@@ -67,6 +67,7 @@ app.use(
       "http://localhost:5173",
       "http://localhost:5174",
       "http://localhost:5175",
+      FRONTEND_URL,
     ],
     credentials: true,
   })
@@ -423,6 +424,49 @@ app.use(express.json());
 // HOME
 // ======================================================
 
+// ======================================================
+// AUTH HELPERS
+// The frontend sends: Authorization: Bearer <supabase access token>
+// ======================================================
+
+const ADMIN_EMAILS = (process.env.ADMIN_EMAILS || "")
+  .split(",")
+  .map((e) => e.trim().toLowerCase())
+  .filter(Boolean);
+
+async function requireAuth(req, res, next) {
+  try {
+    const header = req.headers.authorization || "";
+    const token = header.startsWith("Bearer ") ? header.slice(7) : null;
+
+    if (!token) {
+      return res.status(401).json({ error: "Login required" });
+    }
+
+    const { data, error } = await supabase.auth.getUser(token);
+
+    if (error || !data?.user) {
+      return res.status(401).json({ error: "Invalid or expired session" });
+    }
+
+    req.user = data.user;
+    next();
+  } catch (err) {
+    next(err);
+  }
+}
+
+function requireAdmin(req, res, next) {
+  const email = (req.user?.email || "").toLowerCase();
+
+  if (!ADMIN_EMAILS.includes(email)) {
+    return res.status(403).json({ error: "Admin access only" });
+  }
+
+  next();
+}
+
+
 app.get("/", (req, res) => {
   res.json({
     success: true,
@@ -545,7 +589,7 @@ app.get("/products/:id", async (req, res) => {
 // ADD PRODUCT
 // ======================================================
 
-app.post("/products", async (req, res) => {
+app.post("/products", requireAuth, requireAdmin, async (req, res) => {
   try {
     const {
       name,
@@ -996,11 +1040,18 @@ app.get(
 
 app.get(
   "/orders/:userId",
+  requireAuth,
   async (req, res) => {
     try {
       const {
         userId,
       } = req.params;
+
+      if (userId !== req.user.id) {
+        return res.status(403).json({
+          error: "You can only view your own orders",
+        });
+      }
 
       if (!userId) {
         return res.status(400).json({
@@ -1083,6 +1134,7 @@ app.get(
 
 app.get(
   "/order/:orderId",
+  requireAuth,
   async (req, res) => {
     try {
       const orderId =
@@ -1141,6 +1193,12 @@ app.get(
         return res.status(404).json({
           error:
             error.message,
+        });
+      }
+
+      if (data.user_id !== req.user.id) {
+        return res.status(404).json({
+          error: "Order not found",
         });
       }
 

@@ -2,9 +2,12 @@ import { useEffect, useState } from "react";
 import { supabase } from "@/lib/supabase";
 import MainLayout from "@/layouts/MainLayout";
 import { User } from "lucide-react";
+import { Link } from "react-router-dom";
+import useWishlistStore from "@/store/wishlistStore";
 
 export default function Account() {
   const [profile, setProfile] = useState(null);
+  const wishlistCount = useWishlistStore((s) => s.items.length);
 
   useEffect(() => {
     loadProfile();
@@ -75,37 +78,33 @@ export default function Account() {
 
           <hr className="my-10 border-zinc-700" />
 
-          <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
+          <div className="grid grid-cols-1 sm:grid-cols-3 gap-6">
 
-            <div className="bg-black rounded-lg p-6 text-center">
-              <h2 className="text-3xl font-bold">0</h2>
-              <p>Orders</p>
-            </div>
+            <Link to="/orders" className="bg-black rounded-lg p-6 text-center hover:ring-2 hover:ring-cyan-500 transition">
+              <h2 className="text-xl font-bold">My Orders</h2>
+              <p className="text-gray-400 text-sm mt-1">Track your purchases</p>
+            </Link>
 
-            <div className="bg-black rounded-lg p-6 text-center">
-              <h2 className="text-3xl font-bold">0</h2>
+            <Link to="/wishlist" className="bg-black rounded-lg p-6 text-center hover:ring-2 hover:ring-cyan-500 transition">
+              <h2 className="text-3xl font-bold">{wishlistCount}</h2>
               <p>Wishlist</p>
-            </div>
+            </Link>
 
-            <div className="bg-black rounded-lg p-6 text-center">
-              <h2 className="text-3xl font-bold">0</h2>
-              <p>Addresses</p>
-            </div>
-
-            <div className="bg-black rounded-lg p-6 text-center">
-              <h2 className="text-3xl font-bold">0</h2>
-              <p>Payments</p>
-            </div>
+            <Link to="/cart" className="bg-black rounded-lg p-6 text-center hover:ring-2 hover:ring-cyan-500 transition">
+              <h2 className="text-xl font-bold">My Cart</h2>
+              <p className="text-gray-400 text-sm mt-1">Ready to checkout</p>
+            </Link>
 
           </div>
 
           <div className="mt-10 flex gap-4">
 
-            <button
+            <Link
+              to="/profile"
               className="bg-cyan-500 hover:bg-cyan-600 px-6 py-3 rounded-lg font-semibold"
             >
               Edit Profile
-            </button>
+            </Link>
 
             <button
               onClick={logout}

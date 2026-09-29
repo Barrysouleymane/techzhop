@@ -1,7 +1,14 @@
 import { Link } from "react-router-dom";
+import { Heart } from "lucide-react";
 import { cartAdd } from "@/services/cartService";
+import useWishlistStore from "@/store/wishlistStore";
 
 export default function ProductCard({ product }) {
+  const toggleWishlist = useWishlistStore((s) => s.toggle);
+  const inWishlist = useWishlistStore((s) =>
+    s.items.some((p) => p.id === product.id)
+  );
+
   async function handleAddToCart(e) {
     e.preventDefault();
     e.stopPropagation();
@@ -19,7 +26,22 @@ export default function ProductCard({ product }) {
   return (
     <div className="bg-zinc-900 rounded-2xl overflow-hidden border border-zinc-800 hover:border-cyan-500 transition">
 
-      <Link to={`/product/${product.id}`}>
+      <Link to={`/product/${product.id}`} className="relative block">
+        <button
+          type="button"
+          onClick={(e) => {
+            e.preventDefault();
+            e.stopPropagation();
+            toggleWishlist(product);
+          }}
+          aria-label={inWishlist ? "Remove from wishlist" : "Add to wishlist"}
+          className="absolute top-3 right-3 z-10 bg-black/70 hover:bg-black rounded-full p-2 transition"
+        >
+          <Heart
+            className={`w-5 h-5 ${inWishlist ? "fill-pink-500 text-pink-500" : "text-white"}`}
+          />
+        </button>
+
         <div className="bg-white h-64 flex items-center justify-center">
 
           <img

@@ -3,6 +3,7 @@ import { Link } from "react-router-dom";
 import axios from "axios";
 import MainLayout from "@/layouts/MainLayout";
 import useCart from "@/hooks/useCart";
+import { API_URL } from "@/config/constants";
 
 export default function Checkout() {
   const { cart, loading } = useCart();
@@ -92,7 +93,7 @@ export default function Checkout() {
       // ========================================
 
       const response = await axios.post(
-        "http://localhost:8000/create-checkout-session",
+        `${API_URL}/create-checkout-session`,
         {
           items,
         },

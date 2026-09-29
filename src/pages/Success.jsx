@@ -2,6 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useSearchParams } from "react-router-dom";
 import axios from "axios";
 import MainLayout from "@/layouts/MainLayout";
+import { API_URL } from "@/config/constants";
 
 export default function Success() {
   const [searchParams] = useSearchParams();
@@ -24,7 +25,7 @@ export default function Success() {
         console.log("SESSION ID:", sessionId);
 
         const response = await axios.get(
-          `http://localhost:8000/checkout-session/${sessionId}`
+          `${API_URL}/checkout-session/${sessionId}`
         );
 
         console.log("SESSION DATA:", response.data);
