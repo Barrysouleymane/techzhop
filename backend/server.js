@@ -285,6 +285,80 @@ async function sendOrderPush(userId, orderId, status) {
 
 
 
+
+// ======================================================
+// PRICES, SHIPPING & TAXES
+// (same rules as shared/settings.js used by the website and app)
+// ======================================================
+
+const DEFAULT_SHOP_SETTINGS = {
+  shipping: { standard_rate: 9.99, free_over: 50, zones: [], min_days: 3, max_days: 7 },
+  taxes: { enabled: false, rates: [] },
+};
+
+function isOnSale(p) {
+  const sale = Number(p?.sale_price);
+  if (!p || !(sale > 0) || !(sale < Number(p.price))) return false;
+  return !p.sale_ends_at || new Date(p.sale_ends_at).getTime() > Date.now();
+}
+
+function effectivePrice(p) {
+  return isOnSale(p) ? Number(p.sale_price) : Number(p?.price || 0);
+}
+
+const COUNTRY_ALIASES = {
+  USA: "US", "UNITED STATES": "US", "UNITED STATES OF AMERICA": "US", "ÉTATS-UNIS": "US", "ETATS-UNIS": "US",
+  "UNITED KINGDOM": "GB", UK: "GB", FRANCE: "FR", CANADA: "CA", GUINEA: "GN", "GUINÉE": "GN", GUINEE: "GN",
+  SENEGAL: "SN", "SÉNÉGAL": "SN", NIGERIA: "NG", GERMANY: "DE", ALLEMAGNE: "DE", SPAIN: "ES", ESPAGNE: "ES",
+  BRAZIL: "BR", "BRÉSIL": "BR", MEXICO: "MX", CHINA: "CN", CHINE: "CN", "CÔTE D'IVOIRE": "CI", "COTE D'IVOIRE": "CI",
+};
+const normalizeCountry = (v) => {
+  const x = String(v || "").trim().toUpperCase();
+  return COUNTRY_ALIASES[x] || x;
+};
+const US_STATE_NAMES = {
+  "NEW YORK": "NY", "NEW JERSEY": "NJ", CALIFORNIA: "CA", TEXAS: "TX", FLORIDA: "FL", PENNSYLVANIA: "PA",
+  ILLINOIS: "IL", OHIO: "OH", GEORGIA: "GA", "NORTH CAROLINA": "NC", MICHIGAN: "MI", MASSACHUSETTS: "MA",
+  WASHINGTON: "WA", VIRGINIA: "VA", MARYLAND: "MD", CONNECTICUT: "CT", "DISTRICT OF COLUMBIA": "DC",
+};
+const normalizeState = (v) => {
+  const x = String(v || "").trim().toUpperCase();
+  return US_STATE_NAMES[x] || x;
+};
+
+function shippingCost(settings, country, subtotal) {
+  const s = { ...DEFAULT_SHOP_SETTINGS.shipping, ...(settings?.shipping || {}) };
+  if (Number(s.free_over) > 0 && subtotal >= Number(s.free_over)) return 0;
+  const zone = (s.zones || []).find((z) => normalizeCountry(z.country) === normalizeCountry(country));
+  return Number(zone ? zone.rate : s.standard_rate) || 0;
+}
+
+function taxRate(settings, country, state) {
+  const t = settings?.taxes;
+  if (!t?.enabled) return 0;
+  const c = normalizeCountry(country);
+  const st = normalizeState(state);
+  const rates = t.rates || [];
+  const exact = rates.find((r) => normalizeCountry(r.country) === c && r.state && normalizeState(r.state) === st);
+  const countryWide = rates.find((r) => normalizeCountry(r.country) === c && !r.state);
+  return Number((exact || countryWide)?.rate) || 0;
+}
+
+let settingsCache = null;
+let settingsAt = 0;
+
+async function getShopSettings() {
+  if (settingsCache && Date.now() - settingsAt < 30000) return settingsCache;
+  const { data } = await supabase.from("shop_settings").select("value").eq("key", "shop").maybeSingle();
+  settingsCache = {
+    shipping: { ...DEFAULT_SHOP_SETTINGS.shipping, ...(data?.value?.shipping || {}) },
+    taxes: { ...DEFAULT_SHOP_SETTINGS.taxes, ...(data?.value?.taxes || {}) },
+  };
+  settingsAt = Date.now();
+  return settingsCache;
+}
+
+
 // ======================================================
 // ORDER CREATION AFTER PAYMENT
 // Called by the Stripe webhook AND when the customer comes back
@@ -321,17 +395,31 @@ async function doFulfill(sessionId) {
   const userId = session.metadata?.user_id || null;
   const now = new Date().toISOString();
 
+  const orderRow = {
+    user_id: userId,
+    stripe_session_id: session.id,
+    total: Number(session.amount_total || 0) / 100,
+    shipping_address: session.metadata?.shipping_address || null,
+    status: "paid",
+    created_at: now,
+    updated_at: now,
+  };
+
+  // Detailed amounts, when the columns exist (SQL "store features")
+  const cols = await orderColumns();
+  const amounts = {
+    subtotal: Number(session.metadata?.subtotal || session.amount_subtotal / 100 || 0),
+    shipping_amount: Number(session.total_details?.amount_shipping || 0) / 100,
+    tax_amount: Number(session.metadata?.tax || 0),
+    discount_amount: Number(session.total_details?.amount_discount || 0) / 100,
+  };
+  for (const [k, v] of Object.entries(amounts)) {
+    if (cols.includes(k)) orderRow[k] = v;
+  }
+
   const { data: order, error: orderError } = await supabase
     .from("orders")
-    .insert({
-      user_id: userId,
-      stripe_session_id: session.id,
-      total: Number(session.amount_total || 0) / 100,
-      shipping_address: session.metadata?.shipping_address || null,
-      status: "paid",
-      created_at: now,
-      updated_at: now,
-    })
+    .insert(orderRow)
     .select()
     .single();
 
@@ -353,7 +441,9 @@ async function doFulfill(sessionId) {
     expand: ["data.price.product"],
   });
 
-  const orderItems = lineItems.data.map((item) => {
+  const orderItems = lineItems.data
+    .filter((item) => item.price?.product?.metadata?.kind !== "tax")
+    .map((item) => {
     const product = item.price?.product;
     const productId = Number(product?.metadata?.product_id) || null;
     return {
@@ -442,7 +532,7 @@ async function requireAuth(req, res, next) {
 // ------------------------------------------------------
 
 const ROLE_PERMISSIONS = {
-  admin: ["products", "orders", "team", "revenue"],
+  admin: ["products", "orders", "team", "revenue", "store"],
   product_manager: ["products"],
   seller: ["orders"],
   customer: [],
@@ -689,303 +779,106 @@ app.post("/products", requireAuth, requirePermission("products"), async (req, re
 // CREATE STRIPE CHECKOUT SESSION
 // ======================================================
 
-app.post(
-  "/create-checkout-session",
-  requireAuth,
-  async (req, res) => {
-    try {
-      console.log("");
-      console.log(
-        "========================================"
-      );
-      console.log(
-        "🛒 CHECKOUT REQUEST"
-      );
-      console.log(
-        "BODY:",
-        JSON.stringify(
-          req.body,
-          null,
-          2
-        )
-      );
-      console.log(
-        "========================================"
-      );
+app.post("/create-checkout-session", requireAuth, async (req, res) => {
+  try {
+    const { items, shipping_address, address, return_to } = req.body || {};
 
-      const {
-        items,
-      } = req.body;
+    if (!Array.isArray(items) || items.length === 0) {
+      return res.status(400).json({ error: "Cart is empty" });
+    }
 
-      // The user comes from the verified token, never from the request body
-      const user_id = req.user.id;
+    const ids = [...new Set(items.map((i) => Number(i.product_id)).filter(Number.isInteger))];
+    const { data: products, error } = await supabase.from("products").select("*").in("id", ids);
+    if (error) return res.status(500).json({ error: error.message });
 
-      // ----------------------------------------------
-      // Validate cart
-      // ----------------------------------------------
+    let subtotal = 0;
+    const line_items = items.map((item) => {
+      const product = (products || []).find((p) => Number(p.id) === Number(item.product_id));
+      if (!product) throw new Error(`Product ${item.product_id} not found`);
 
-      if (
-        !items ||
-        !Array.isArray(items) ||
-        items.length === 0
-      ) {
-        return res.status(400).json({
-          error: "Cart is empty",
-        });
+      const quantity = Number(item.quantity);
+      if (!Number.isInteger(quantity) || quantity <= 0) throw new Error(`Invalid quantity for ${product.name}`);
+      if (product.stock != null && quantity > Number(product.stock)) {
+        throw new Error(`Only ${product.stock} left in stock for ${product.name}`);
       }
 
-      // ----------------------------------------------
-      // Validate user
-      // ----------------------------------------------
+      const unit = effectivePrice(product); // sale price when active
+      if (!(unit > 0)) throw new Error(`Invalid price for ${product.name}`);
+      subtotal += unit * quantity;
 
-      if (!user_id) {
-        return res.status(400).json({
-          error:
-            "User ID is required for checkout",
-        });
-      }
+      return {
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: product.name,
+            ...(product.image ? { images: [product.image] } : {}),
+            metadata: { product_id: String(product.id) },
+          },
+          unit_amount: Math.round(unit * 100),
+        },
+        quantity,
+      };
+    });
 
-      // ----------------------------------------------
-      // Product IDs
-      // ----------------------------------------------
+    const settings = await getShopSettings();
+    const shipping = shippingCost(settings, address?.country, subtotal);
+    const rate = taxRate(settings, address?.country, address?.state);
+    const tax = Math.round(subtotal * rate) / 100;
 
-      const productIds =
-        items
-          .map((item) =>
-            Number(item.product_id)
-          )
-          .filter((id) =>
-            Number.isInteger(id)
-          );
-
-      if (
-        productIds.length === 0
-      ) {
-        return res.status(400).json({
-          error:
-            "No valid product IDs found",
-        });
-      }
-
-      console.log(
-        "PRODUCT IDS:",
-        productIds
-      );
-
-      // ----------------------------------------------
-      // Get products from Supabase
-      // ----------------------------------------------
-
-      const {
-        data: products,
-        error: productsError,
-      } = await supabase
-        .from("products")
-        .select(
-          "id,name,price,image,stock"
-        )
-        .in(
-          "id",
-          productIds
-        );
-
-      if (productsError) {
-        console.error(
-          "SUPABASE PRODUCTS ERROR:",
-          productsError
-        );
-
-        return res.status(500).json({
-          error:
-            productsError.message,
-        });
-      }
-
-      if (
-        !products ||
-        products.length === 0
-      ) {
-        return res.status(400).json({
-          error:
-            "No products found",
-        });
-      }
-
-      console.log(
-        "PRODUCTS FOUND:",
-        products
-      );
-
-      // ----------------------------------------------
-      // Build Stripe line items
-      // ----------------------------------------------
-
-      const line_items =
-        items.map((item) => {
-          const productId =
-            Number(
-              item.product_id
-            );
-
-          const product =
-            products.find(
-              (p) =>
-                Number(p.id) ===
-                productId
-            );
-
-          if (!product) {
-            throw new Error(
-              `Product ${productId} not found`
-            );
-          }
-
-          const quantity =
-            Number(
-              item.quantity
-            );
-
-          if (
-            !Number.isInteger(
-              quantity
-            ) ||
-            quantity <= 0
-          ) {
-            throw new Error(
-              `Invalid quantity for ${product.name}`
-            );
-          }
-
-          const price =
-            Number(
-              product.price
-            );
-
-          if (
-            !Number.isFinite(
-              price
-            ) ||
-            price <= 0
-          ) {
-            throw new Error(
-              `Invalid price for ${product.name}`
-            );
-          }
-
-          return {
-            price_data: {
-              currency: "usd",
-
-              product_data: {
-                name:
-                  product.name,
-
-                metadata: {
-                  product_id:
-                    String(
-                      product.id
-                    ),
-                },
-              },
-
-              unit_amount:
-                Math.round(
-                  price * 100
-                ),
-            },
-
-            quantity,
-          };
-        });
-
-      // ----------------------------------------------
-      // Create Stripe Checkout
-      // ----------------------------------------------
-
-      const session =
-        await stripe.checkout.sessions.create(
-          {
-            mode: "payment",
-
-            payment_method_types: [
-              "card",
-            ],
-
-            line_items,
-
-            metadata: {
-              user_id:
-                String(user_id),
-              // Chosen delivery address (Stripe metadata max 500 chars)
-              shipping_address: String(
-                req.body.shipping_address || ""
-              ).slice(0, 490),
-            },
-
-            success_url:
-              req.body.return_to === "app"
-                ? `${req.protocol}://${req.get("host")}/checkout/return?session_id={CHECKOUT_SESSION_ID}`
-                : `${FRONTEND_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-
-            cancel_url:
-              `${FRONTEND_URL}/cart`,
-
-            billing_address_collection:
-              "auto",
-
-            phone_number_collection: {
-              enabled: true,
-            },
-
-            shipping_address_collection: {
-              allowed_countries: [
-                "US",
-                "CA",
-              ],
-            },
-          }
-        );
-
-      console.log("");
-      console.log(
-        "========================================"
-      );
-      console.log(
-        "✅ STRIPE SESSION CREATED"
-      );
-      console.log(
-        "SESSION ID:",
-        session.id
-      );
-      console.log(
-        "URL:",
-        session.url
-      );
-      console.log(
-        "========================================"
-      );
-
-      res.json({
-        success: true,
-        id: session.id,
-        url: session.url,
-      });
-
-    } catch (err) {
-      console.error("");
-      console.error(
-        "❌ STRIPE CHECKOUT ERROR:",
-        err
-      );
-
-      res.status(500).json({
-        error:
-          err.message ||
-          "Unable to create checkout session",
+    if (tax > 0) {
+      line_items.push({
+        price_data: {
+          currency: "usd",
+          product_data: {
+            name: `Sales tax (${rate}%)`,
+            metadata: { kind: "tax" },
+          },
+          unit_amount: Math.round(tax * 100),
+        },
+        quantity: 1,
       });
     }
+
+    const ship = { ...DEFAULT_SHOP_SETTINGS.shipping, ...(settings.shipping || {}) };
+
+    const session = await stripe.checkout.sessions.create({
+      mode: "payment",
+      line_items,
+      allow_promotion_codes: true,
+      customer_email: req.user.email || undefined,
+      shipping_options: [
+        {
+          shipping_rate_data: {
+            type: "fixed_amount",
+            display_name: shipping === 0 ? "Free shipping" : "Standard shipping",
+            fixed_amount: { amount: Math.round(shipping * 100), currency: "usd" },
+            delivery_estimate: {
+              minimum: { unit: "business_day", value: Number(ship.min_days) || 3 },
+              maximum: { unit: "business_day", value: Number(ship.max_days) || 7 },
+            },
+          },
+        },
+      ],
+      metadata: {
+        user_id: String(req.user.id),
+        shipping_address: String(shipping_address || "").slice(0, 490),
+        subtotal: subtotal.toFixed(2),
+        tax: tax.toFixed(2),
+      },
+      success_url:
+        return_to === "app"
+          ? `${req.protocol}://${req.get("host")}/checkout/return?session_id={CHECKOUT_SESSION_ID}`
+          : `${FRONTEND_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: return_to === "app" ? `${req.protocol}://${req.get("host")}/checkout/return` : `${FRONTEND_URL}/cart`,
+    });
+
+    console.log("🛒 CHECKOUT:", session.id, "subtotal", subtotal, "shipping", shipping, "tax", tax);
+    res.json({ success: true, id: session.id, url: session.url });
+  } catch (err) {
+    console.error("CHECKOUT ERROR:", err.message);
+    res.status(400).json({ error: err.message });
   }
-);
+});
 
 
 // ======================================================
@@ -1462,6 +1355,7 @@ async function productColumns() {
 const EDITABLE_PRODUCT_FIELDS = [
   "name", "title", "description", "price", "stock", "image", "images",
   "sku", "slug", "status", "category_id", "brand_id", "featured",
+  "sale_price", "sale_ends_at",
 ];
 
 async function cleanProduct(body) {
@@ -1477,6 +1371,8 @@ async function cleanProduct(body) {
   if (out.stock !== undefined) out.stock = Number(out.stock || 0);
   if (out.category_id === "") out.category_id = null;
   if (out.brand_id === "") out.brand_id = null;
+  if (out.sale_price !== undefined) out.sale_price = Number(out.sale_price) > 0 ? Number(out.sale_price) : null;
+  if (out.sale_ends_at !== undefined) out.sale_ends_at = out.sale_ends_at ? new Date(out.sale_ends_at).toISOString() : null;
 
   if (Array.isArray(body.images) && body.images.length && cols.includes("image")) {
     out.image = body.images[0];
@@ -1670,7 +1566,7 @@ app.delete("/admin/products/:id", requireAuth, requirePermission("products"), as
 // Upload a product photo. Body: { data: "<base64>", contentType: "image/jpeg" }
 let productsBucketReady = false;
 
-app.post("/admin/upload", requireAuth, requirePermission("products"), async (req, res) => {
+app.post("/admin/upload", requireAuth, requirePermission("products", "store"), async (req, res) => {
   try {
     const { data: base64, contentType = "image/jpeg" } = req.body || {};
     if (!base64) return res.status(400).json({ error: "No image" });
@@ -1710,12 +1606,281 @@ for (const table of ["categories", "brands"]) {
 
 
 
+
+// ======================================================
+// STORE SETTINGS (shipping, taxes, delivery time)
+// ======================================================
+
+// Public: the website/app show shipping costs and delivery dates
+app.get("/shop-settings", async (req, res) => {
+  res.json(await getShopSettings());
+});
+
+app.get("/admin/settings", requireAuth, requirePermission("store"), async (req, res) => {
+  res.json(await getShopSettings());
+});
+
+app.put("/admin/settings", requireAuth, requirePermission("store"), async (req, res) => {
+  const body = req.body || {};
+  const value = {
+    shipping: {
+      standard_rate: Math.max(0, Number(body.shipping?.standard_rate) || 0),
+      free_over: Math.max(0, Number(body.shipping?.free_over) || 0),
+      min_days: Math.max(0, parseInt(body.shipping?.min_days, 10) || 0),
+      max_days: Math.max(0, parseInt(body.shipping?.max_days, 10) || 0),
+      zones: (body.shipping?.zones || [])
+        .filter((z) => z && z.country)
+        .map((z) => ({ country: normalizeCountry(z.country), rate: Math.max(0, Number(z.rate) || 0) })),
+    },
+    taxes: {
+      enabled: !!body.taxes?.enabled,
+      rates: (body.taxes?.rates || [])
+        .filter((r) => r && r.country)
+        .map((r) => ({
+          country: normalizeCountry(r.country),
+          state: r.state ? normalizeState(r.state) : "",
+          rate: Math.max(0, Math.min(50, Number(r.rate) || 0)),
+        })),
+    },
+  };
+  const { error } = await supabase
+    .from("shop_settings")
+    .upsert({ key: "shop", value, updated_at: new Date().toISOString() });
+  if (error) return res.status(500).json({ error: error.message });
+  settingsCache = null;
+  res.json(value);
+});
+
+
+// ======================================================
+// REVIEWS & RATINGS
+// ======================================================
+
+let ratingsCache = null;
+let ratingsAt = 0;
+
+// Public: { "<product id>": { avg: 4.5, count: 12 } }
+app.get("/ratings", async (req, res) => {
+  if (!ratingsCache || Date.now() - ratingsAt > 60000) {
+    const { data } = await supabase.from("reviews").select("product_id, rating");
+    const map = {};
+    for (const r of data || []) {
+      const m = (map[r.product_id] ||= { sum: 0, count: 0 });
+      m.sum += r.rating;
+      m.count += 1;
+    }
+    ratingsCache = Object.fromEntries(
+      Object.entries(map).map(([id, m]) => [id, { avg: Math.round((m.sum / m.count) * 10) / 10, count: m.count }])
+    );
+    ratingsAt = Date.now();
+  }
+  res.json(ratingsCache);
+});
+
+app.get("/products/:id/reviews", async (req, res) => {
+  const { data, error } = await supabase
+    .from("reviews")
+    .select("id, user_id, author_name, rating, title, body, created_at")
+    .eq("product_id", req.params.id)
+    .order("created_at", { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ reviews: data || [] });
+});
+
+async function hasBought(userId, productId) {
+  const { data } = await supabase
+    .from("orders")
+    .select("id, order_items!inner(product_id)")
+    .eq("user_id", userId)
+    .in("status", ["paid", "processing", "shipped", "delivered"])
+    .eq("order_items.product_id", productId)
+    .limit(1);
+  return (data || []).length > 0;
+}
+
+// Can the logged-in user review this product? (bought it)
+app.get("/products/:id/can-review", requireAuth, async (req, res) => {
+  res.json({ canReview: await hasBought(req.user.id, Number(req.params.id)) });
+});
+
+app.post("/products/:id/reviews", requireAuth, async (req, res) => {
+  const productId = Number(req.params.id);
+  const rating = parseInt(req.body?.rating, 10);
+  if (!(rating >= 1 && rating <= 5)) return res.status(400).json({ error: "Rating must be 1 to 5" });
+  if (!(await hasBought(req.user.id, productId))) {
+    return res.status(403).json({ error: "Only customers who bought this product can review it" });
+  }
+
+  const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", req.user.id).maybeSingle();
+  const name = profile?.full_name || req.user.user_metadata?.full_name || "Customer";
+  const parts = name.trim().split(/\s+/);
+  const author = parts.length > 1 ? `${parts[0]} ${parts[parts.length - 1][0]}.` : parts[0];
+
+  const { data, error } = await supabase
+    .from("reviews")
+    .upsert(
+      {
+        product_id: productId,
+        user_id: req.user.id,
+        author_name: author,
+        rating,
+        title: String(req.body?.title || "").slice(0, 120),
+        body: String(req.body?.body || "").slice(0, 2000),
+        updated_at: new Date().toISOString(),
+      },
+      { onConflict: "product_id,user_id" }
+    )
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  ratingsCache = null;
+  res.json({ review: data });
+});
+
+// Delete: the author, or staff who manage products
+app.delete("/reviews/:id", requireAuth, async (req, res) => {
+  const { data: review } = await supabase.from("reviews").select("id, user_id").eq("id", req.params.id).maybeSingle();
+  if (!review) return res.status(404).json({ error: "Review not found" });
+  const role = await getRole(req.user);
+  const canModerate = (ROLE_PERMISSIONS[role] || []).includes("products");
+  if (review.user_id !== req.user.id && !canModerate) {
+    return res.status(403).json({ error: "Not allowed" });
+  }
+  await supabase.from("reviews").delete().eq("id", review.id);
+  ratingsCache = null;
+  res.json({ deleted: true });
+});
+
+
+// ======================================================
+// HOME BANNERS
+// ======================================================
+
+app.get("/banners", async (req, res) => {
+  const { data } = await supabase.from("banners").select("*").eq("active", true).order("sort").order("id");
+  res.json({ banners: data || [] });
+});
+
+app.get("/admin/banners", requireAuth, requirePermission("store"), async (req, res) => {
+  const { data, error } = await supabase.from("banners").select("*").order("sort").order("id");
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ banners: data || [] });
+});
+
+const BANNER_FIELDS = ["image", "title", "subtitle", "link", "button_label", "active", "sort"];
+const pickBanner = (b) => Object.fromEntries(BANNER_FIELDS.filter((k) => b?.[k] !== undefined).map((k) => [k, b[k]]));
+
+app.post("/admin/banners", requireAuth, requirePermission("store"), async (req, res) => {
+  const banner = pickBanner(req.body);
+  if (!banner.image) return res.status(400).json({ error: "Image is required" });
+  const { data, error } = await supabase.from("banners").insert(banner).select().single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ banner: data });
+});
+
+app.patch("/admin/banners/:id", requireAuth, requirePermission("store"), async (req, res) => {
+  const { data, error } = await supabase.from("banners").update(pickBanner(req.body)).eq("id", req.params.id).select().single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ banner: data });
+});
+
+app.delete("/admin/banners/:id", requireAuth, requirePermission("store"), async (req, res) => {
+  const { error } = await supabase.from("banners").delete().eq("id", req.params.id);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ deleted: true });
+});
+
+
+// ======================================================
+// PROMO CODES (Stripe coupons — no extra Stripe fee)
+// Customers type them on the Stripe payment page.
+// ======================================================
+
+async function couponOf(pc) {
+  const ref = pc.promotion?.coupon ?? pc.coupon;
+  if (!ref) return null;
+  return typeof ref === "string" ? stripe.coupons.retrieve(ref) : ref;
+}
+
+app.get("/admin/promos", requireAuth, requirePermission("store"), async (req, res) => {
+  try {
+    const list = await stripe.promotionCodes.list({ limit: 100 });
+    const promos = await Promise.all(
+      list.data.map(async (pc) => {
+        const coupon = await couponOf(pc).catch(() => null);
+        return {
+          id: pc.id,
+          code: pc.code,
+          active: pc.active,
+          times_redeemed: pc.times_redeemed,
+          max_redemptions: pc.max_redemptions,
+          expires_at: pc.expires_at ? new Date(pc.expires_at * 1000).toISOString() : null,
+          percent_off: coupon?.percent_off || null,
+          amount_off: coupon?.amount_off ? coupon.amount_off / 100 : null,
+        };
+      })
+    );
+    res.json({ promos });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+app.post("/admin/promos", requireAuth, requirePermission("store"), async (req, res) => {
+  try {
+    const code = String(req.body?.code || "").trim().toUpperCase().replace(/[^A-Z0-9_-]/g, "");
+    const percent = Number(req.body?.percent_off);
+    const amount = Number(req.body?.amount_off);
+    if (!code) return res.status(400).json({ error: "Code is required" });
+    if (!(percent > 0 && percent <= 100) && !(amount > 0)) {
+      return res.status(400).json({ error: "Enter a percentage or an amount" });
+    }
+
+    const coupon = await stripe.coupons.create(
+      percent > 0
+        ? { percent_off: percent, duration: "once", name: code }
+        : { amount_off: Math.round(amount * 100), currency: "usd", duration: "once", name: code }
+    );
+
+    const extra = {};
+    if (req.body?.expires_at) extra.expires_at = Math.floor(new Date(req.body.expires_at).getTime() / 1000);
+    if (Number(req.body?.max_redemptions) > 0) extra.max_redemptions = Number(req.body.max_redemptions);
+
+    let pc;
+    try {
+      // Newer Stripe API versions
+      pc = await stripe.promotionCodes.create({ code, promotion: { type: "coupon", coupon: coupon.id }, ...extra });
+    } catch {
+      // Older Stripe API versions
+      pc = await stripe.promotionCodes.create({ code, coupon: coupon.id, ...extra });
+    }
+    res.json({ promo: { id: pc.id, code: pc.code } });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+app.patch("/admin/promos/:id", requireAuth, requirePermission("store"), async (req, res) => {
+  try {
+    const pc = await stripe.promotionCodes.update(req.params.id, { active: !!req.body?.active });
+    res.json({ promo: { id: pc.id, active: pc.active } });
+  } catch (err) {
+    res.status(400).json({ error: err.message });
+  }
+});
+
+
 // ======================================================
 // RETURN PAGE FOR THE MOBILE APP
 // After paying in the phone's browser, Stripe sends the customer here.
 // ======================================================
 
 app.get("/checkout/return", async (req, res) => {
+  if (!req.query.session_id) {
+    return res.set("Content-Type", "text/html; charset=utf-8").send(`<!doctype html><html><head><meta name="viewport" content="width=device-width,initial-scale=1"><title>TechZhop</title>
+<style>body{font-family:-apple-system,system-ui,sans-serif;background:#000;color:#fff;display:flex;min-height:100vh;align-items:center;justify-content:center;text-align:center;margin:0;padding:24px}p{color:#a1a1aa;font-size:18px}</style></head>
+<body><div><div style="font-size:64px">↩️</div><p>Payment cancelled — you can close this page and return to the app.<br>Paiement annulé — vous pouvez fermer cette page.</p></div></body></html>`);
+  }
   let ok = false;
   try {
     const { orderId } = await fulfillCheckoutSession(String(req.query.session_id || ""));
