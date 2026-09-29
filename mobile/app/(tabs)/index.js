@@ -7,6 +7,7 @@ import useAuth from "../../src/lib/useAuth";
 import { useShop, useRecent } from "../../src/store/shop";
 import ProductCard from "../../src/components/ProductCard";
 import { PromoBar } from "../../src/components/Shop";
+import { DeliverToBar } from "../../src/components/DeliverTo";
 import { Loading, useStyles } from "../../src/components/ui";
 import { isOnSale, discountPercent } from "../../../shared/settings";
 
@@ -86,6 +87,7 @@ export default function Home() {
       contentContainerStyle={{ padding: 16, paddingBottom: 40 }}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={() => { setRefreshing(true); reloadShop(true); load(); }} tintColor={c.primary} />}
     >
+      <DeliverToBar />
       <PromoBar />
       {banners.length ? (
         <View>

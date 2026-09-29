@@ -3,6 +3,7 @@ import SearchBar from "../SearchBar/SearchBar";
 import CartIcon from "../Cart/CartIcon";
 import UserMenu from "../UserMenu/UserMenu";
 import PromoBar from "../Shop/PromoBar";
+import DeliverTo, { DeliverToMobile } from "../DeliverTo/DeliverTo";
 
 export default function Navbar() {
   return (
@@ -10,6 +11,7 @@ export default function Navbar() {
       <PromoBar />
       <div className="max-w-7xl mx-auto flex flex-wrap md:flex-nowrap items-center gap-4 md:gap-6 px-4 sm:px-6 py-3 md:py-4">
         <Logo />
+        <DeliverTo />
         <div className="order-3 md:order-none w-full md:w-auto md:flex-1">
           <SearchBar />
         </div>
@@ -18,6 +20,7 @@ export default function Navbar() {
           <CartIcon />
         </div>
       </div>
+      <DeliverToMobile />
     </header>
   );
 }

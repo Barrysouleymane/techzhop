@@ -551,5 +551,25 @@
       "customer": "No access to the admin area."
     },
     "invited": "Invitation sent to {{email}}"
+  },
+  "location": {
+    "deliverTo": "Deliver to",
+    "deliverToName": "Deliver to {{name}}",
+    "title": "Choose your location",
+    "intro": "Delivery options, fees and delivery speeds may vary for different locations.",
+    "default": "Default address",
+    "manage": "Manage address book",
+    "addAddress": "Add an address",
+    "signIn": "Sign in to see your addresses",
+    "orZip": "or choose a country and postal code",
+    "country": "Country",
+    "zip": "Postal code (optional)",
+    "apply": "Apply",
+    "done": "Done",
+    "updated": "Delivery location updated",
+    "deliveringTo": "Delivering to {{place}}",
+    "shippingTo": "Shipping: {{amount}}",
+    "freeShipping": "Free shipping",
+    "change": "Change"
   }
 }

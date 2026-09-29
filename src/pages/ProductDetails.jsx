@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Heart, Truck } from "lucide-react";
+import { Heart, Truck, MapPin } from "lucide-react";
 import { toast } from "sonner";
 import Page, { btnPrimary } from "@/components/Page";
 import useProduct from "@/hooks/useProduct";
@@ -14,7 +14,9 @@ import Reviews from "@/components/Shop/Reviews";
 import ProductCard from "@/components/ProductCard/ProductCard";
 import useShopStore from "@/store/shopStore";
 import useRecentStore from "@/store/recentStore";
-import { isOnSale, deliveryRange } from "../../shared/settings";
+import { isOnSale, deliveryRange, shippingCost, effectivePrice, locationPlace } from "../../shared/settings";
+import useDeliveryLocation from "@/hooks/useDeliveryLocation";
+import useLocationStore from "@/store/locationStore";
 import useCartStore from "@/store/cartStore";
 import useWishlistStore from "@/store/wishlistStore";
 
@@ -29,6 +31,8 @@ export default function ProductDetails() {
   const settings = useShopStore((s) => s.settings);
   const rating = useShopStore((s) => s.ratings[id]);
   const addRecent = useRecentStore((s) => s.add);
+  const loc = useDeliveryLocation();
+  const openLocation = useLocationStore((s) => s.setOpen);
 
   useEffect(() => {
     setPhoto(0);
@@ -104,9 +108,18 @@ export default function ProductDetails() {
               <Truck className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
               <div>
                 <div className="font-semibold">{t("product.delivery", deliveryRange(settings, i18n.language))}</div>
+                {(() => {
+                  const fee = shippingCost(settings, loc.country, effectivePrice(product));
+                  return (
+                    <div className="text-sm">{fee === 0 ? <span className="text-green-400">{t("location.freeShipping")}</span> : t("location.shippingTo", { amount: money(fee) })}</div>
+                  );
+                })()}
                 {Number(settings.shipping?.free_over) > 0 && (
                   <div className="text-gray-400 text-sm">{t("product.freeShippingOver", { amount: money(settings.shipping.free_over) })}</div>
                 )}
+                <button onClick={() => openLocation(true)} className="mt-1 flex items-center gap-1 bg-transparent border-0 p-0 text-cyan-400 text-sm hover:underline cursor-pointer">
+                  <MapPin className="w-4 h-4" /> {t("location.deliveringTo", { place: locationPlace(loc, i18n.language) })}
+                </button>
               </div>
             </div>
           )}

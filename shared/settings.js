@@ -240,3 +240,80 @@ export function timeLeft(until, now = Date.now()) {
   const s = Math.floor(ms / 1000);
   return { days: Math.floor(s / 86400), hours: Math.floor((s % 86400) / 3600), minutes: Math.floor((s % 3600) / 60), seconds: s % 60 };
 }
+
+// ---------- "Deliver to" location ----------
+
+/** Countries we can ship to (English names; localized with Intl when available) */
+export const SHIP_COUNTRIES = {
+  US: "United States", CA: "Canada", MX: "Mexico", GB: "United Kingdom", IE: "Ireland", FR: "France",
+  BE: "Belgium", CH: "Switzerland", LU: "Luxembourg", DE: "Germany", NL: "Netherlands", ES: "Spain", PT: "Portugal",
+  IT: "Italy", BR: "Brazil", AR: "Argentina", CO: "Colombia", CN: "China", JP: "Japan", KR: "South Korea",
+  IN: "India", AE: "United Arab Emirates", SA: "Saudi Arabia", MA: "Morocco", DZ: "Algeria", TN: "Tunisia",
+  EG: "Egypt", SN: "Senegal", GN: "Guinea", ML: "Mali", CI: "Côte d'Ivoire", BF: "Burkina Faso", CM: "Cameroon",
+  NG: "Nigeria", GH: "Ghana", SL: "Sierra Leone", LR: "Liberia", KE: "Kenya", ZA: "South Africa", AU: "Australia",
+};
+
+export function countryName(code, locale = "en") {
+  const c = normalizeCountry(code);
+  if (!c) return "";
+  if (c.length === 2) {
+    try {
+      const n = new Intl.DisplayNames([locale], { type: "region" }).of(c);
+      if (n && n !== c) return n;
+    } catch {
+      // Intl.DisplayNames not available on this device
+    }
+  }
+  return SHIP_COUNTRIES[c] || String(code);
+}
+
+/** Country list for a picker, sorted by name in the user's language */
+export function countryOptions(locale = "en", extra) {
+  const codes = Object.keys(SHIP_COUNTRIES);
+  const e = normalizeCountry(extra);
+  if (e && e.length === 2 && !codes.includes(e)) codes.push(e);
+  return codes
+    .map((code) => ({ code, name: countryName(code, locale) }))
+    .sort((a, b) => a.name.localeCompare(b.name, locale));
+}
+
+/**
+ * Where the customer wants delivery.
+ * choice: { type: "address", id } | { type: "zip", country, zip } | null
+ * Falls back to the default address, then to the device's region.
+ */
+export function resolveLocation({ addresses = [], choice = null, region = "US" } = {}) {
+  let address = null;
+  if (choice?.type === "address") address = addresses.find((a) => String(a.id) === String(choice.id)) || null;
+  if (!address && choice?.type !== "zip") address = addresses.find((a) => a.is_default) || addresses[0] || null;
+
+  if (address) {
+    return {
+      address,
+      name: address.full_name || "",
+      city: address.city || "",
+      zip: address.postal_code || "",
+      state: address.state || "",
+      country: normalizeCountry(address.country) || normalizeCountry(region),
+    };
+  }
+  return {
+    address: null,
+    name: "",
+    city: "",
+    zip: choice?.type === "zip" ? choice.zip || "" : "",
+    state: "",
+    country: normalizeCountry(choice?.type === "zip" ? choice.country : region) || "US",
+  };
+}
+
+/** Short place text: "Brooklyn 11225", "France 75001" or "Guinea" */
+export function locationPlace(loc, locale = "en") {
+  if (!loc) return "";
+  if (loc.address) return [loc.city || countryName(loc.country, locale), loc.zip].filter(Boolean).join(" ");
+  return [countryName(loc.country, locale), loc.zip].filter(Boolean).join(" ");
+}
+
+export function firstName(name) {
+  return String(name || "").trim().split(/\s+/)[0] || "";
+}

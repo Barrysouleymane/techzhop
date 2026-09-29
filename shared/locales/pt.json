@@ -551,5 +551,25 @@
       "customer": "Sem acesso à área de administração."
     },
     "invited": "Convite enviado para {{email}}"
+  },
+  "location": {
+    "deliverTo": "Entregar em",
+    "deliverToName": "Entregar para {{name}}",
+    "title": "Escolha sua localização",
+    "intro": "As opções, taxas e prazos de entrega podem variar conforme o local.",
+    "default": "Endereço padrão",
+    "manage": "Gerenciar endereços",
+    "addAddress": "Adicionar um endereço",
+    "signIn": "Entre para ver seus endereços",
+    "orZip": "ou escolha um país e um código postal",
+    "country": "País",
+    "zip": "Código postal (opcional)",
+    "apply": "Aplicar",
+    "done": "Concluído",
+    "updated": "Local de entrega atualizado",
+    "deliveringTo": "Entrega em {{place}}",
+    "shippingTo": "Frete: {{amount}}",
+    "freeShipping": "Frete grátis",
+    "change": "Alterar"
   }
 }

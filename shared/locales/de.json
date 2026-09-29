@@ -551,5 +551,25 @@
       "customer": "Kein Zugriff auf den Admin-Bereich."
     },
     "invited": "Einladung an {{email}} gesendet"
+  },
+  "location": {
+    "deliverTo": "Liefern an",
+    "deliverToName": "Liefern an {{name}}",
+    "title": "Lieferort wählen",
+    "intro": "Lieferoptionen, Kosten und Lieferzeiten können je nach Ort variieren.",
+    "default": "Standardadresse",
+    "manage": "Adressbuch verwalten",
+    "addAddress": "Adresse hinzufügen",
+    "signIn": "Melde dich an, um deine Adressen zu sehen",
+    "orZip": "oder Land und Postleitzahl wählen",
+    "country": "Land",
+    "zip": "Postleitzahl (optional)",
+    "apply": "Übernehmen",
+    "done": "Fertig",
+    "updated": "Lieferort aktualisiert",
+    "deliveringTo": "Lieferung nach {{place}}",
+    "shippingTo": "Versand: {{amount}}",
+    "freeShipping": "Kostenloser Versand",
+    "change": "Ändern"
   }
 }

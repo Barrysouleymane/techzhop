@@ -10,6 +10,7 @@ import useAuth from "../src/lib/useAuth";
 import { registerForPush } from "../src/lib/push";
 import { request } from "../src/lib/api";
 import { useShop } from "../src/store/shop";
+import { LocationModal } from "../src/components/DeliverTo";
 
 // Applies the language chosen in Settings (or the phone language)
 function useLanguageSync() {
@@ -72,6 +73,7 @@ export default function RootLayout() {
         <Stack.Screen name="admin/order" options={{ title: t("admin.orderDetails") }} />
         <Stack.Screen name="forgot-password" options={{ title: t("auth.forgotTitle"), presentation: "modal" }} />
       </Stack>
+      <LocationModal />
     </>
   );
 }

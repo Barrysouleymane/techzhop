@@ -8,8 +8,7 @@ import useMoney from "@/hooks/useMoney";
 import useAuth from "@/hooks/useAuth";
 import PriceTag from "@/components/Shop/PriceTag";
 import OrderSummary from "@/components/Shop/OrderSummary";
-import { getAddresses } from "@/api/account";
-import { useEffect, useState } from "react";
+import useDeliveryLocation from "@/hooks/useDeliveryLocation";
 import { effectivePrice } from "../../shared/settings";
 
 export default function Cart() {
@@ -21,11 +20,7 @@ export default function Cart() {
   const remove = useCartStore((s) => s.remove);
 
   const run = (fn) => fn().catch(() => toast.error(t("common.error")));
-  const [address, setAddress] = useState(null);
-
-  useEffect(() => {
-    if (user) getAddresses(user.id).then((l) => setAddress(l.find((a) => a.is_default) || l[0] || null)).catch(() => {});
-  }, [user]);
+  const address = useDeliveryLocation();
 
   if (loading || authLoading) return <Page><p className="text-center py-20">{t("common.loading")}</p></Page>;
 

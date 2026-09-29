@@ -551,5 +551,25 @@
       "customer": "Aucun accès à l'espace admin."
     },
     "invited": "Invitation envoyée à {{email}}"
+  },
+  "location": {
+    "deliverTo": "Livrer à",
+    "deliverToName": "Livrer à {{name}}",
+    "title": "Choisissez votre adresse de livraison",
+    "intro": "Les options, les frais et les délais de livraison peuvent varier selon l'adresse.",
+    "default": "Adresse par défaut",
+    "manage": "Gérer mes adresses",
+    "addAddress": "Ajouter une adresse",
+    "signIn": "Connectez-vous pour voir vos adresses",
+    "orZip": "ou choisissez un pays et un code postal",
+    "country": "Pays",
+    "zip": "Code postal (facultatif)",
+    "apply": "Appliquer",
+    "done": "Terminé",
+    "updated": "Adresse de livraison mise à jour",
+    "deliveringTo": "Livraison à {{place}}",
+    "shippingTo": "Livraison : {{amount}}",
+    "freeShipping": "Livraison gratuite",
+    "change": "Modifier"
   }
 }

@@ -4,13 +4,14 @@ import { useFocusEffect, router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { getCart, setQuantity, removeFromCart, createCheckoutSession, confirmCheckout, getAddresses, errorMessage } from "../../src/lib/api";
+import { getCart, setQuantity, removeFromCart, createCheckoutSession, confirmCheckout, errorMessage } from "../../src/lib/api";
 import useAuth from "../../src/lib/useAuth";
 import { useMoney, useCurrency } from "../../src/lib/money";
 import { Button, Loading, Empty, useStyles } from "../../src/components/ui";
 import { formatAddress, formatUSD, effectivePrice, quote } from "../../../shared/settings";
 import { useShop } from "../../src/store/shop";
 import { PriceTag } from "../../src/components/Shop";
+import { useLocation, useDeliveryLocation } from "../../src/store/location";
 
 export default function Cart() {
   const { t, i18n } = useTranslation();
@@ -18,7 +19,11 @@ export default function Cart() {
   const currency = useCurrency();
   const { user, loading: authLoading } = useAuth();
   const [cart, setCart] = useState([]);
-  const [address, setAddress] = useState(null);
+  const loc = useDeliveryLocation();
+  const address = loc.address;
+  const openLocation = useLocation((st) => st.setOpen);
+  const savedCount = useLocation((st) => st.addresses.length);
+  const loadAddresses = useLocation((st) => st.loadAddresses);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
   const settings = useShop((st) => st.settings);
@@ -37,16 +42,13 @@ export default function Cart() {
   const load = useCallback(async () => {
     try {
       setCart(await getCart());
-      if (user) {
-        const list = await getAddresses(user.id).catch(() => []);
-        setAddress(list.find((a) => a.is_default) || list[0] || null);
-      }
+      if (user) loadAddresses(user.id);
     } catch (e) {
       Alert.alert(t("common.error"), errorMessage(e, t));
     } finally {
       setLoading(false);
     }
-  }, [user, t]);
+  }, [user, t, loadAddresses]);
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -83,7 +85,7 @@ export default function Cart() {
   }
 
   const subtotal = cart.reduce((sum, i) => sum + effectivePrice(i.products) * i.quantity, 0);
-  const q = quote(settings, subtotal, address);
+  const q = quote(settings, subtotal, loc);
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
@@ -115,10 +117,10 @@ export default function Cart() {
 
       {cart.length > 0 && (
         <View style={s.footer}>
-          <Pressable style={s.address} onPress={() => router.push("/addresses")}>
+          <Pressable style={s.address} onPress={() => (savedCount ? openLocation(true) : router.push("/addresses/edit"))}>
             <Ionicons name="location-outline" size={20} color={c.primary} />
             <Text style={{ color: address ? c.text : c.primary, flex: 1 }} numberOfLines={2}>
-              {address ? `${t("checkout.shipTo")}: ${formatAddress(address)}` : t("checkout.addAddress")}
+              {address ? `${t("checkout.shipTo")}: ${formatAddress(address)}` : savedCount ? t("location.title") : t("checkout.addAddress")}
             </Text>
             <Ionicons name="chevron-forward" size={18} color={c.muted} />
           </Pressable>

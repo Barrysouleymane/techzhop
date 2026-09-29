@@ -8,7 +8,8 @@ import { useShop, useRecent } from "../../src/store/shop";
 import { Stars, PriceTag, Countdown } from "../../src/components/Shop";
 import Reviews from "../../src/components/Reviews";
 import ProductCard from "../../src/components/ProductCard";
-import { isOnSale, deliveryRange } from "../../../shared/settings";
+import { isOnSale, deliveryRange, shippingCost, effectivePrice, locationPlace } from "../../../shared/settings";
+import { useLocation, useDeliveryLocation } from "../../src/store/location";
 import { useWishlist } from "../../src/store/wishlist";
 import { useMoney } from "../../src/lib/money";
 import { Button, Loading, Empty, useStyles } from "../../src/components/ui";
@@ -19,6 +20,8 @@ export default function ProductDetails() {
   const settings = useShop((st) => st.settings);
   const rating = useShop((st) => st.ratings[id]);
   const addRecent = useRecent((st) => st.add);
+  const loc = useDeliveryLocation();
+  const openLocation = useLocation((st) => st.setOpen);
   const [similar, setSimilar] = useState([]);
   const { id } = useLocalSearchParams();
   const [product, setProduct] = useState(null);
@@ -123,9 +126,18 @@ export default function ProductDetails() {
               <Ionicons name="car-outline" size={18} color={c.primary} />
               <View style={{ flex: 1 }}>
                 <Text style={{ color: c.text, fontWeight: "700" }}>{t("product.delivery", deliveryRange(settings, i18n.language))}</Text>
+                {shippingCost(settings, loc.country, effectivePrice(product)) === 0 ? (
+                  <Text style={{ color: c.success, fontSize: 13 }}>{t("location.freeShipping")}</Text>
+                ) : (
+                  <Text style={{ color: c.text, fontSize: 13 }}>{t("location.shippingTo", { amount: money(shippingCost(settings, loc.country, effectivePrice(product))) })}</Text>
+                )}
                 {Number(settings.shipping?.free_over) > 0 && (
                   <Text style={{ color: c.muted, fontSize: 13 }}>{t("product.freeShippingOver", { amount: money(settings.shipping.free_over) })}</Text>
                 )}
+                <Pressable onPress={() => openLocation(true)} hitSlop={8} style={{ flexDirection: "row", alignItems: "center", gap: 4, marginTop: 4 }}>
+                  <Ionicons name="location-outline" size={15} color={c.primary} />
+                  <Text style={{ color: c.primary, fontSize: 13 }}>{t("location.deliveringTo", { place: locationPlace(loc, i18n.language) })}</Text>
+                </Pressable>
               </View>
             </View>
           )}

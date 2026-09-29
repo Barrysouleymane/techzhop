@@ -9,6 +9,8 @@ import useMoney from "@/hooks/useMoney";
 import OrderSummary from "@/components/Shop/OrderSummary";
 import useAuth from "@/hooks/useAuth";
 import { API_URL } from "@/config/constants";
+import useDeliveryLocation from "@/hooks/useDeliveryLocation";
+import useLocationStore from "@/store/locationStore";
 import { authHeaders, getAddresses, apiError } from "@/api/account";
 import { formatAddress, effectivePrice } from "../../shared/settings";
 
@@ -18,7 +20,13 @@ export default function Checkout() {
   const { user } = useAuth();
   const { cart, loading } = useCart();
   const [addresses, setAddresses] = useState([]);
-  const [addressId, setAddressId] = useState(null);
+  const [addressId, setAddressIdState] = useState(null);
+  const chosen = useDeliveryLocation().address;
+  const setChoice = useLocationStore((s) => s.setChoice);
+  const setAddressId = (id) => {
+    setAddressIdState(id);
+    if (id) setChoice({ type: "address", id });
+  };
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
 
@@ -27,9 +35,10 @@ export default function Checkout() {
     getAddresses(user.id)
       .then((list) => {
         setAddresses(list);
-        setAddressId((list.find((a) => a.is_default) || list[0])?.id ?? null);
+        setAddressIdState((list.find((a) => a.id === chosen?.id) || list.find((a) => a.is_default) || list[0])?.id ?? null);
       })
       .catch(() => {});
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user]);
 
   const address = addresses.find((a) => a.id === addressId);

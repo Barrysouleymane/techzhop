@@ -549,5 +549,25 @@
       "customer": "无管理后台权限。"
     },
     "invited": "邀请已发送至 {{email}}"
+  },
+  "location": {
+    "deliverTo": "配送至",
+    "deliverToName": "配送给 {{name}}",
+    "title": "选择配送地址",
+    "intro": "不同地区的配送方式、运费和时效可能不同。",
+    "default": "默认地址",
+    "manage": "管理地址簿",
+    "addAddress": "添加地址",
+    "signIn": "登录以查看您的地址",
+    "orZip": "或选择国家和邮政编码",
+    "country": "国家/地区",
+    "zip": "邮政编码（可选）",
+    "apply": "应用",
+    "done": "完成",
+    "updated": "配送地址已更新",
+    "deliveringTo": "配送至 {{place}}",
+    "shippingTo": "运费：{{amount}}",
+    "freeShipping": "免运费",
+    "change": "更改"
   }
 }
