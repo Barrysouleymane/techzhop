@@ -133,3 +133,13 @@ alter table public.newsletter_subscribers enable row level security;
 drop policy if exists "newsletter_insert_anyone" on public.newsletter_subscribers;
 create policy "newsletter_insert_anyone" on public.newsletter_subscribers
   for insert with check (true);
+
+-- ---------------------------------------------------------------------
+-- 7. TABLE PERMISSIONS
+-- Newer Supabase projects don't grant access to new tables
+-- automatically. Row Level Security above still limits each user
+-- to their own rows.
+-- ---------------------------------------------------------------------
+grant select, insert, update, delete on public.addresses   to authenticated;
+grant select, insert, update, delete on public.push_tokens to authenticated;
+grant insert on public.newsletter_subscribers to anon, authenticated;
