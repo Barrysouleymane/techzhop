@@ -23,3 +23,12 @@ dist-ssr
 *.sln
 *.sw?
 backend/.env
+
+# Secrets
+.env
+.env.*
+!.env.example
+**/.env
+
+# Backups
+*.zip

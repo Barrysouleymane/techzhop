@@ -1,58 +1,51 @@
-import { useState } from 'react'
-import { supabase } from '../lib/supabase'
-import { Link } from 'react-router-dom'
+import { useState } from "react";
+import { supabase } from "../lib/supabase";
+import { Link, useNavigate } from "react-router-dom";
 
 export default function Login() {
+  const navigate = useNavigate();
 
-  const [email, setEmail] = useState('')
-  const [password, setPassword] = useState('')
+  const [email, setEmail] = useState("");
+  const [password, setPassword] = useState("");
 
   async function handleLogin(e) {
-
-    e.preventDefault()
+    e.preventDefault();
 
     const { error } = await supabase.auth.signInWithPassword({
       email,
       password,
-    })
+    });
 
     if (error) {
-      alert(error.message)
-    } else {
-      alert('Login successful!')
+      alert(error.message);
+      return;
     }
+
+    // Clear the form
+    setEmail("");
+    setPassword("");
+
+    alert("Login successful!");
+
+    // Redirect to the Account page
+    navigate("/account");
   }
 
   return (
-
     <div className="min-h-screen bg-black text-white">
-
-      {/* NAVBAR */}
 
       <nav className="flex justify-between items-center px-10 py-6 border-b border-gray-800">
 
-        <Link
-          to="/"
-          className="text-4xl font-bold text-cyan-400"
-        >
+        <Link to="/" className="text-4xl font-bold text-cyan-400">
           TECHZHOP
         </Link>
 
         <div className="space-x-6">
-
-          <Link to="/">
-            Home
-          </Link>
-
-          <Link to="/register">
-            Register
-          </Link>
-
+          <Link to="/">Home</Link>
+          <Link to="/register">Register</Link>
         </div>
 
       </nav>
-
-      {/* LOGIN FORM */}
 
       <div className="flex items-center justify-center px-5 py-20">
 
@@ -68,15 +61,17 @@ export default function Login() {
           <input
             type="email"
             placeholder="Email"
-            className="w-full p-4 mb-5 rounded-xl bg-gray-800 text-white outline-none"
+            value={email}
             onChange={(e) => setEmail(e.target.value)}
+            className="w-full p-4 mb-5 rounded-xl bg-gray-800 text-white outline-none"
           />
 
           <input
             type="password"
             placeholder="Password"
-            className="w-full p-4 mb-6 rounded-xl bg-gray-800 text-white outline-none"
+            value={password}
             onChange={(e) => setPassword(e.target.value)}
+            className="w-full p-4 mb-6 rounded-xl bg-gray-800 text-white outline-none"
           />
 
           <button className="bg-cyan-500 hover:bg-cyan-600 w-full py-4 rounded-xl font-bold text-lg">
@@ -84,7 +79,6 @@ export default function Login() {
           </button>
 
           <p className="text-center text-gray-400 mt-6">
-
             Don’t have an account?
 
             <Link
@@ -93,7 +87,6 @@ export default function Login() {
             >
               Register
             </Link>
-
           </p>
 
         </form>
@@ -101,6 +94,5 @@ export default function Login() {
       </div>
 
     </div>
-
-  )
+  );
 }

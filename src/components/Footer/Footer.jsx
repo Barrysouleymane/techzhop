@@ -1,20 +1,17 @@
 export default function Footer() {
   return (
-    <footer className="bg-slate-900 text-white py-10 mt-20">
-      <div className="max-w-7xl mx-auto px-6 text-center">
-        <h2 className="text-2xl font-bold text-cyan-400">
-          TECHZHOP
-        </h2>
+    <footer className="bg-zinc-950 border-t border-zinc-800 py-10 text-center text-gray-400">
+      <h2 className="text-xl font-bold text-cyan-400">
+        TECHZHOP
+      </h2>
 
-        <p className="mt-3 text-gray-400">
-          Your trusted destination for electronics,
-          computers, smartphones, gaming, TVs and accessories.
-        </p>
+      <p className="mt-2">
+        Modern Electronics Marketplace
+      </p>
 
-        <p className="mt-6 text-sm text-gray-500">
-          © 2026 TechZhop. All rights reserved.
-        </p>
-      </div>
+      <p className="mt-4 text-sm">
+        © {new Date().getFullYear()} TechZhop. All rights reserved.
+      </p>
     </footer>
   );
 }
