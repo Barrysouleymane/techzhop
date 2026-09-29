@@ -101,3 +101,22 @@ export function formatAddress(a) {
     .filter(Boolean)
     .join(", ");
 }
+
+// Shipping carriers and their public tracking pages
+export const CARRIERS = [
+  { code: "usps", name: "USPS", url: "https://tools.usps.com/go/TrackConfirmAction?tLabels=" },
+  { code: "ups", name: "UPS", url: "https://www.ups.com/track?tracknum=" },
+  { code: "fedex", name: "FedEx", url: "https://www.fedex.com/fedextrack/?trknbr=" },
+  { code: "dhl", name: "DHL", url: "https://www.dhl.com/global-en/home/tracking/tracking-express.html?submit=1&tracking-id=" },
+  { code: "other", name: "Other", url: "https://parcelsapp.com/en/tracking/" },
+];
+
+export function carrierName(code) {
+  return CARRIERS.find((c) => c.code === code)?.name || code || "";
+}
+
+export function trackingUrl(carrier, number) {
+  if (!number) return null;
+  const c = CARRIERS.find((x) => x.code === carrier) || CARRIERS[CARRIERS.length - 1];
+  return c.url + encodeURIComponent(number);
+}

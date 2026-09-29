@@ -14,6 +14,7 @@ export const adminApi = {
   update: (id, p) => request(`/admin/products/${id}`, json("PATCH", p)).then((d) => d.product),
   remove: (id) => request(`/admin/products/${id}`, { method: "DELETE" }),
   orders: () => request("/admin/orders").then((d) => d.orders),
+  order: (id) => request(`/admin/orders/${id}`),
   updateOrder: (id, fields) => request(`/admin/orders/${id}`, json("PATCH", fields)).then((d) => d.order),
   createCategory: (name) => request("/admin/categories", json("POST", { name })).then((d) => d.item),
   createBrand: (name) => request("/admin/brands", json("POST", { name })).then((d) => d.item),

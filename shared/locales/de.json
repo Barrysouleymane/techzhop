@@ -213,7 +213,9 @@
       "delivered": "Zugestellt",
       "cancelled": "Storniert",
       "failed": "Fehlgeschlagen"
-    }
+    },
+    "trackPackage": "Paket verfolgen",
+    "carrier": "Versanddienst"
   },
   "wishlist": {
     "title": "Meine Wunschliste",
@@ -420,6 +422,20 @@
     "changeStatus": "Status ändern",
     "all": "Alle",
     "photosNeedSql": "Um mehrere Fotos pro Produkt hinzuzufügen, führe das neueste SQL (Abschnitt 8) in Supabase aus. Derzeit wird nur das erste Foto gespeichert.",
-    "saved": "Produkt gespeichert"
+    "saved": "Produkt gespeichert",
+    "orderDetails": "Bestelldetails",
+    "customer": "Kunde",
+    "email": "E-Mail",
+    "phone": "Telefon",
+    "payment": "Zahlung",
+    "viewInStripe": "In Stripe ansehen",
+    "carrier": "Versanddienst",
+    "chooseCarrier": "Versanddienst wählen",
+    "saveTracking": "Sendungsverfolgung speichern",
+    "internalNote": "Interne Notiz (nur für Admins sichtbar)",
+    "notePlaceholder": "z. B. Geschenkverpackung, Kunde hat angerufen…",
+    "markAs": "Als {{status}} markieren",
+    "needSql": "Führe das neueste SQL (Abschnitt 9) in Supabase aus, um Versanddienst und Notizen zu speichern.",
+    "guest": "Gast"
   }
 }

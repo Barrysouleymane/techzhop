@@ -1,11 +1,11 @@
 import { useEffect, useState } from "react";
 import { Link, useParams } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Truck, MapPin } from "lucide-react";
+import { Truck, MapPin, ExternalLink } from "lucide-react";
 import Page, { card } from "@/components/Page";
 import { StatusBadge, StatusTimeline } from "@/components/Orders/OrderStatus";
 import { getOrder, apiError } from "@/api/account";
-import { formatUSD } from "../../shared/settings";
+import { formatUSD, carrierName, trackingUrl } from "../../shared/settings";
 
 export default function OrderDetails() {
   const { t, i18n } = useTranslation();
@@ -37,7 +37,13 @@ export default function OrderDetails() {
               <Truck className="w-5 h-5 text-cyan-400" />
               {t("orders.trackingNumber")}:{" "}
               <span className="text-white font-mono">{order.tracking_number || t("orders.noTracking")}</span>
+              {order.carrier && <span className="text-gray-400">· {carrierName(order.carrier)}</span>}
             </p>
+            {trackingUrl(order.carrier, order.tracking_number) && (
+              <a href={trackingUrl(order.carrier, order.tracking_number)} target="_blank" rel="noreferrer" className="inline-flex items-center gap-2 mt-4 bg-cyan-500 hover:bg-cyan-600 text-black font-bold px-5 py-3 rounded-lg no-underline">
+                <ExternalLink className="w-4 h-4" /> {t("orders.trackPackage")}
+              </a>
+            )}
           </div>
 
           {order.shipping_address && (

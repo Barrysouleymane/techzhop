@@ -16,6 +16,8 @@ export const adminApi = {
   create: (p) => call("post", "/admin/products", p).then((d) => d.product),
   update: (id, p) => call("patch", `/admin/products/${id}`, p).then((d) => d.product),
   remove: (id) => call("delete", `/admin/products/${id}`),
+  order: (id) => call("get", `/admin/orders/${id}`),
+  updateOrder: (id, fields) => call("patch", `/admin/orders/${id}`, fields).then((d) => d.order),
   createCategory: (name) => call("post", "/admin/categories", { name }).then((d) => d.item),
   createBrand: (name) => call("post", "/admin/brands", { name }).then((d) => d.item),
   upload: async (file) => {

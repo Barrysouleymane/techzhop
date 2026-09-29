@@ -213,7 +213,9 @@
       "delivered": "Entregado",
       "cancelled": "Cancelado",
       "failed": "Fallido"
-    }
+    },
+    "trackPackage": "Seguir mi paquete",
+    "carrier": "Transportista"
   },
   "wishlist": {
     "title": "Mis favoritos",
@@ -420,6 +422,20 @@
     "changeStatus": "Cambiar estado",
     "all": "Todos",
     "photosNeedSql": "Para añadir varias fotos por producto, ejecuta el último SQL (sección 8) en Supabase. Por ahora solo se guarda la primera foto.",
-    "saved": "Producto guardado"
+    "saved": "Producto guardado",
+    "orderDetails": "Detalle del pedido",
+    "customer": "Cliente",
+    "email": "Correo",
+    "phone": "Teléfono",
+    "payment": "Pago",
+    "viewInStripe": "Ver en Stripe",
+    "carrier": "Transportista",
+    "chooseCarrier": "Elegir transportista",
+    "saveTracking": "Guardar seguimiento",
+    "internalNote": "Nota interna (solo la ven los administradores)",
+    "notePlaceholder": "p. ej. envolver para regalo, el cliente llamó…",
+    "markAs": "Marcar como {{status}}",
+    "needSql": "Ejecuta el último SQL (sección 9) en Supabase para guardar el transportista y las notas.",
+    "guest": "Invitado"
   }
 }

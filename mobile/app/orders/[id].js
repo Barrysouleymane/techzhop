@@ -1,12 +1,12 @@
 import { useEffect, useState } from "react";
-import { ScrollView, View, Text } from "react-native";
+import { ScrollView, View, Text, Linking } from "react-native";
 import { Stack, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { getOrder, errorMessage } from "../../src/lib/api";
-import { Loading, Empty, Card, useStyles } from "../../src/components/ui";
+import { Loading, Empty, Card, Button, useStyles } from "../../src/components/ui";
 import { StatusBadge, StatusTimeline } from "../../src/components/OrderStatus";
-import { formatUSD } from "../../../shared/settings";
+import { formatUSD, carrierName, trackingUrl } from "../../../shared/settings";
 
 export default function OrderDetails() {
   const { t, i18n } = useTranslation();
@@ -43,8 +43,12 @@ export default function OrderDetails() {
         <View style={{ flexDirection: "row", alignItems: "center", gap: 8, marginTop: 16 }}>
           <Ionicons name="cube-outline" size={18} color={c.primary} />
           <Text style={s.muted}>{t("orders.trackingNumber")}: </Text>
-          <Text style={[s.text, { fontWeight: "700" }]} selectable>{order.tracking_number || t("orders.noTracking")}</Text>
+          <Text style={[s.text, { fontWeight: "700", flexShrink: 1 }]} selectable>{order.tracking_number || t("orders.noTracking")}</Text>
         </View>
+        {order.carrier ? <Text style={[s.muted, { marginTop: 4 }]}>{t("orders.carrier")}: {carrierName(order.carrier)}</Text> : null}
+        {trackingUrl(order.carrier, order.tracking_number) ? (
+          <Button title={t("orders.trackPackage")} icon="open-outline" onPress={() => Linking.openURL(trackingUrl(order.carrier, order.tracking_number))} style={{ marginTop: 14 }} />
+        ) : null}
       </Card>
 
       {order.shipping_address ? (

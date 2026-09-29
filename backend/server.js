@@ -1050,15 +1050,7 @@ app.get(
         .from("orders")
         .select(
           `
-            id,
-            user_id,
-            stripe_session_id,
-            total,
-            status,
-            tracking_number,
-            shipping_address,
-            created_at,
-            updated_at,
+            *,
             order_items (
               id,
               order_id,
@@ -1095,8 +1087,9 @@ app.get(
 
       res.json({
         success: true,
-        orders:
-          data || [],
+        orders: (data || []).map(
+          ({ admin_note, ...o }) => o
+        ),
       });
 
     } catch (err) {
@@ -1145,15 +1138,7 @@ app.get(
         .from("orders")
         .select(
           `
-            id,
-            user_id,
-            stripe_session_id,
-            total,
-            status,
-            tracking_number,
-            shipping_address,
-            created_at,
-            updated_at,
+            *,
             order_items (
               id,
               order_id,
@@ -1189,9 +1174,11 @@ app.get(
         });
       }
 
+      const { admin_note, ...publicOrder } = data;
+
       res.json({
         success: true,
-        order: data,
+        order: publicOrder,
       });
 
     } catch (err) {
@@ -1282,6 +1269,87 @@ app.get("/admin/orders", requireAuth, requireAdmin, async (req, res) => {
 });
 
 
+
+// Which columns exist in "orders" (detected, refreshed every minute)
+let orderColumnsCache = null;
+let orderColumnsAt = 0;
+
+async function orderColumns() {
+  if (orderColumnsCache && Date.now() - orderColumnsAt < 60000) return orderColumnsCache;
+  const { data } = await supabase.from("orders").select("*").limit(1);
+  if (data?.[0]) {
+    orderColumnsCache = Object.keys(data[0]);
+    orderColumnsAt = Date.now();
+  }
+  return orderColumnsCache || [];
+}
+
+// ADMIN — ONE ORDER WITH CUSTOMER, PRODUCTS AND PAYMENT DETAILS
+app.get("/admin/orders/:orderId", requireAuth, requireAdmin, async (req, res) => {
+  const { data: order, error } = await supabase
+    .from("orders")
+    .select("*, order_items (id, product_id, product_name, price, quantity)")
+    .eq("id", req.params.orderId)
+    .single();
+
+  if (error) return res.status(404).json({ error: error.message });
+
+  // Product photos
+  const ids = (order.order_items || []).map((i) => i.product_id).filter(Boolean);
+  if (ids.length) {
+    const { data: products } = await supabase.from("products").select("id, image").in("id", ids);
+    const images = Object.fromEntries((products || []).map((p) => [p.id, p.image]));
+    order.order_items = order.order_items.map((i) => ({ ...i, image: images[i.product_id] || null }));
+  }
+
+  // Customer
+  let customer = null;
+  if (order.user_id) {
+    const [{ data: profile }, { data: authUser }] = await Promise.all([
+      supabase.from("profiles").select("full_name, phone, avatar_url").eq("id", order.user_id).maybeSingle(),
+      supabase.auth.admin.getUserById(order.user_id),
+    ]);
+    customer = {
+      name: profile?.full_name || authUser?.user?.user_metadata?.full_name || null,
+      email: authUser?.user?.email || null,
+      phone: profile?.phone || null,
+      avatar_url: profile?.avatar_url || null,
+    };
+  }
+
+  // Payment (Stripe)
+  let payment = null;
+  if (order.stripe_session_id) {
+    try {
+      const session = await stripe.checkout.sessions.retrieve(order.stripe_session_id);
+      const live = STRIPE_SECRET_KEY.startsWith("sk_live");
+      payment = {
+        email: session.customer_details?.email || null,
+        name: session.customer_details?.name || null,
+        amount: (session.amount_total || 0) / 100,
+        currency: session.currency,
+        status: session.payment_status,
+        payment_intent: session.payment_intent,
+        dashboard_url: session.payment_intent
+          ? `https://dashboard.stripe.com/${live ? "" : "test/"}payments/${session.payment_intent}`
+          : null,
+      };
+      if (!customer) customer = { name: payment.name, email: payment.email, phone: null };
+    } catch (err) {
+      console.error("STRIPE SESSION ERROR:", err.message);
+    }
+  }
+
+  const cols = await orderColumns();
+  res.json({
+    order,
+    customer,
+    payment,
+    fields: { carrier: cols.includes("carrier"), note: cols.includes("admin_note") },
+  });
+});
+
+
 // ======================================================
 // ADMIN — UPDATE ORDER STATUS / TRACKING NUMBER
 // ======================================================
@@ -1302,11 +1370,18 @@ app.patch("/admin/orders/:orderId", requireAuth, requireAdmin, async (req, res) 
   if (status) update.status = status;
   if (tracking_number !== undefined) update.tracking_number = tracking_number || null;
 
+  const orderCols = await orderColumns();
+  for (const key of ["carrier", "admin_note"]) {
+    if (req.body?.[key] !== undefined && orderCols.includes(key)) {
+      update[key] = req.body[key] || null;
+    }
+  }
+
   const { data, error } = await supabase
     .from("orders")
     .update(update)
     .eq("id", orderId)
-    .select("id, user_id, status, tracking_number")
+    .select("*")
     .single();
 
   if (error) {

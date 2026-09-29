@@ -164,6 +164,7 @@ function ProductsAdmin() {
 
 function OrdersAdmin() {
   const { t, i18n } = useTranslation();
+  const navigate = useNavigate();
   const [orders, setOrders] = useState([]);
   const [loading, setLoading] = useState(true);
   const [filter, setFilter] = useState("");
@@ -213,7 +214,7 @@ function OrdersAdmin() {
             </thead>
             <tbody>
               {list.map((o) => (
-                <tr key={o.id} className="border-b border-zinc-800 last:border-0 align-top">
+                <tr key={o.id} className="border-b border-zinc-800 last:border-0 align-top cursor-pointer hover:bg-zinc-800" onClick={() => navigate(`/admin/orders/${o.id}`)}>
                   <td className="p-4 font-bold">{o.id}</td>
                   <td className="p-4 whitespace-nowrap">{new Date(o.created_at).toLocaleString(i18n.language)}</td>
                   <td className="p-4">
@@ -221,13 +222,13 @@ function OrdersAdmin() {
                     {o.shipping_address && <div className="text-gray-500 text-xs mt-2 max-w-xs">{o.shipping_address}</div>}
                   </td>
                   <td className="p-4">{formatUSD(o.total, i18n.language)}</td>
-                  <td className="p-4">
+                  <td className="p-4" onClick={(e) => e.stopPropagation()}>
                     <div className="mb-2"><StatusBadge status={o.status} /></div>
                     <select value={o.status} onChange={(e) => update(o, { status: e.target.value })} className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-white">
                       {ORDER_STATUSES.map((s) => <option key={s} value={s}>{t(`orders.status.${s}`)}</option>)}
                     </select>
                   </td>
-                  <td className="p-4">
+                  <td className="p-4" onClick={(e) => e.stopPropagation()}>
                     <input
                       defaultValue={o.tracking_number || ""}
                       placeholder={t("admin.trackingPlaceholder")}

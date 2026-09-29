@@ -213,7 +213,9 @@
       "delivered": "Delivered",
       "cancelled": "Cancelled",
       "failed": "Failed"
-    }
+    },
+    "trackPackage": "Track my package",
+    "carrier": "Carrier"
   },
   "wishlist": {
     "title": "My wishlist",
@@ -420,6 +422,20 @@
     "changeStatus": "Change status",
     "all": "All",
     "photosNeedSql": "To add several photos per product, run the latest SQL (section 8) in Supabase. For now only the first photo is saved.",
-    "saved": "Product saved"
+    "saved": "Product saved",
+    "orderDetails": "Order details",
+    "customer": "Customer",
+    "email": "Email",
+    "phone": "Phone",
+    "payment": "Payment",
+    "viewInStripe": "View in Stripe",
+    "carrier": "Carrier",
+    "chooseCarrier": "Choose a carrier",
+    "saveTracking": "Save tracking",
+    "internalNote": "Internal note (only admins see it)",
+    "notePlaceholder": "e.g. gift wrap, customer called…",
+    "markAs": "Mark as {{status}}",
+    "needSql": "Run the latest SQL (section 9) in Supabase to save the carrier and notes.",
+    "guest": "Guest"
   }
 }

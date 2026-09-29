@@ -113,7 +113,7 @@ export default function AdminHome() {
         contentContainerStyle={{ padding: 16, flexGrow: 1 }}
         ListEmptyComponent={<Empty icon="receipt-outline">{t("admin.noOrders")}</Empty>}
         renderItem={({ item: o }) => (
-          <View style={s.order}>
+          <Pressable style={s.order} onPress={() => router.push({ pathname: "/admin/order", params: { id: o.id } })}>
             <View style={{ flexDirection: "row", justifyContent: "space-between" }}>
               <Text style={s.name}>#{o.id} · {usd(o.total)}</Text>
               <Pressable onPress={() => changeStatus(o)} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
@@ -136,7 +136,7 @@ export default function AdminHome() {
                 if (v !== (o.tracking_number || "")) updateOrder(o, { tracking_number: v });
               }}
             />
-          </View>
+          </Pressable>
         )}
       />
     );

@@ -149,3 +149,10 @@ grant insert on public.newsletter_subscribers to anon, authenticated;
 -- ---------------------------------------------------------------------
 alter table public.products
   add column if not exists images text[] not null default '{}';
+
+-- ---------------------------------------------------------------------
+-- 9. ORDERS: carrier + internal note (admin only)
+-- ---------------------------------------------------------------------
+alter table public.orders
+  add column if not exists carrier    text,
+  add column if not exists admin_note text;

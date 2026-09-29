@@ -212,7 +212,9 @@
       "delivered": "已送达",
       "cancelled": "已取消",
       "failed": "失败"
-    }
+    },
+    "trackPackage": "跟踪我的包裹",
+    "carrier": "承运商"
   },
   "wishlist": {
     "title": "我的收藏",
@@ -419,6 +421,20 @@
     "changeStatus": "更改状态",
     "all": "全部",
     "photosNeedSql": "如需为每个商品添加多张图片，请在 Supabase 中运行最新的 SQL（第 8 部分）。目前只会保存第一张图片。",
-    "saved": "商品已保存"
+    "saved": "商品已保存",
+    "orderDetails": "订单详情",
+    "customer": "客户",
+    "email": "邮箱",
+    "phone": "电话",
+    "payment": "支付",
+    "viewInStripe": "在 Stripe 中查看",
+    "carrier": "承运商",
+    "chooseCarrier": "选择承运商",
+    "saveTracking": "保存物流信息",
+    "internalNote": "内部备注（仅管理员可见）",
+    "notePlaceholder": "例如：礼品包装、客户来电…",
+    "markAs": "标记为{{status}}",
+    "needSql": "请在 Supabase 中运行最新的 SQL（第 9 部分）以保存承运商和备注。",
+    "guest": "访客"
   }
 }
