@@ -519,7 +519,12 @@
     "noPromos": "No promo codes yet.",
     "create": "Create",
     "remove": "Remove",
-    "or": "or"
+    "or": "or",
+    "promoBarTitle": "Announcement bar (top of every page)",
+    "promoBarEnabled": "Show the bar",
+    "promoBarText": "Text (e.g. Black Friday: up to -30%!)",
+    "promoBarEnds": "Countdown until (optional)",
+    "promoBarLink": "Link (e.g. /products?sale=1)"
   },
   "team": {
     "title": "Team",

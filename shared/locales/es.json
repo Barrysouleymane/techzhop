@@ -519,7 +519,12 @@
     "noPromos": "Aún no hay códigos promo.",
     "create": "Crear",
     "remove": "Quitar",
-    "or": "o"
+    "or": "o",
+    "promoBarTitle": "Barra de anuncios (arriba de todas las páginas)",
+    "promoBarEnabled": "Mostrar la barra",
+    "promoBarText": "Texto (p. ej. Black Friday: ¡hasta -30 %!)",
+    "promoBarEnds": "Cuenta atrás hasta (opcional)",
+    "promoBarLink": "Enlace (p. ej. /products?sale=1)"
   },
   "team": {
     "title": "Equipo",

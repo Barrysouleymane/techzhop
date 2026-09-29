@@ -148,7 +148,15 @@ export function discountPercent(p) {
 export const DEFAULT_SHOP_SETTINGS = {
   shipping: { standard_rate: 9.99, free_over: 50, zones: [], min_days: 3, max_days: 7 },
   taxes: { enabled: false, rates: [] },
+  promo_bar: { enabled: false, text: "", ends_at: null, link: "" },
 };
+
+/** The site-wide announcement bar is shown when enabled and not expired */
+export function promoBarVisible(settings) {
+  const b = settings?.promo_bar;
+  if (!b?.enabled || !b.text) return false;
+  return !b.ends_at || new Date(b.ends_at).getTime() > Date.now();
+}
 
 const COUNTRY_ALIASES = {
   USA: "US", "UNITED STATES": "US", "UNITED STATES OF AMERICA": "US", "ÉTATS-UNIS": "US", "ETATS-UNIS": "US",

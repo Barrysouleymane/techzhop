@@ -517,7 +517,12 @@
     "noPromos": "暂无优惠码。",
     "create": "创建",
     "remove": "移除",
-    "or": "或"
+    "or": "或",
+    "promoBarTitle": "公告栏（显示在每个页面顶部）",
+    "promoBarEnabled": "显示公告栏",
+    "promoBarText": "文字（例如：黑色星期五，低至 7 折！）",
+    "promoBarEnds": "倒计时截止时间（可选）",
+    "promoBarLink": "链接（例如 /products?sale=1）"
   },
   "team": {
     "title": "团队",

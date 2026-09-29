@@ -519,7 +519,12 @@
     "noPromos": "Noch keine Gutscheincodes.",
     "create": "Erstellen",
     "remove": "Entfernen",
-    "or": "oder"
+    "or": "oder",
+    "promoBarTitle": "Hinweisleiste (oben auf jeder Seite)",
+    "promoBarEnabled": "Leiste anzeigen",
+    "promoBarText": "Text (z. B. Black Friday: bis zu -30 %!)",
+    "promoBarEnds": "Countdown bis (optional)",
+    "promoBarLink": "Link (z. B. /products?sale=1)"
   },
   "team": {
     "title": "Team",

@@ -4,7 +4,9 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useColors } from "../theme";
 import { useMoney } from "../lib/money";
-import { isOnSale, effectivePrice, discountPercent, timeLeft } from "../../../shared/settings";
+import { isOnSale, effectivePrice, discountPercent, timeLeft, promoBarVisible } from "../../../shared/settings";
+import { router } from "expo-router";
+import { useShop } from "../store/shop";
 
 export function Stars({ value = 0, count, size = 14, onChange }) {
   const c = useColors();
@@ -45,7 +47,7 @@ export function PriceTag({ product, size = 16 }) {
   );
 }
 
-export function Countdown({ until, compact }) {
+export function Countdown({ until, compact, color = "#f87171" }) {
   const { t } = useTranslation();
   const [left, setLeft] = useState(() => timeLeft(until));
   useEffect(() => {
@@ -56,11 +58,27 @@ export function Countdown({ until, compact }) {
   const pad = (n) => String(n).padStart(2, "0");
   return (
     <View style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
-      <Ionicons name="time-outline" size={compact ? 12 : 16} color="#f87171" />
-      <Text style={{ color: "#f87171", fontWeight: "700", fontSize: compact ? 11 : 14, fontVariant: ["tabular-nums"] }}>
+      <Ionicons name="time-outline" size={compact ? 12 : 16} color={color} />
+      <Text style={{ color, fontWeight: "700", fontSize: compact ? 11 : 14, fontVariant: ["tabular-nums"] }}>
         {compact ? "" : `${t("product.endsIn")} `}
         {t("product.countdown", { d: left.days, h: pad(left.hours), m: pad(left.minutes), s: pad(left.seconds) })}
       </Text>
     </View>
+  );
+}
+
+/** Site-wide announcement bar (Admin → Store) */
+export function PromoBar() {
+  const settings = useShop((s) => s.settings);
+  if (!promoBarVisible(settings)) return null;
+  const b = settings.promo_bar;
+  return (
+    <Pressable
+      onPress={() => b.link?.startsWith("/") && router.push(b.link)}
+      style={{ backgroundColor: "#dc2626", borderRadius: 12, paddingVertical: 10, paddingHorizontal: 14, marginBottom: 12, alignItems: "center", gap: 4 }}
+    >
+      <Text style={{ color: "#fff", fontWeight: "800", textAlign: "center" }}>{b.text}</Text>
+      {b.ends_at ? <Countdown until={b.ends_at} compact color="#fff" /> : null}
+    </Pressable>
   );
 }

@@ -519,7 +519,12 @@
     "noPromos": "Nenhum cupom ainda.",
     "create": "Criar",
     "remove": "Remover",
-    "or": "ou"
+    "or": "ou",
+    "promoBarTitle": "Barra de anúncio (no topo de todas as páginas)",
+    "promoBarEnabled": "Mostrar a barra",
+    "promoBarText": "Texto (ex.: Black Friday: até -30%!)",
+    "promoBarEnds": "Contagem regressiva até (opcional)",
+    "promoBarLink": "Link (ex.: /products?sale=1)"
   },
   "team": {
     "title": "Equipe",

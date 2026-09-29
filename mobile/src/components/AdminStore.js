@@ -9,6 +9,18 @@ import { useShop } from "../store/shop";
 import { Button, Input, Card, Toggle, useStyles } from "./ui";
 import { formatUSD } from "../../../shared/settings";
 
+const toText = (iso) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+const fromText = (txt) => {
+  if (!txt?.trim()) return null;
+  const d = new Date(txt.trim().replace(" ", "T"));
+  return isNaN(d) ? null : d.toISOString();
+};
+
 const H2 = ({ children }) => {
   const [s] = useStyles((c) => ({ h: { color: c.text, fontSize: 18, fontWeight: "800" } }));
   return <Text style={s.h}>{children}</Text>;
@@ -94,6 +106,23 @@ export function StoreSettings() {
           );
         })}
         <Button title={t("admin.addRate")} variant="outline" icon="add" onPress={() => setV({ ...v, taxes: { ...v.taxes, rates: [...rates, { country: "US", state: "", rate: "" }] } })} />
+      </Card>
+
+      <Card style={{ gap: 10 }}>
+        <H2>📣 {t("admin.promoBarTitle")}</H2>
+        <View style={{ flexDirection: "row", justifyContent: "space-between", alignItems: "center" }}>
+          <Text style={{ color: c.text, fontSize: 16 }}>{t("admin.promoBarEnabled")}</Text>
+          <Toggle value={!!v.promo_bar?.enabled} onValueChange={(val) => setV({ ...v, promo_bar: { ...(v.promo_bar || {}), enabled: val } })} />
+        </View>
+        <Input label={t("admin.promoBarText")} value={v.promo_bar?.text || ""} maxLength={140} onChangeText={(val) => setV({ ...v, promo_bar: { ...(v.promo_bar || {}), text: val } })} />
+        <Input
+          label={t("admin.promoBarEnds")}
+          placeholder="2026-11-30 23:59"
+          value={v.promo_bar?.ends_text ?? toText(v.promo_bar?.ends_at)}
+          autoCorrect={false}
+          onChangeText={(val) => setV({ ...v, promo_bar: { ...(v.promo_bar || {}), ends_text: val, ends_at: fromText(val) } })}
+        />
+        <Input label={t("admin.promoBarLink")} value={v.promo_bar?.link || ""} autoCapitalize="none" onChangeText={(val) => setV({ ...v, promo_bar: { ...(v.promo_bar || {}), link: val } })} />
       </Card>
 
       <Button title={t("common.save")} onPress={save} loading={busy} />

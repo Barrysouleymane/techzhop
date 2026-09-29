@@ -294,6 +294,7 @@ async function sendOrderPush(userId, orderId, status) {
 const DEFAULT_SHOP_SETTINGS = {
   shipping: { standard_rate: 9.99, free_over: 50, zones: [], min_days: 3, max_days: 7 },
   taxes: { enabled: false, rates: [] },
+  promo_bar: { enabled: false, text: "", ends_at: null, link: "" },
 };
 
 function isOnSale(p) {
@@ -353,6 +354,7 @@ async function getShopSettings() {
   settingsCache = {
     shipping: { ...DEFAULT_SHOP_SETTINGS.shipping, ...(data?.value?.shipping || {}) },
     taxes: { ...DEFAULT_SHOP_SETTINGS.taxes, ...(data?.value?.taxes || {}) },
+    promo_bar: { ...DEFAULT_SHOP_SETTINGS.promo_bar, ...(data?.value?.promo_bar || {}) },
   };
   settingsAt = Date.now();
   return settingsCache;
@@ -1641,6 +1643,12 @@ app.put("/admin/settings", requireAuth, requirePermission("store"), async (req, 
           state: r.state ? normalizeState(r.state) : "",
           rate: Math.max(0, Math.min(50, Number(r.rate) || 0)),
         })),
+    },
+    promo_bar: {
+      enabled: !!body.promo_bar?.enabled,
+      text: String(body.promo_bar?.text || "").slice(0, 140),
+      ends_at: body.promo_bar?.ends_at ? new Date(body.promo_bar.ends_at).toISOString() : null,
+      link: String(body.promo_bar?.link || "").slice(0, 300),
     },
   };
   const { error } = await supabase

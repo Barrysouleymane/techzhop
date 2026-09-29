@@ -19,6 +19,13 @@ export default function StoreSettings() {
 
   if (!v) return <p className="text-gray-400">{t("common.loading")}</p>;
 
+  const bar = { enabled: false, text: "", ends_at: null, link: "", ...(v.promo_bar || {}) };
+  const setBar = (k, val) => setV({ ...v, promo_bar: { ...bar, [k]: val } });
+  const toLocal = (iso) => {
+    if (!iso) return "";
+    const d = new Date(iso);
+    return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+  };
   const ship = (k) => (e) => setV({ ...v, shipping: { ...v.shipping, [k]: e.target.value } });
   const zones = v.shipping.zones || [];
   const rates = v.taxes.rates || [];
@@ -86,6 +93,19 @@ export default function StoreSettings() {
         <button onClick={() => setV({ ...v, taxes: { ...v.taxes, rates: [...rates, { country: "US", state: "", rate: "" }] } })} className={btnSecondary}>
           <Plus className="w-4 h-4" /> {t("admin.addRate")}
         </button>
+      </div>
+
+      <div className={`${card} p-6 space-y-4 lg:col-span-2`}>
+        <h2 className="text-xl font-bold m-0">📣 {t("admin.promoBarTitle")}</h2>
+        <label className="flex items-center gap-3">
+          <input type="checkbox" className="w-5 h-5 accent-cyan-500" checked={!!bar.enabled} onChange={(e) => setBar("enabled", e.target.checked)} />
+          {t("admin.promoBarEnabled")}
+        </label>
+        <div className="grid md:grid-cols-3 gap-4">
+          <Field label={t("admin.promoBarText")}><input value={bar.text} maxLength={140} onChange={(e) => setBar("text", e.target.value)} className={inputClass} /></Field>
+          <Field label={t("admin.promoBarEnds")}><input type="datetime-local" value={toLocal(bar.ends_at)} onChange={(e) => setBar("ends_at", e.target.value ? new Date(e.target.value).toISOString() : null)} className={inputClass} /></Field>
+          <Field label={t("admin.promoBarLink")}><input value={bar.link} onChange={(e) => setBar("link", e.target.value)} className={inputClass} /></Field>
+        </div>
       </div>
 
       <div className="lg:col-span-2">
