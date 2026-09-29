@@ -5,7 +5,7 @@ services:
     name: techzhop-api
     runtime: node
     rootDir: backend
-    plan: starter
+    plan: free   # "starter" (~7 $/mois) au vrai lancement : ne s'endort pas
     buildCommand: npm ci
     startCommand: npm start
     healthCheckPath: /health
