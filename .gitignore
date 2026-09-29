@@ -35,3 +35,4 @@ backend/.env
 
 # Temporary archives
 *.tgz
+.vercel-env.txt

@@ -38,7 +38,7 @@ Coche au fur et à mesure.
 
 ## 3. Mettre le serveur en ligne — Render (≈ 7 $/mois)
 
-1. render.com → **New → Blueprint** → choisir le dépôt GitHub `techzhop` (le fichier `render.yaml` est déjà prêt).
+1. render.com → **New → Blueprint** → choisir le dépôt GitHub `techzhop` (le fichier `docs/render.yaml.example` sert de modèle).
 2. Remplir les variables :
 
 | Variable | Valeur |
