@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { adminApi, useStaff } from "../../src/lib/admin";
 import AdminTeam from "../../src/components/AdminTeam";
+import { StoreSettings, BannersAdmin, PromosAdmin } from "../../src/components/AdminStore";
 import { errorMessage } from "../../src/lib/api";
 import { Loading, Empty, useStyles } from "../../src/components/ui";
 import { StatusBadge } from "../../src/components/OrderStatus";
@@ -16,6 +17,9 @@ export default function AdminHome() {
   const tabs = [
     staff.can("products") && ["products", t("admin.productsTab")],
     staff.can("orders") && ["orders", t("admin.ordersTab")],
+    staff.can("store") && ["store", t("admin.storeTab")],
+    staff.can("store") && ["banners", t("admin.bannersTab")],
+    staff.can("store") && ["promos", t("admin.promosTab")],
     staff.can("team") && ["team", t("team.tab")],
   ].filter(Boolean);
   const [chosen, setTab] = useState("");
@@ -30,7 +34,7 @@ export default function AdminHome() {
     statLabel: { color: c.muted, fontSize: 12 },
     statValue: { color: c.text, fontSize: 18, fontWeight: "800", marginTop: 4 },
     tabs: { flexDirection: "row", gap: 8, paddingHorizontal: 16, marginTop: 12 },
-    tab: { flex: 1, paddingVertical: 10, borderRadius: 10, alignItems: "center", borderWidth: 1, borderColor: c.border },
+    tab: { paddingVertical: 10, paddingHorizontal: 16, borderRadius: 10, alignItems: "center", borderWidth: 1, borderColor: c.border },
     tabOn: { backgroundColor: c.primary, borderColor: c.primary },
     search: { backgroundColor: c.card, color: c.text, borderRadius: 12, paddingHorizontal: 14, paddingVertical: 12, fontSize: 16, margin: 16, marginBottom: 4, borderWidth: 1, borderColor: c.border },
     row: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: c.card, borderRadius: 14, padding: 10, marginBottom: 10, borderWidth: 1, borderColor: c.border },
@@ -104,22 +108,23 @@ export default function AdminHome() {
           </View>
         ))}
       </ScrollView>
-      <View style={s.tabs}>
+      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={s.tabs}>
         {tabs.map(([id, label]) => (
           <Pressable key={id} onPress={() => setTab(id)} style={[s.tab, tab === id && s.tabOn]}>
             <Text style={{ color: tab === id ? c.onPrimary : c.text, fontWeight: "700" }}>{label}</Text>
           </Pressable>
         ))}
-      </View>
+      </ScrollView>
     </>
   );
 
-  if (tab === "team") {
+  const Panel = { team: AdminTeam, store: StoreSettings, banners: BannersAdmin, promos: PromosAdmin }[tab];
+  if (Panel) {
     return (
       <ScrollView style={{ backgroundColor: c.bg }} contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
         {header}
         <View style={{ padding: 16 }}>
-          <AdminTeam />
+          <Panel />
         </View>
       </ScrollView>
     );

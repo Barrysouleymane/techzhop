@@ -2,11 +2,15 @@ import { View, Text, Image, Pressable, StyleSheet } from "react-native";
 import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useWishlist } from "../store/wishlist";
-import { useMoney } from "../lib/money";
+import { useTranslation } from "react-i18next";
+import { useShop } from "../store/shop";
+import { Stars, PriceTag, Countdown } from "./Shop";
+import { isOnSale, discountPercent } from "../../../shared/settings";
 import { useStyles } from "./ui";
 
 export default function ProductCard({ product, style }) {
-  const money = useMoney();
+  const { t } = useTranslation();
+  const rating = useShop((s) => s.ratings[product.id]);
   const toggle = useWishlist((s) => s.toggle);
   const liked = useWishlist((s) => s.items.some((i) => i.id === product.id));
   const [s, c] = useStyles((c) => ({
@@ -27,13 +31,22 @@ export default function ProductCard({ product, style }) {
         ) : (
           <Ionicons name="image-outline" size={40} color="#999" />
         )}
+        {isOnSale(product) && (
+          <Text style={{ position: "absolute", top: 8, left: 8, backgroundColor: "#dc2626", color: "#fff", fontWeight: "800", fontSize: 11, paddingHorizontal: 6, paddingVertical: 2, borderRadius: 4, overflow: "hidden" }}>
+            {t("product.off", { percent: discountPercent(product) })}
+          </Text>
+        )}
         <Pressable onPress={() => toggle(product)} hitSlop={10} style={s.heart}>
           <Ionicons name={liked ? "heart" : "heart-outline"} size={20} color={liked ? c.pink : "#fff"} />
         </Pressable>
       </View>
       <Text style={s.name} numberOfLines={2}>{product.name}</Text>
       <Text style={s.brand} numberOfLines={1}>{product.brands?.name || product.categories?.name || " "}</Text>
-      <Text style={s.price}>{money(product.price)}</Text>
+      <View style={{ marginHorizontal: 10, marginTop: 6, gap: 4 }}>
+        {rating ? <Stars value={rating.avg} count={rating.count} size={12} /> : null}
+        <PriceTag product={product} size={16} />
+        {isOnSale(product) && product.sale_ends_at ? <Countdown until={product.sale_ends_at} compact /> : null}
+      </View>
     </Pressable>
   );
 }

@@ -8,6 +8,7 @@ import { useSettings } from "../src/store/settings";
 import { useColors } from "../src/theme";
 import useAuth from "../src/lib/useAuth";
 import { registerForPush } from "../src/lib/push";
+import { useShop } from "../src/store/shop";
 
 // Applies the language chosen in Settings (or the phone language)
 function useLanguageSync() {
@@ -22,6 +23,11 @@ export default function RootLayout() {
   const { t, i18n: i } = useTranslation();
   const c = useColors();
   const { user } = useAuth();
+  const loadShop = useShop((s) => s.load);
+
+  useEffect(() => {
+    loadShop();
+  }, [loadShop]);
 
   useEffect(() => {
     if (user) registerForPush(user.id, i.language);

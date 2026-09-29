@@ -1,4 +1,5 @@
 import { supabase } from "./supabase";
+import { effectivePrice } from "../../../shared/settings";
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8000";
 export const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || "http://localhost:5173";
@@ -45,7 +46,7 @@ export async function getCart() {
   if (!user) return [];
   const { data, error } = await supabase
     .from("cart_items")
-    .select("*, products(id, name, price, image, stock)")
+    .select("*, products(*)")
     .eq("user_id", user.id)
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -100,18 +101,49 @@ export async function request(path, options = {}) {
   return body;
 }
 
-export async function createCheckoutSession(cart, shippingAddress) {
+export async function createCheckoutSession(cart, shippingAddress, address) {
   const items = cart.map((item) => ({
     product_id: item.product_id,
     name: item.products?.name,
-    price: Number(item.products?.price || 0),
+    price: effectivePrice(item.products),
     quantity: Number(item.quantity || 0),
   }));
   return request("/create-checkout-session", {
     method: "POST",
-    body: JSON.stringify({ items, shipping_address: shippingAddress || "", return_to: "app" }),
+    body: JSON.stringify({
+      items,
+      shipping_address: shippingAddress || "",
+      address: address ? { country: address.country, state: address.state } : null,
+      return_to: "app",
+    }),
   });
 }
+
+// ---------- Public store data ----------
+
+async function publicGet(path) {
+  const res = await fetch(`${API_URL}${path}`);
+  if (!res.ok) throw new Error(`Server error (${res.status})`);
+  return res.json();
+}
+
+export const getShopSettings = () => publicGet("/shop-settings");
+export const getRatings = () => publicGet("/ratings");
+export const getBanners = () => publicGet("/banners").then((d) => d.banners || []);
+export const getReviews = (productId) => publicGet(`/products/${productId}/reviews`).then((d) => d.reviews || []);
+
+export async function canReview(productId) {
+  try {
+    return !!(await request(`/products/${productId}/can-review`)).canReview;
+  } catch {
+    return false;
+  }
+}
+
+export const postReview = (productId, review) =>
+  request(`/products/${productId}/reviews`, { method: "POST", body: JSON.stringify(review) });
+
+export const deleteReview = (id) => request(`/reviews/${id}`, { method: "DELETE" });
 
 /** After payment: makes sure the order is saved and returns its id */
 export async function confirmCheckout(sessionId) {

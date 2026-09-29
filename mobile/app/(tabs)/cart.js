@@ -8,7 +8,9 @@ import { getCart, setQuantity, removeFromCart, createCheckoutSession, confirmChe
 import useAuth from "../../src/lib/useAuth";
 import { useMoney, useCurrency } from "../../src/lib/money";
 import { Button, Loading, Empty, useStyles } from "../../src/components/ui";
-import { formatAddress, formatUSD } from "../../../shared/settings";
+import { formatAddress, formatUSD, effectivePrice, quote } from "../../../shared/settings";
+import { useShop } from "../../src/store/shop";
+import { PriceTag } from "../../src/components/Shop";
 
 export default function Cart() {
   const { t, i18n } = useTranslation();
@@ -19,6 +21,7 @@ export default function Cart() {
   const [address, setAddress] = useState(null);
   const [loading, setLoading] = useState(true);
   const [paying, setPaying] = useState(false);
+  const settings = useShop((st) => st.settings);
   const [s, c] = useStyles((c) => ({
     row: { flexDirection: "row", alignItems: "center", gap: 12, backgroundColor: c.card, borderRadius: 14, padding: 12, marginBottom: 12, borderWidth: 1, borderColor: c.border },
     thumb: { width: 70, height: 70, backgroundColor: "#fff", borderRadius: 10, alignItems: "center", justifyContent: "center" },
@@ -55,7 +58,7 @@ export default function Cart() {
   async function checkout() {
     setPaying(true);
     try {
-      const { url, id } = await createCheckoutSession(cart, formatAddress(address));
+      const { url, id } = await createCheckoutSession(cart, formatAddress(address), address);
       if (!url) throw new Error(t("checkout.failed"));
       await WebBrowser.openBrowserAsync(url);
       // Back from the payment page: save the order if it was paid
@@ -79,7 +82,8 @@ export default function Cart() {
     return <Empty icon="cart-outline" action={<Button title={t("auth.login")} onPress={() => router.push("/account")} style={{ alignSelf: "stretch" }} />}>{t("cart.loginToSee")}</Empty>;
   }
 
-  const total = cart.reduce((sum, i) => sum + Number(i.products?.price || 0) * i.quantity, 0);
+  const subtotal = cart.reduce((sum, i) => sum + effectivePrice(i.products) * i.quantity, 0);
+  const q = quote(settings, subtotal, address);
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
@@ -95,7 +99,7 @@ export default function Cart() {
             </Pressable>
             <View style={{ flex: 1 }}>
               <Text style={s.name} numberOfLines={2}>{item.products?.name}</Text>
-              <Text style={s.price}>{money(item.products?.price)}</Text>
+              <View style={{ marginTop: 4 }}><PriceTag product={item.products} size={15} /></View>
               <View style={s.qtyRow}>
                 <Pressable onPress={() => changeQty(item, -1)} style={s.qtyBtn}><Ionicons name="remove" size={16} color={c.text} /></Pressable>
                 <Text style={{ color: c.text, minWidth: 24, textAlign: "center" }}>{item.quantity}</Text>
@@ -119,12 +123,27 @@ export default function Cart() {
             <Ionicons name="chevron-forward" size={18} color={c.muted} />
           </Pressable>
           <View style={s.totalRow}>
+            <Text style={{ color: c.muted }}>{t("cart.subtotalLabel")}</Text>
+            <Text style={{ color: c.text }}>{money(q.subtotal)}</Text>
+          </View>
+          <View style={s.totalRow}>
+            <Text style={{ color: c.muted }}>{t("cart.shipping")}</Text>
+            <Text style={{ color: q.shipping === 0 ? c.success : c.text }}>{q.shipping === 0 ? t("cart.free") : money(q.shipping)}</Text>
+          </View>
+          {q.tax > 0 && (
+            <View style={s.totalRow}>
+              <Text style={{ color: c.muted }}>{t("cart.tax")} ({q.taxRate}%)</Text>
+              <Text style={{ color: c.text }}>{money(q.tax)}</Text>
+            </View>
+          )}
+          <View style={s.totalRow}>
             <Text style={{ color: c.text, fontSize: 18, fontWeight: "700" }}>{t("cart.total")}</Text>
-            <Text style={{ color: c.primary, fontSize: 22, fontWeight: "800" }}>{money(total)}</Text>
+            <Text style={{ color: c.primary, fontSize: 22, fontWeight: "800" }}>{money(q.total)}</Text>
           </View>
           {currency !== "USD" && (
-            <Text style={{ color: c.muted, fontSize: 12 }}>{t("checkout.chargedInUsd", { amount: formatUSD(total, i18n.language) })}</Text>
+            <Text style={{ color: c.muted, fontSize: 12 }}>{t("checkout.chargedInUsd", { amount: formatUSD(q.total, i18n.language) })}</Text>
           )}
+          <Text style={{ color: c.muted, fontSize: 12 }}>🏷️ {t("cart.promoNote")}</Text>
           <Button title={t("checkout.pay")} onPress={checkout} loading={paying} />
         </View>
       )}

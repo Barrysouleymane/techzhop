@@ -8,7 +8,20 @@ import { adminApi } from "../../src/lib/admin";
 import { errorMessage } from "../../src/lib/api";
 import { Button, Input, Card, Toggle, Loading, useStyles } from "../../src/components/ui";
 
-const EMPTY = { name: "", description: "", price: "", stock: "", sku: "", category_id: "", brand_id: "", status: "active", featured: false, images: [] };
+const EMPTY = { name: "", description: "", price: "", sale_price: "", sale_ends_at: "", stock: "", sku: "", category_id: "", brand_id: "", status: "active", featured: false, images: [] };
+
+// "2026-10-31 23:59" <-> ISO
+const toText = (iso) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  const pad = (n) => String(n).padStart(2, "0");
+  return `${d.getFullYear()}-${pad(d.getMonth() + 1)}-${pad(d.getDate())} ${pad(d.getHours())}:${pad(d.getMinutes())}`;
+};
+const fromText = (txt) => {
+  if (!txt?.trim()) return null;
+  const d = new Date(txt.trim().replace(" ", "T"));
+  return isNaN(d) ? null : d.toISOString();
+};
 
 function Chips({ items, value, onChange, onCreate, noneLabel, newLabel }) {
   const [adding, setAdding] = useState(false);
@@ -81,6 +94,8 @@ export default function AdminProduct() {
             ...p,
             price: p.price != null ? String(p.price) : "",
             stock: p.stock != null ? String(p.stock) : "",
+            sale_price: p.sale_price != null ? String(p.sale_price) : "",
+            sale_ends_at: toText(p.sale_ends_at),
             category_id: p.category_id ?? "",
             brand_id: p.brand_id ?? "",
             images: p.images?.length ? p.images : p.image ? [p.image] : [],
@@ -119,7 +134,7 @@ export default function AdminProduct() {
   async function save() {
     if (!form.name || form.price === "") return Alert.alert(`${t("admin.name")}, ${t("admin.price")}`);
     setSaving(true);
-    const payload = { ...form, image: form.images[0] || null };
+    const payload = { ...form, image: form.images[0] || null, sale_ends_at: fromText(form.sale_ends_at) };
     if (!meta.fields.images) delete payload.images;
     try {
       if (isNew) await adminApi.create(payload);
@@ -193,6 +208,11 @@ export default function AdminProduct() {
             <View style={{ flex: 1 }}><Input label={`${t("admin.price")} (USD) *`} value={form.price} onChangeText={set("price")} keyboardType="decimal-pad" /></View>
             <View style={{ flex: 1 }}><Input label={t("admin.stock")} value={form.stock} onChangeText={set("stock")} keyboardType="number-pad" /></View>
           </View>
+          <View style={{ flexDirection: "row", gap: 12 }}>
+            <View style={{ flex: 1 }}><Input label={t("admin.salePrice")} value={form.sale_price} onChangeText={set("sale_price")} keyboardType="decimal-pad" /></View>
+            <View style={{ flex: 1 }}><Input label={t("admin.saleEnds")} value={form.sale_ends_at} onChangeText={set("sale_ends_at")} placeholder="2026-10-31 23:59" autoCorrect={false} /></View>
+          </View>
+          <Text style={{ color: c.muted, fontSize: 12 }}>{t("admin.saleHelp")}</Text>
           <Input label={t("admin.sku")} value={form.sku || ""} onChangeText={set("sku")} autoCapitalize="characters" />
         </Card>
 
