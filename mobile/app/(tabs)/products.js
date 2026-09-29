@@ -14,7 +14,7 @@ const SORT_LABEL = { newest: "products.sortNewest", "price-asc": "products.sortP
 
 export default function Products() {
   const { t } = useTranslation();
-  const { category } = useLocalSearchParams();
+  const { category, q: qParam, sale: saleParam } = useLocalSearchParams();
   const ratings = useShop((s) => s.ratings);
   const [products, setProducts] = useState([]);
   const [loading, setLoading] = useState(true);
@@ -29,6 +29,14 @@ export default function Products() {
     chip: { borderWidth: 1, borderColor: c.border, borderRadius: 18, paddingVertical: 6, paddingHorizontal: 12, marginRight: 8 },
     on: { backgroundColor: c.primary, borderColor: c.primary },
   }));
+
+  // Search / deals opened from the home screen
+  useEffect(() => {
+    if (qParam !== undefined) setQuery(String(qParam));
+  }, [qParam]);
+  useEffect(() => {
+    if (saleParam !== undefined) setSale(saleParam === "1");
+  }, [saleParam]);
 
   useEffect(() => {
     getProducts().then(setProducts).catch(() => {}).finally(() => setLoading(false));
