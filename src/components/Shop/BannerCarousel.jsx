@@ -35,15 +35,26 @@ export default function BannerCarousel() {
     )
   );
 
+  // Image-only banner (text already drawn in the picture): show it whole, all clickable
+  const imageOnly = !b.title && !b.subtitle;
+  const wrap = (children) =>
+    !b.link ? children : internal ? <Link to={b.link} className="block">{children}</Link> : <a href={b.link} className="block">{children}</a>;
+
   return (
-    <section className="relative h-[300px] sm:h-[420px] overflow-hidden bg-black">
-      <img key={b.id} src={b.image} alt={b.title || ""} className="absolute inset-0 w-full h-full object-cover" />
-      <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-transparent" />
-      <div className="relative max-w-7xl mx-auto px-6 sm:px-10 h-full flex flex-col justify-center" style={{ color: "#fff" }}>
-        {b.title && <h1 className="text-3xl sm:text-5xl font-extrabold max-w-2xl" style={{ color: "#fff" }}>{b.title}</h1>}
-        {b.subtitle && <p className="mt-3 text-lg max-w-xl" style={{ color: "#e4e4e7" }}>{b.subtitle}</p>}
-        {cta}
-      </div>
+    <section className={`relative overflow-hidden bg-black ${imageOnly ? "" : "h-[300px] sm:h-[420px]"}`}>
+      {imageOnly ? (
+        wrap(<img key={b.id} src={b.image} alt={b.button_label || "TechZhop"} className="w-full h-auto block" />)
+      ) : (
+        <>
+          <img key={b.id} src={b.image} alt={b.title || ""} className="absolute inset-0 w-full h-full object-cover" />
+          <div className="absolute inset-0 bg-gradient-to-r from-black/75 via-black/40 to-transparent" />
+          <div className="relative max-w-7xl mx-auto px-6 sm:px-10 h-full flex flex-col justify-center" style={{ color: "#fff" }}>
+            {b.title && <h1 className="text-3xl sm:text-5xl font-extrabold max-w-2xl" style={{ color: "#fff" }}>{b.title}</h1>}
+            {b.subtitle && <p className="mt-3 text-lg max-w-xl" style={{ color: "#e4e4e7" }}>{b.subtitle}</p>}
+            {cta}
+          </div>
+        </>
+      )}
 
       {banners.length > 1 && (
         <>

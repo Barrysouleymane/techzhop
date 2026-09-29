@@ -97,12 +97,18 @@ export default function Home() {
             style={{ width: bannerWidth }}
           >
             {banners.map((b) => (
-              <Pressable key={b.id} onPress={() => openLink(b.link)} style={[s.banner, { width: bannerWidth }]}>
+              <Pressable
+                key={b.id}
+                onPress={() => openLink(b.link)}
+                style={[s.banner, { width: bannerWidth }, !b.title && !b.subtitle && { height: bannerWidth / 2.5 }]}
+              >
                 <Image source={{ uri: b.image }} style={{ position: "absolute", width: "100%", height: "100%" }} resizeMode="cover" />
-                <View style={{ flex: 1, justifyContent: "flex-end", padding: 16, backgroundColor: "rgba(0,0,0,0.35)" }}>
-                  {b.title ? <Text style={{ color: "#fff", fontSize: 22, fontWeight: "800" }}>{b.title}</Text> : null}
-                  {b.subtitle ? <Text style={{ color: "#e4e4e7", marginTop: 4 }}>{b.subtitle}</Text> : null}
-                </View>
+                {b.title || b.subtitle ? (
+                  <View style={{ flex: 1, justifyContent: "flex-end", padding: 16, backgroundColor: "rgba(0,0,0,0.35)" }}>
+                    {b.title ? <Text style={{ color: "#fff", fontSize: 22, fontWeight: "800" }}>{b.title}</Text> : null}
+                    {b.subtitle ? <Text style={{ color: "#e4e4e7", marginTop: 4 }}>{b.subtitle}</Text> : null}
+                  </View>
+                ) : null}
               </Pressable>
             ))}
           </ScrollView>
