@@ -675,6 +675,7 @@ app.post("/products", requireAuth, requireAdmin, async (req, res) => {
 
 app.post(
   "/create-checkout-session",
+  requireAuth,
   async (req, res) => {
     try {
       console.log("");
@@ -698,8 +699,10 @@ app.post(
 
       const {
         items,
-        user_id,
       } = req.body;
+
+      // The user comes from the verified token, never from the request body
+      const user_id = req.user.id;
 
       // ----------------------------------------------
       // Validate cart

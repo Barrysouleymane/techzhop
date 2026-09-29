@@ -4,6 +4,7 @@ import axios from "axios";
 import MainLayout from "@/layouts/MainLayout";
 import useCart from "@/hooks/useCart";
 import { API_URL } from "@/config/constants";
+import { supabase } from "@/lib/supabase";
 
 export default function Checkout() {
   const { cart, loading } = useCart();
@@ -92,6 +93,14 @@ export default function Checkout() {
       // SEND TO BACKEND
       // ========================================
 
+      const {
+        data: { session },
+      } = await supabase.auth.getSession();
+
+      if (!session) {
+        throw new Error("Please login first.");
+      }
+
       const response = await axios.post(
         `${API_URL}/create-checkout-session`,
         {
@@ -100,6 +109,7 @@ export default function Checkout() {
         {
           headers: {
             "Content-Type": "application/json",
+            Authorization: `Bearer ${session.access_token}`,
           },
         }
       );
