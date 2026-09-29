@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
+import { useCallback, useState } from "react";
 import { FlatList, View, Text, Pressable } from "react-native";
-import { router } from "expo-router";
+import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { getOrders, errorMessage } from "../../src/lib/api";
@@ -18,9 +18,11 @@ export default function Orders() {
     title: { color: c.text, fontWeight: "800", fontSize: 16 },
   }));
 
-  useEffect(() => {
-    getOrders().then(setOrders).catch((e) => setError(errorMessage(e, t))).finally(() => setLoading(false));
-  }, [t]);
+  useFocusEffect(
+    useCallback(() => {
+      getOrders().then(setOrders).catch((e) => setError(errorMessage(e, t))).finally(() => setLoading(false));
+    }, [t])
+  );
 
   if (loading) return <Loading />;
   if (error) return <Empty icon="alert-circle-outline">{error}</Empty>;

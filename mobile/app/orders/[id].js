@@ -1,6 +1,6 @@
-import { useEffect, useState } from "react";
-import { ScrollView, View, Text, Linking } from "react-native";
-import { Stack, useLocalSearchParams } from "expo-router";
+import { useCallback, useState } from "react";
+import { ScrollView, View, Text, Linking, RefreshControl } from "react-native";
+import { Stack, useLocalSearchParams, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { getOrder, errorMessage } from "../../src/lib/api";
@@ -20,9 +20,14 @@ export default function OrderDetails() {
     muted: { color: c.muted },
   }));
 
-  useEffect(() => {
-    getOrder(id).then(setOrder).catch((e) => setError(errorMessage(e, t)));
+  const [refreshing, setRefreshing] = useState(false);
+
+  const load = useCallback(() => {
+    return getOrder(id).then(setOrder).catch((e) => setError(errorMessage(e, t)));
   }, [id, t]);
+
+  // Reload each time the screen is shown (status or tracking may have changed)
+  useFocusEffect(useCallback(() => { load(); }, [load]));
 
   if (error) return <Empty icon="alert-circle-outline">{error}</Empty>;
   if (!order) return <Loading />;
@@ -30,7 +35,11 @@ export default function OrderDetails() {
   const usd = (n) => formatUSD(n, i18n.language);
 
   return (
-    <ScrollView style={{ backgroundColor: c.bg }} contentContainerStyle={{ padding: 16, gap: 14 }}>
+    <ScrollView
+      style={{ backgroundColor: c.bg }}
+      contentContainerStyle={{ padding: 16, gap: 14 }}
+      refreshControl={<RefreshControl refreshing={refreshing} tintColor={c.primary} onRefresh={async () => { setRefreshing(true); await load(); setRefreshing(false); }} />}
+    >
       <Stack.Screen options={{ title: t("orders.order", { id: order.id }) }} />
 
       <Card>

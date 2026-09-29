@@ -82,7 +82,7 @@ export default function AdminOrderDetail() {
                 </select>
               </Field>
               <Field label={t("orders.trackingNumber")}>
-                <input value={tracking.tracking_number} onChange={(e) => setTracking({ ...tracking, tracking_number: e.target.value })} placeholder="1Z999AA10123456784" className={inputClass} />
+                <input value={tracking.tracking_number} onChange={(e) => setTracking({ ...tracking, tracking_number: e.target.value })} placeholder={t("admin.trackingPlaceholder")} className={inputClass} />
               </Field>
             </div>
             {!fields.carrier && <p className="text-yellow-400 text-sm m-0">{t("admin.needSql")}</p>}
