@@ -39,8 +39,8 @@ export default function Profile() {
     setUploading(true);
     try {
       setAvatar(await uploadAvatar(user.id, result.assets[0]));
-    } catch {
-      Alert.alert(t("profile.uploadError"));
+    } catch (e) {
+      Alert.alert(t("profile.uploadError"), e?.message);
     } finally {
       setUploading(false);
     }

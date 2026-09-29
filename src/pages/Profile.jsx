@@ -32,8 +32,8 @@ export default function Profile() {
     setUploading(true);
     try {
       setAvatar(await uploadAvatar(user.id, file));
-    } catch {
-      toast.error(t("profile.uploadError"));
+    } catch (err) {
+      toast.error(t("profile.uploadError"), { description: err?.message });
     } finally {
       setUploading(false);
       e.target.value = "";
