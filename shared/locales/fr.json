@@ -263,12 +263,30 @@
     "responseTime": "Nous répondons en général sous 24 heures.",
     "faqTitle": "Questions fréquentes",
     "faq": [
-      { "q": "Comment suivre ma commande ?", "a": "Allez dans Compte → Mes commandes et ouvrez la commande. Vous verrez son statut (payée, en préparation, expédiée, livrée) et le numéro de suivi une fois expédiée." },
-      { "q": "Quels moyens de paiement acceptez-vous ?", "a": "Nous acceptons les principales cartes bancaires via Stripe, un prestataire de paiement sécurisé. Nous ne voyons ni ne stockons jamais vos données de carte." },
-      { "q": "Pourquoi suis-je débité en dollars américains ?", "a": "Les prix peuvent être affichés dans votre devise à titre indicatif, mais les paiements sont traités en USD. Votre banque convertit le montant à son propre taux." },
-      { "q": "Puis-je retourner un produit ?", "a": "Oui. Contactez-nous dans les 14 jours suivant la livraison avec votre numéro de commande et nous vous guiderons." },
-      { "q": "Comment changer mon adresse de livraison ?", "a": "Allez dans Compte → Adresses pour ajouter ou modifier une adresse. Si votre commande est déjà expédiée, contactez-nous au plus vite." },
-      { "q": "Comment supprimer mon compte ?", "a": "Allez dans Compte → Supprimer le compte. Vos données personnelles sont supprimées définitivement." }
+      {
+        "q": "Comment suivre ma commande ?",
+        "a": "Allez dans Compte → Mes commandes et ouvrez la commande. Vous verrez son statut (payée, en préparation, expédiée, livrée) et le numéro de suivi une fois expédiée."
+      },
+      {
+        "q": "Quels moyens de paiement acceptez-vous ?",
+        "a": "Nous acceptons les principales cartes bancaires via Stripe, un prestataire de paiement sécurisé. Nous ne voyons ni ne stockons jamais vos données de carte."
+      },
+      {
+        "q": "Pourquoi suis-je débité en dollars américains ?",
+        "a": "Les prix peuvent être affichés dans votre devise à titre indicatif, mais les paiements sont traités en USD. Votre banque convertit le montant à son propre taux."
+      },
+      {
+        "q": "Puis-je retourner un produit ?",
+        "a": "Oui. Contactez-nous dans les 14 jours suivant la livraison avec votre numéro de commande et nous vous guiderons."
+      },
+      {
+        "q": "Comment changer mon adresse de livraison ?",
+        "a": "Allez dans Compte → Adresses pour ajouter ou modifier une adresse. Si votre commande est déjà expédiée, contactez-nous au plus vite."
+      },
+      {
+        "q": "Comment supprimer mon compte ?",
+        "a": "Allez dans Compte → Supprimer le compte. Vos données personnelles sont supprimées définitivement."
+      }
     ]
   },
   "legal": {
@@ -276,24 +294,72 @@
     "termsTitle": "Conditions d'utilisation",
     "privacyTitle": "Politique de confidentialité",
     "terms": [
-      { "h": "1. À propos de TechZhop", "p": "TechZhop est une boutique en ligne d'électronique et d'accessoires. En utilisant notre site ou notre application, vous acceptez ces conditions." },
-      { "h": "2. Votre compte", "p": "Vous êtes responsable de la confidentialité de votre mot de passe et de toute activité sur votre compte. Vous devez fournir des informations exactes." },
-      { "h": "3. Commandes et prix", "p": "Les prix sont affichés en dollars américains ; les autres devises sont des estimations. Une commande est confirmée une fois le paiement accepté. Nous pouvons annuler une commande en cas d'erreur de prix ou de rupture de stock, avec remboursement intégral." },
-      { "h": "4. Paiement", "p": "Les paiements sont traités de façon sécurisée par Stripe. Nous ne stockons pas vos données de carte." },
-      { "h": "5. Livraison", "p": "Les délais de livraison sont indicatifs. Vous êtes informé du statut de votre commande dans votre compte." },
-      { "h": "6. Retours et remboursements", "p": "Vous pouvez retourner un produit non utilisé dans les 14 jours suivant la livraison. Le remboursement est effectué sur le moyen de paiement d'origine dès réception du produit." },
-      { "h": "7. Responsabilité", "p": "Les produits sont couverts par la garantie du fabricant. TechZhop n'est pas responsable des dommages indirects liés à l'utilisation des produits." },
-      { "h": "8. Contact", "p": "Pour toute question sur ces conditions, contactez-nous depuis la page Aide et contact." }
+      {
+        "h": "1. À propos de TechZhop",
+        "p": "TechZhop est une boutique en ligne d'électronique et d'accessoires. En utilisant notre site ou notre application, vous acceptez ces conditions."
+      },
+      {
+        "h": "2. Votre compte",
+        "p": "Vous êtes responsable de la confidentialité de votre mot de passe et de toute activité sur votre compte. Vous devez fournir des informations exactes."
+      },
+      {
+        "h": "3. Commandes et prix",
+        "p": "Les prix sont affichés en dollars américains ; les autres devises sont des estimations. Une commande est confirmée une fois le paiement accepté. Nous pouvons annuler une commande en cas d'erreur de prix ou de rupture de stock, avec remboursement intégral."
+      },
+      {
+        "h": "4. Paiement",
+        "p": "Les paiements sont traités de façon sécurisée par Stripe. Nous ne stockons pas vos données de carte."
+      },
+      {
+        "h": "5. Livraison",
+        "p": "Les délais de livraison sont indicatifs. Vous êtes informé du statut de votre commande dans votre compte."
+      },
+      {
+        "h": "6. Retours et remboursements",
+        "p": "Vous pouvez retourner un produit non utilisé dans les 14 jours suivant la livraison. Le remboursement est effectué sur le moyen de paiement d'origine dès réception du produit."
+      },
+      {
+        "h": "7. Responsabilité",
+        "p": "Les produits sont couverts par la garantie du fabricant. TechZhop n'est pas responsable des dommages indirects liés à l'utilisation des produits."
+      },
+      {
+        "h": "8. Contact",
+        "p": "Pour toute question sur ces conditions, contactez-nous depuis la page Aide et contact."
+      }
     ],
     "privacy": [
-      { "h": "1. Données collectées", "p": "Votre nom, e-mail, numéro de téléphone, adresses de livraison, commandes et, si vous le souhaitez, une photo de profil." },
-      { "h": "2. Utilisation", "p": "Pour créer votre compte, traiter et livrer vos commandes, vous assister et, uniquement avec votre accord, vous envoyer des offres." },
-      { "h": "3. Données de paiement", "p": "Les paiements par carte sont gérés par Stripe. Nous ne recevons ni ne stockons jamais votre numéro de carte complet." },
-      { "h": "4. Partage", "p": "Nous partageons les données uniquement avec les prestataires nécessaires au service (hébergement, paiement, livraison). Nous ne vendons jamais vos données." },
-      { "h": "5. Stockage et sécurité", "p": "Vos données sont stockées de façon sécurisée par notre hébergeur (Supabase) et protégées par des contrôles d'accès." },
-      { "h": "6. Vos droits", "p": "Vous pouvez consulter et modifier vos informations à tout moment dans votre compte, et supprimer définitivement votre compte depuis Compte → Supprimer le compte." },
-      { "h": "7. Notifications", "p": "Vous pouvez activer ou désactiver les notifications de commande et de promotions à tout moment dans les Paramètres." },
-      { "h": "8. Contact", "p": "Pour toute question sur la confidentialité, contactez-nous depuis la page Aide et contact." }
+      {
+        "h": "1. Données collectées",
+        "p": "Votre nom, e-mail, numéro de téléphone, adresses de livraison, commandes et, si vous le souhaitez, une photo de profil."
+      },
+      {
+        "h": "2. Utilisation",
+        "p": "Pour créer votre compte, traiter et livrer vos commandes, vous assister et, uniquement avec votre accord, vous envoyer des offres."
+      },
+      {
+        "h": "3. Données de paiement",
+        "p": "Les paiements par carte sont gérés par Stripe. Nous ne recevons ni ne stockons jamais votre numéro de carte complet."
+      },
+      {
+        "h": "4. Partage",
+        "p": "Nous partageons les données uniquement avec les prestataires nécessaires au service (hébergement, paiement, livraison). Nous ne vendons jamais vos données."
+      },
+      {
+        "h": "5. Stockage et sécurité",
+        "p": "Vos données sont stockées de façon sécurisée par notre hébergeur (Supabase) et protégées par des contrôles d'accès."
+      },
+      {
+        "h": "6. Vos droits",
+        "p": "Vous pouvez consulter et modifier vos informations à tout moment dans votre compte, et supprimer définitivement votre compte depuis Compte → Supprimer le compte."
+      },
+      {
+        "h": "7. Notifications",
+        "p": "Vous pouvez activer ou désactiver les notifications de commande et de promotions à tout moment dans les Paramètres."
+      },
+      {
+        "h": "8. Contact",
+        "p": "Pour toute question sur la confidentialité, contactez-nous depuis la page Aide et contact."
+      }
     ]
   },
   "footer": {
@@ -322,6 +388,38 @@
     "status": "Statut",
     "date": "Date",
     "trackingPlaceholder": "Numéro de suivi",
-    "noOrders": "Aucune commande pour le moment."
+    "noOrders": "Aucune commande pour le moment.",
+    "dashboard": "Tableau de bord",
+    "revenue": "Chiffre d'affaires",
+    "ordersCount": "Commandes",
+    "toShip": "À expédier",
+    "lowStock": "Stock faible",
+    "newProduct": "Nouveau produit",
+    "editProduct": "Modifier le produit",
+    "deleteProduct": "Supprimer le produit",
+    "deleteConfirm": "Supprimer définitivement ce produit ?",
+    "deleted": "Produit supprimé",
+    "hiddenInstead": "Ce produit figure dans d'anciennes commandes : il a été masqué de la boutique au lieu d'être supprimé.",
+    "photos": "Photos",
+    "addPhotos": "Ajouter des photos",
+    "mainPhoto": "Principale",
+    "setMain": "Mettre en photo principale",
+    "removePhoto": "Retirer",
+    "uploading": "Envoi...",
+    "category": "Catégorie",
+    "brand": "Marque",
+    "none": "Aucune",
+    "newCategory": "Nouvelle catégorie",
+    "newBrand": "Nouvelle marque",
+    "namePrompt": "Nom",
+    "visibility": "Visibilité",
+    "visible": "Visible dans la boutique",
+    "hidden": "Masqué",
+    "featured": "Mis en avant sur l'accueil",
+    "search": "Rechercher un produit...",
+    "changeStatus": "Changer le statut",
+    "all": "Tous",
+    "photosNeedSql": "Pour ajouter plusieurs photos par produit, exécutez le dernier SQL (section 8) dans Supabase. Pour l'instant, seule la première photo est enregistrée.",
+    "saved": "Produit enregistré"
   }
 }

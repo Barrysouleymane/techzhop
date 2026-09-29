@@ -1,3 +1,4 @@
+import { useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import { Heart } from "lucide-react";
@@ -14,6 +15,7 @@ export default function ProductDetails() {
   const navigate = useNavigate();
   const money = useMoney();
   const { product, loading } = useProduct(id);
+  const [photo, setPhoto] = useState(0);
   const addToCart = useCartStore((s) => s.add);
   const toggleWishlist = useWishlistStore((s) => s.toggle);
   const liked = useWishlistStore((s) => s.items.some((p) => String(p.id) === String(id)));
@@ -22,6 +24,7 @@ export default function ProductDetails() {
   if (!product) return <Page><p className="text-center py-20">{t("product.notFound")}</p></Page>;
 
   const inStock = Number(product.stock) > 0;
+  const photos = product.images?.length ? product.images : product.image ? [product.image] : [];
 
   async function handleAdd() {
     try {
@@ -40,8 +43,23 @@ export default function ProductDetails() {
   return (
     <Page width="max-w-7xl" back="/products" backLabel={t("nav.products")}>
       <div className="grid lg:grid-cols-2 gap-12">
-        <div className="bg-white rounded-xl flex items-center justify-center p-6 min-h-[320px]">
-          <img src={product.image} alt={product.name} className="max-h-[480px] max-w-full object-contain" />
+        <div>
+          <div className="bg-white rounded-xl flex items-center justify-center p-6 min-h-[320px]">
+            <img src={photos[photo] || product.image} alt={product.name} className="max-h-[480px] max-w-full object-contain" />
+          </div>
+          {photos.length > 1 && (
+            <div className="flex gap-2 mt-3 overflow-x-auto">
+              {photos.map((url, i) => (
+                <button
+                  key={url}
+                  onClick={() => setPhoto(i)}
+                  className={`bg-white w-20 h-20 rounded-lg flex items-center justify-center shrink-0 border-2 ${i === photo ? "border-cyan-500" : "border-transparent"}`}
+                >
+                  <img src={url} alt="" className="max-h-full max-w-full object-contain" />
+                </button>
+              ))}
+            </div>
+          )}
         </div>
 
         <div>

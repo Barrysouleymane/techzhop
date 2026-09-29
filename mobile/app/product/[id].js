@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { ScrollView, View, Text, Image, Alert, Pressable } from "react-native";
+import { ScrollView, View, Text, Image, Alert, Pressable, useWindowDimensions } from "react-native";
 import { useLocalSearchParams, Stack, router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
@@ -15,6 +15,8 @@ export default function ProductDetails() {
   const [product, setProduct] = useState(null);
   const [loading, setLoading] = useState(true);
   const [adding, setAdding] = useState(false);
+  const [photo, setPhoto] = useState(0);
+  const { width } = useWindowDimensions();
   const toggle = useWishlist((s) => s.toggle);
   const liked = useWishlist((s) => s.items.some((i) => String(i.id) === String(id)));
   const [s, c] = useStyles((c) => ({
@@ -55,6 +57,7 @@ export default function ProductDetails() {
   if (!product) return <Empty icon="alert-circle-outline">{t("product.notFound")}</Empty>;
 
   const inStock = product.stock > 0;
+  const photos = product.images?.length ? product.images : product.image ? [product.image] : [];
 
   return (
     <View style={{ flex: 1, backgroundColor: c.bg }}>
@@ -69,9 +72,25 @@ export default function ProductDetails() {
         }}
       />
       <ScrollView contentContainerStyle={{ paddingBottom: 24 }}>
-        <View style={s.imageBox}>
-          {product.image && <Image source={{ uri: product.image }} style={{ width: "85%", height: "85%" }} resizeMode="contain" />}
-        </View>
+        <ScrollView
+          horizontal
+          pagingEnabled
+          showsHorizontalScrollIndicator={false}
+          onMomentumScrollEnd={(e) => setPhoto(Math.round(e.nativeEvent.contentOffset.x / width))}
+        >
+          {photos.map((url) => (
+            <View key={url} style={[s.imageBox, { width }]}>
+              <Image source={{ uri: url }} style={{ width: "85%", height: "85%" }} resizeMode="contain" />
+            </View>
+          ))}
+        </ScrollView>
+        {photos.length > 1 && (
+          <View style={{ flexDirection: "row", justifyContent: "center", gap: 6, marginTop: 10 }}>
+            {photos.map((url, i) => (
+              <View key={url} style={{ width: 8, height: 8, borderRadius: 4, backgroundColor: i === photo ? c.primary : c.border }} />
+            ))}
+          </View>
+        )}
         <View style={{ padding: 20 }}>
           <Text style={s.name}>{product.name}</Text>
           <Text style={s.price}>{money(product.price)}</Text>

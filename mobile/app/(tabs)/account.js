@@ -7,6 +7,7 @@ import { supabase } from "../../src/lib/supabase";
 import useAuth from "../../src/lib/useAuth";
 import { useWishlist } from "../../src/store/wishlist";
 import { getProfile, getOrders, getAddresses } from "../../src/lib/api";
+import { useIsAdmin } from "../../src/lib/admin";
 import { Button, Loading, Input, Group, Row, SectionTitle, Badge, useStyles } from "../../src/components/ui";
 
 function AuthForm() {
@@ -63,6 +64,7 @@ export default function Account() {
   const { t } = useTranslation();
   const { user, loading } = useAuth();
   const wishlistCount = useWishlist((s) => s.items.length);
+  const isAdmin = useIsAdmin();
   const [profile, setProfile] = useState(null);
   const [counts, setCounts] = useState({ orders: 0, addresses: 0 });
   const [s, c] = useStyles((c) => ({
@@ -107,6 +109,15 @@ export default function Account() {
         <Row icon="receipt-outline" label={t("account.orders")} onPress={go("/orders")} right={count(counts.orders)} />
         <Row icon="heart-outline" label={t("account.wishlist")} onPress={go("/wishlist")} right={wishlistCount > 0 ? <Badge>{wishlistCount}</Badge> : null} last />
       </Group>
+
+      {isAdmin && (
+        <>
+          <SectionTitle>{t("nav.admin")}</SectionTitle>
+          <Group>
+            <Row icon="shield-checkmark-outline" label={t("account.adminPanel")} onPress={go("/admin")} last />
+          </Group>
+        </>
+      )}
 
       <SectionTitle>{t("account.preferences")}</SectionTitle>
       <Group>

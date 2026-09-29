@@ -85,7 +85,7 @@ export async function removeFromCart(cartItemId) {
 
 // ---------- Backend helper ----------
 
-async function request(path, options = {}) {
+export async function request(path, options = {}) {
   const { data } = await supabase.auth.getSession();
   if (!data.session) throw loginRequired();
   const res = await fetch(`${API_URL}${path}`, {

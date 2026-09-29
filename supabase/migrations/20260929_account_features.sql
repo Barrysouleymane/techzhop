@@ -143,3 +143,9 @@ create policy "newsletter_insert_anyone" on public.newsletter_subscribers
 grant select, insert, update, delete on public.addresses   to authenticated;
 grant select, insert, update, delete on public.push_tokens to authenticated;
 grant insert on public.newsletter_subscribers to anon, authenticated;
+
+-- ---------------------------------------------------------------------
+-- 8. PRODUCT PHOTO GALLERY (several photos per product)
+-- ---------------------------------------------------------------------
+alter table public.products
+  add column if not exists images text[] not null default '{}';

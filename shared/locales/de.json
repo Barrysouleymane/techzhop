@@ -263,12 +263,30 @@
     "responseTime": "Wir antworten in der Regel innerhalb von 24 Stunden.",
     "faqTitle": "Häufige Fragen",
     "faq": [
-      { "q": "Wie verfolge ich meine Bestellung?", "a": "Gehe zu Konto → Meine Bestellungen und öffne die Bestellung. Dort siehst du den Status (bezahlt, in Bearbeitung, versandt, zugestellt) und nach dem Versand die Sendungsnummer." },
-      { "q": "Welche Zahlungsmethoden akzeptiert ihr?", "a": "Wir akzeptieren gängige Kredit- und Debitkarten über Stripe, einen sicheren Zahlungsanbieter. Wir sehen oder speichern deine Kartendaten nie." },
-      { "q": "Warum wird in US-Dollar abgerechnet?", "a": "Preise können zur Information in deiner Währung angezeigt werden, die Zahlung erfolgt jedoch in USD. Deine Bank rechnet den Betrag zu ihrem eigenen Kurs um." },
-      { "q": "Kann ich ein Produkt zurückgeben?", "a": "Ja. Kontaktiere uns innerhalb von 14 Tagen nach der Zustellung mit deiner Bestellnummer, und wir helfen dir weiter." },
-      { "q": "Wie ändere ich meine Lieferadresse?", "a": "Gehe zu Konto → Adressen, um eine Adresse hinzuzufügen oder zu bearbeiten. Wenn deine Bestellung schon versandt wurde, kontaktiere uns so schnell wie möglich." },
-      { "q": "Wie lösche ich mein Konto?", "a": "Gehe zu Konto → Konto löschen. Deine persönlichen Daten werden dauerhaft entfernt." }
+      {
+        "q": "Wie verfolge ich meine Bestellung?",
+        "a": "Gehe zu Konto → Meine Bestellungen und öffne die Bestellung. Dort siehst du den Status (bezahlt, in Bearbeitung, versandt, zugestellt) und nach dem Versand die Sendungsnummer."
+      },
+      {
+        "q": "Welche Zahlungsmethoden akzeptiert ihr?",
+        "a": "Wir akzeptieren gängige Kredit- und Debitkarten über Stripe, einen sicheren Zahlungsanbieter. Wir sehen oder speichern deine Kartendaten nie."
+      },
+      {
+        "q": "Warum wird in US-Dollar abgerechnet?",
+        "a": "Preise können zur Information in deiner Währung angezeigt werden, die Zahlung erfolgt jedoch in USD. Deine Bank rechnet den Betrag zu ihrem eigenen Kurs um."
+      },
+      {
+        "q": "Kann ich ein Produkt zurückgeben?",
+        "a": "Ja. Kontaktiere uns innerhalb von 14 Tagen nach der Zustellung mit deiner Bestellnummer, und wir helfen dir weiter."
+      },
+      {
+        "q": "Wie ändere ich meine Lieferadresse?",
+        "a": "Gehe zu Konto → Adressen, um eine Adresse hinzuzufügen oder zu bearbeiten. Wenn deine Bestellung schon versandt wurde, kontaktiere uns so schnell wie möglich."
+      },
+      {
+        "q": "Wie lösche ich mein Konto?",
+        "a": "Gehe zu Konto → Konto löschen. Deine persönlichen Daten werden dauerhaft entfernt."
+      }
     ]
   },
   "legal": {
@@ -276,24 +294,72 @@
     "termsTitle": "Nutzungsbedingungen",
     "privacyTitle": "Datenschutzerklärung",
     "terms": [
-      { "h": "1. Über TechZhop", "p": "TechZhop ist ein Onlineshop für Elektronik und Zubehör. Mit der Nutzung unserer Website oder App akzeptierst du diese Bedingungen." },
-      { "h": "2. Dein Konto", "p": "Du bist dafür verantwortlich, dein Passwort geheim zu halten, und für alle Aktivitäten in deinem Konto. Deine Angaben müssen korrekt sein." },
-      { "h": "3. Bestellungen und Preise", "p": "Preise werden in US-Dollar angezeigt; andere Währungen sind Schätzungen. Eine Bestellung ist bestätigt, sobald die Zahlung akzeptiert wurde. Bei Preisfehlern oder fehlendem Bestand können wir eine Bestellung mit voller Erstattung stornieren." },
-      { "h": "4. Zahlung", "p": "Zahlungen werden sicher über Stripe abgewickelt. Wir speichern deine Kartendaten nicht." },
-      { "h": "5. Lieferung", "p": "Lieferzeiten sind Schätzungen. Den Status deiner Bestellung siehst du in deinem Konto." },
-      { "h": "6. Rückgabe und Erstattung", "p": "Du kannst ein unbenutztes Produkt innerhalb von 14 Tagen nach Zustellung zurückgeben. Die Erstattung erfolgt nach Erhalt des Produkts auf die ursprüngliche Zahlungsmethode." },
-      { "h": "7. Haftung", "p": "Die Produkte unterliegen der Herstellergarantie. TechZhop haftet nicht für indirekte Schäden durch die Nutzung der Produkte." },
-      { "h": "8. Kontakt", "p": "Bei Fragen zu diesen Bedingungen kontaktiere uns über die Seite Hilfe & Kontakt." }
+      {
+        "h": "1. Über TechZhop",
+        "p": "TechZhop ist ein Onlineshop für Elektronik und Zubehör. Mit der Nutzung unserer Website oder App akzeptierst du diese Bedingungen."
+      },
+      {
+        "h": "2. Dein Konto",
+        "p": "Du bist dafür verantwortlich, dein Passwort geheim zu halten, und für alle Aktivitäten in deinem Konto. Deine Angaben müssen korrekt sein."
+      },
+      {
+        "h": "3. Bestellungen und Preise",
+        "p": "Preise werden in US-Dollar angezeigt; andere Währungen sind Schätzungen. Eine Bestellung ist bestätigt, sobald die Zahlung akzeptiert wurde. Bei Preisfehlern oder fehlendem Bestand können wir eine Bestellung mit voller Erstattung stornieren."
+      },
+      {
+        "h": "4. Zahlung",
+        "p": "Zahlungen werden sicher über Stripe abgewickelt. Wir speichern deine Kartendaten nicht."
+      },
+      {
+        "h": "5. Lieferung",
+        "p": "Lieferzeiten sind Schätzungen. Den Status deiner Bestellung siehst du in deinem Konto."
+      },
+      {
+        "h": "6. Rückgabe und Erstattung",
+        "p": "Du kannst ein unbenutztes Produkt innerhalb von 14 Tagen nach Zustellung zurückgeben. Die Erstattung erfolgt nach Erhalt des Produkts auf die ursprüngliche Zahlungsmethode."
+      },
+      {
+        "h": "7. Haftung",
+        "p": "Die Produkte unterliegen der Herstellergarantie. TechZhop haftet nicht für indirekte Schäden durch die Nutzung der Produkte."
+      },
+      {
+        "h": "8. Kontakt",
+        "p": "Bei Fragen zu diesen Bedingungen kontaktiere uns über die Seite Hilfe & Kontakt."
+      }
     ],
     "privacy": [
-      { "h": "1. Welche Daten wir erheben", "p": "Deinen Namen, deine E-Mail, Telefonnummer, Lieferadressen, Bestellungen und, falls gewünscht, ein Profilbild." },
-      { "h": "2. Wofür wir sie nutzen", "p": "Um dein Konto zu erstellen, Bestellungen zu bearbeiten und zu liefern, dich zu unterstützen und dir nur mit deiner Zustimmung Angebote zu senden." },
-      { "h": "3. Zahlungsdaten", "p": "Kartenzahlungen werden von Stripe abgewickelt. Wir erhalten oder speichern nie deine vollständige Kartennummer." },
-      { "h": "4. Weitergabe", "p": "Wir teilen Daten nur mit Dienstleistern, die für den Betrieb nötig sind (Hosting, Zahlung, Versand). Wir verkaufen deine Daten nie." },
-      { "h": "5. Speicherung und Sicherheit", "p": "Deine Daten werden sicher bei unserem Hosting-Anbieter (Supabase) gespeichert und durch Zugriffskontrollen geschützt." },
-      { "h": "6. Deine Rechte", "p": "Du kannst deine Daten jederzeit in deinem Konto einsehen und bearbeiten und dein Konto unter Konto → Konto löschen dauerhaft löschen." },
-      { "h": "7. Benachrichtigungen", "p": "Du kannst Bestell- und Werbebenachrichtigungen jederzeit in den Einstellungen ein- oder ausschalten." },
-      { "h": "8. Kontakt", "p": "Bei Fragen zum Datenschutz kontaktiere uns über die Seite Hilfe & Kontakt." }
+      {
+        "h": "1. Welche Daten wir erheben",
+        "p": "Deinen Namen, deine E-Mail, Telefonnummer, Lieferadressen, Bestellungen und, falls gewünscht, ein Profilbild."
+      },
+      {
+        "h": "2. Wofür wir sie nutzen",
+        "p": "Um dein Konto zu erstellen, Bestellungen zu bearbeiten und zu liefern, dich zu unterstützen und dir nur mit deiner Zustimmung Angebote zu senden."
+      },
+      {
+        "h": "3. Zahlungsdaten",
+        "p": "Kartenzahlungen werden von Stripe abgewickelt. Wir erhalten oder speichern nie deine vollständige Kartennummer."
+      },
+      {
+        "h": "4. Weitergabe",
+        "p": "Wir teilen Daten nur mit Dienstleistern, die für den Betrieb nötig sind (Hosting, Zahlung, Versand). Wir verkaufen deine Daten nie."
+      },
+      {
+        "h": "5. Speicherung und Sicherheit",
+        "p": "Deine Daten werden sicher bei unserem Hosting-Anbieter (Supabase) gespeichert und durch Zugriffskontrollen geschützt."
+      },
+      {
+        "h": "6. Deine Rechte",
+        "p": "Du kannst deine Daten jederzeit in deinem Konto einsehen und bearbeiten und dein Konto unter Konto → Konto löschen dauerhaft löschen."
+      },
+      {
+        "h": "7. Benachrichtigungen",
+        "p": "Du kannst Bestell- und Werbebenachrichtigungen jederzeit in den Einstellungen ein- oder ausschalten."
+      },
+      {
+        "h": "8. Kontakt",
+        "p": "Bei Fragen zum Datenschutz kontaktiere uns über die Seite Hilfe & Kontakt."
+      }
     ]
   },
   "footer": {
@@ -322,6 +388,38 @@
     "status": "Status",
     "date": "Datum",
     "trackingPlaceholder": "Sendungsnummer",
-    "noOrders": "Noch keine Bestellungen."
+    "noOrders": "Noch keine Bestellungen.",
+    "dashboard": "Übersicht",
+    "revenue": "Umsatz",
+    "ordersCount": "Bestellungen",
+    "toShip": "Zu versenden",
+    "lowStock": "Geringer Bestand",
+    "newProduct": "Neues Produkt",
+    "editProduct": "Produkt bearbeiten",
+    "deleteProduct": "Produkt löschen",
+    "deleteConfirm": "Dieses Produkt endgültig löschen?",
+    "deleted": "Produkt gelöscht",
+    "hiddenInstead": "Dieses Produkt ist in früheren Bestellungen enthalten und wurde daher im Shop ausgeblendet statt gelöscht.",
+    "photos": "Fotos",
+    "addPhotos": "Fotos hinzufügen",
+    "mainPhoto": "Hauptfoto",
+    "setMain": "Als Hauptfoto festlegen",
+    "removePhoto": "Entfernen",
+    "uploading": "Wird hochgeladen...",
+    "category": "Kategorie",
+    "brand": "Marke",
+    "none": "Keine",
+    "newCategory": "Neue Kategorie",
+    "newBrand": "Neue Marke",
+    "namePrompt": "Name",
+    "visibility": "Sichtbarkeit",
+    "visible": "Im Shop sichtbar",
+    "hidden": "Ausgeblendet",
+    "featured": "Auf der Startseite hervorheben",
+    "search": "Produkte suchen...",
+    "changeStatus": "Status ändern",
+    "all": "Alle",
+    "photosNeedSql": "Um mehrere Fotos pro Produkt hinzuzufügen, führe das neueste SQL (Abschnitt 8) in Supabase aus. Derzeit wird nur das erste Foto gespeichert.",
+    "saved": "Produkt gespeichert"
   }
 }

@@ -263,12 +263,30 @@
     "responseTime": "We usually reply within 24 hours.",
     "faqTitle": "Frequently asked questions",
     "faq": [
-      { "q": "How do I track my order?", "a": "Go to Account → My orders and open the order. You'll see its status (paid, preparing, shipped, delivered) and the tracking number once it has shipped." },
-      { "q": "Which payment methods do you accept?", "a": "We accept major credit and debit cards through Stripe, a secure payment provider. We never see or store your card details." },
-      { "q": "Why am I charged in US dollars?", "a": "Prices can be shown in your local currency for information, but payments are processed in USD. Your bank converts the amount at its own rate." },
-      { "q": "Can I return a product?", "a": "Yes. Contact us within 14 days of delivery with your order number and we'll guide you through the return." },
-      { "q": "How do I change my delivery address?", "a": "Go to Account → Addresses to add or edit an address. If your order has already shipped, contact us as soon as possible." },
-      { "q": "How do I delete my account?", "a": "Go to Account → Delete account. Your personal data is removed permanently." }
+      {
+        "q": "How do I track my order?",
+        "a": "Go to Account → My orders and open the order. You'll see its status (paid, preparing, shipped, delivered) and the tracking number once it has shipped."
+      },
+      {
+        "q": "Which payment methods do you accept?",
+        "a": "We accept major credit and debit cards through Stripe, a secure payment provider. We never see or store your card details."
+      },
+      {
+        "q": "Why am I charged in US dollars?",
+        "a": "Prices can be shown in your local currency for information, but payments are processed in USD. Your bank converts the amount at its own rate."
+      },
+      {
+        "q": "Can I return a product?",
+        "a": "Yes. Contact us within 14 days of delivery with your order number and we'll guide you through the return."
+      },
+      {
+        "q": "How do I change my delivery address?",
+        "a": "Go to Account → Addresses to add or edit an address. If your order has already shipped, contact us as soon as possible."
+      },
+      {
+        "q": "How do I delete my account?",
+        "a": "Go to Account → Delete account. Your personal data is removed permanently."
+      }
     ]
   },
   "legal": {
@@ -276,24 +294,72 @@
     "termsTitle": "Terms of service",
     "privacyTitle": "Privacy policy",
     "terms": [
-      { "h": "1. About TechZhop", "p": "TechZhop is an online store selling electronics and accessories. By using our website or app, you agree to these terms." },
-      { "h": "2. Your account", "p": "You are responsible for keeping your password secret and for all activity on your account. You must provide accurate information." },
-      { "h": "3. Orders and prices", "p": "Prices are shown in US dollars; other currencies are estimates. An order is confirmed once payment is accepted. We may cancel an order in case of a pricing error or lack of stock, with a full refund." },
-      { "h": "4. Payment", "p": "Payments are processed securely by Stripe. We do not store your card details." },
-      { "h": "5. Delivery", "p": "Delivery times are estimates. You will be notified of the status of your order in your account." },
-      { "h": "6. Returns and refunds", "p": "You may return an unused product within 14 days of delivery. Refunds are made to the original payment method once the product is received." },
-      { "h": "7. Liability", "p": "Products are covered by the manufacturer's warranty. TechZhop is not liable for indirect damages resulting from the use of the products." },
-      { "h": "8. Contact", "p": "For any question about these terms, contact us from the Help & contact page." }
+      {
+        "h": "1. About TechZhop",
+        "p": "TechZhop is an online store selling electronics and accessories. By using our website or app, you agree to these terms."
+      },
+      {
+        "h": "2. Your account",
+        "p": "You are responsible for keeping your password secret and for all activity on your account. You must provide accurate information."
+      },
+      {
+        "h": "3. Orders and prices",
+        "p": "Prices are shown in US dollars; other currencies are estimates. An order is confirmed once payment is accepted. We may cancel an order in case of a pricing error or lack of stock, with a full refund."
+      },
+      {
+        "h": "4. Payment",
+        "p": "Payments are processed securely by Stripe. We do not store your card details."
+      },
+      {
+        "h": "5. Delivery",
+        "p": "Delivery times are estimates. You will be notified of the status of your order in your account."
+      },
+      {
+        "h": "6. Returns and refunds",
+        "p": "You may return an unused product within 14 days of delivery. Refunds are made to the original payment method once the product is received."
+      },
+      {
+        "h": "7. Liability",
+        "p": "Products are covered by the manufacturer's warranty. TechZhop is not liable for indirect damages resulting from the use of the products."
+      },
+      {
+        "h": "8. Contact",
+        "p": "For any question about these terms, contact us from the Help & contact page."
+      }
     ],
     "privacy": [
-      { "h": "1. Data we collect", "p": "Your name, email, phone number, delivery addresses, orders and, if you choose, a profile photo." },
-      { "h": "2. Why we use it", "p": "To create your account, process and deliver your orders, provide customer support and, only if you agree, send you offers." },
-      { "h": "3. Payment data", "p": "Card payments are handled by Stripe. We never receive or store your full card number." },
-      { "h": "4. Sharing", "p": "We share data only with the providers needed to run the service (hosting, payment, delivery). We never sell your data." },
-      { "h": "5. Storage and security", "p": "Your data is stored securely by our hosting provider (Supabase) and protected by access controls." },
-      { "h": "6. Your rights", "p": "You can view and edit your information at any time in your account, and delete your account permanently from Account → Delete account." },
-      { "h": "7. Notifications", "p": "You can turn order and promotional notifications on or off at any time in Settings." },
-      { "h": "8. Contact", "p": "For any privacy question, contact us from the Help & contact page." }
+      {
+        "h": "1. Data we collect",
+        "p": "Your name, email, phone number, delivery addresses, orders and, if you choose, a profile photo."
+      },
+      {
+        "h": "2. Why we use it",
+        "p": "To create your account, process and deliver your orders, provide customer support and, only if you agree, send you offers."
+      },
+      {
+        "h": "3. Payment data",
+        "p": "Card payments are handled by Stripe. We never receive or store your full card number."
+      },
+      {
+        "h": "4. Sharing",
+        "p": "We share data only with the providers needed to run the service (hosting, payment, delivery). We never sell your data."
+      },
+      {
+        "h": "5. Storage and security",
+        "p": "Your data is stored securely by our hosting provider (Supabase) and protected by access controls."
+      },
+      {
+        "h": "6. Your rights",
+        "p": "You can view and edit your information at any time in your account, and delete your account permanently from Account → Delete account."
+      },
+      {
+        "h": "7. Notifications",
+        "p": "You can turn order and promotional notifications on or off at any time in Settings."
+      },
+      {
+        "h": "8. Contact",
+        "p": "For any privacy question, contact us from the Help & contact page."
+      }
     ]
   },
   "footer": {
@@ -322,6 +388,38 @@
     "status": "Status",
     "date": "Date",
     "trackingPlaceholder": "Tracking number",
-    "noOrders": "No orders yet."
+    "noOrders": "No orders yet.",
+    "dashboard": "Dashboard",
+    "revenue": "Revenue",
+    "ordersCount": "Orders",
+    "toShip": "To ship",
+    "lowStock": "Low stock",
+    "newProduct": "New product",
+    "editProduct": "Edit product",
+    "deleteProduct": "Delete product",
+    "deleteConfirm": "Delete this product permanently?",
+    "deleted": "Product deleted",
+    "hiddenInstead": "This product is in past orders, so it was hidden from the store instead of deleted.",
+    "photos": "Photos",
+    "addPhotos": "Add photos",
+    "mainPhoto": "Main",
+    "setMain": "Make main photo",
+    "removePhoto": "Remove",
+    "uploading": "Uploading...",
+    "category": "Category",
+    "brand": "Brand",
+    "none": "None",
+    "newCategory": "New category",
+    "newBrand": "New brand",
+    "namePrompt": "Name",
+    "visibility": "Visibility",
+    "visible": "Visible in store",
+    "hidden": "Hidden",
+    "featured": "Featured on home page",
+    "search": "Search products...",
+    "changeStatus": "Change status",
+    "all": "All",
+    "photosNeedSql": "To add several photos per product, run the latest SQL (section 8) in Supabase. For now only the first photo is saved.",
+    "saved": "Product saved"
   }
 }

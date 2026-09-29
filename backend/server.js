@@ -423,7 +423,7 @@ app.post(
 // JSON MIDDLEWARE
 // ======================================================
 
-app.use(express.json());
+app.use(express.json({ limit: "15mb" }));
 
 
 // ======================================================
@@ -1417,6 +1417,205 @@ app.patch("/admin/orders/:orderId", requireAuth, requireAdmin, async (req, res) 
 
   res.json({ success: true, order: data });
 });
+
+
+
+// ======================================================
+// ADMIN — PRODUCTS, PHOTOS, CATEGORIES, BRANDS, STATS
+// ======================================================
+
+// Which columns exist in the "products" table (detected once)
+let productColumnsCache = null;
+let productColumnsAt = 0;
+
+async function productColumns() {
+  if (productColumnsCache && Date.now() - productColumnsAt < 60000) return productColumnsCache;
+  const { data } = await supabase.from("products").select("*").limit(1);
+  const cols = data?.[0] ? Object.keys(data[0]) : [];
+  if (cols.length) {
+    productColumnsCache = cols;
+    productColumnsAt = Date.now();
+  }
+  return cols.length
+    ? cols
+    : ["name", "title", "description", "price", "image", "stock", "slug", "sku", "status"];
+}
+
+const EDITABLE_PRODUCT_FIELDS = [
+  "name", "title", "description", "price", "stock", "image", "images",
+  "sku", "slug", "status", "category_id", "brand_id", "featured",
+];
+
+async function cleanProduct(body) {
+  const cols = await productColumns();
+  const out = {};
+
+  for (const key of EDITABLE_PRODUCT_FIELDS) {
+    if (body[key] === undefined || !cols.includes(key)) continue;
+    out[key] = body[key];
+  }
+
+  if (out.price !== undefined) out.price = Number(out.price);
+  if (out.stock !== undefined) out.stock = Number(out.stock || 0);
+  if (out.category_id === "") out.category_id = null;
+  if (out.brand_id === "") out.brand_id = null;
+
+  if (Array.isArray(body.images) && body.images.length && cols.includes("image")) {
+    out.image = body.images[0];
+  }
+  if (out.name && cols.includes("title") && out.title === undefined) {
+    out.title = out.name;
+  }
+  if (cols.includes("updated_at")) out.updated_at = new Date().toISOString();
+  return out;
+}
+
+// Is the logged-in user an admin? (used by the app to show the Admin menu)
+app.get("/admin/me", requireAuth, (req, res) => {
+  const email = (req.user.email || "").toLowerCase();
+  res.json({ admin: ADMIN_EMAILS.includes(email) });
+});
+
+app.get("/admin/meta", requireAuth, requireAdmin, async (req, res) => {
+  const cols = await productColumns();
+  const [{ data: categories }, { data: brands }] = await Promise.all([
+    supabase.from("categories").select("id, name").order("name"),
+    supabase.from("brands").select("id, name").order("name"),
+  ]);
+  res.json({
+    categories: categories || [],
+    brands: brands || [],
+    fields: {
+      category: cols.includes("category_id"),
+      brand: cols.includes("brand_id"),
+      images: cols.includes("images"),
+      status: cols.includes("status"),
+      featured: cols.includes("featured"),
+    },
+  });
+});
+
+app.get("/admin/stats", requireAuth, requireAdmin, async (req, res) => {
+  const [{ data: orders }, { data: products }] = await Promise.all([
+    supabase.from("orders").select("total, status"),
+    supabase.from("products").select("id, stock"),
+  ]);
+  const paidStatuses = ["paid", "processing", "shipped", "delivered"];
+  const paid = (orders || []).filter((o) => paidStatuses.includes(o.status));
+  res.json({
+    revenue: paid.reduce((t, o) => t + Number(o.total || 0), 0),
+    orders: (orders || []).length,
+    toShip: (orders || []).filter((o) => ["paid", "processing"].includes(o.status)).length,
+    products: (products || []).length,
+    lowStock: (products || []).filter((p) => Number(p.stock || 0) <= 3).length,
+  });
+});
+
+app.get("/admin/products", requireAuth, requireAdmin, async (req, res) => {
+  const { data, error } = await supabase
+    .from("products")
+    .select("*, brands(id, name), categories(id, name)")
+    .order("id", { ascending: false });
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ products: data || [] });
+});
+
+app.get("/admin/products/:id", requireAuth, requireAdmin, async (req, res) => {
+  const { data, error } = await supabase
+    .from("products")
+    .select("*")
+    .eq("id", req.params.id)
+    .single();
+  if (error) return res.status(404).json({ error: error.message });
+  res.json({ product: data });
+});
+
+app.post("/admin/products", requireAuth, requireAdmin, async (req, res) => {
+  const product = await cleanProduct(req.body || {});
+  if (!product.name) return res.status(400).json({ error: "Product name is required" });
+  if (!(product.price >= 0)) return res.status(400).json({ error: "Product price is required" });
+
+  const cols = await productColumns();
+  if (cols.includes("status") && !product.status) product.status = "active";
+
+  const { data, error } = await supabase.from("products").insert(product).select().single();
+  if (error) return res.status(500).json({ error: error.message });
+  productColumnsCache = null;
+  res.json({ product: data });
+});
+
+app.patch("/admin/products/:id", requireAuth, requireAdmin, async (req, res) => {
+  const product = await cleanProduct(req.body || {});
+  const { data, error } = await supabase
+    .from("products")
+    .update(product)
+    .eq("id", req.params.id)
+    .select()
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ product: data });
+});
+
+// Delete a product. If it appears in past orders it can't be deleted,
+// so it is hidden from the store instead.
+app.delete("/admin/products/:id", requireAuth, requireAdmin, async (req, res) => {
+  const id = req.params.id;
+  await supabase.from("cart_items").delete().eq("product_id", id);
+
+  const { error } = await supabase.from("products").delete().eq("id", id);
+  if (!error) return res.json({ deleted: true });
+
+  const cols = await productColumns();
+  if (cols.includes("status")) {
+    const { error: hideError } = await supabase
+      .from("products")
+      .update({ status: "draft" })
+      .eq("id", id);
+    if (!hideError) return res.json({ deleted: false, hidden: true });
+  }
+  res.status(500).json({ error: error.message });
+});
+
+// Upload a product photo. Body: { data: "<base64>", contentType: "image/jpeg" }
+let productsBucketReady = false;
+
+app.post("/admin/upload", requireAuth, requireAdmin, async (req, res) => {
+  try {
+    const { data: base64, contentType = "image/jpeg" } = req.body || {};
+    if (!base64) return res.status(400).json({ error: "No image" });
+
+    if (!productsBucketReady) {
+      const { data: bucket } = await supabase.storage.getBucket("products");
+      if (!bucket) await supabase.storage.createBucket("products", { public: true });
+      productsBucketReady = true;
+    }
+
+    const ext = (contentType.split("/")[1] || "jpg").replace("jpeg", "jpg");
+    const path = `${Date.now()}-${Math.random().toString(36).slice(2, 8)}.${ext}`;
+    const buffer = Buffer.from(base64.replace(/^data:[^,]+,/, ""), "base64");
+
+    const { error } = await supabase.storage
+      .from("products")
+      .upload(path, buffer, { contentType, upsert: false });
+    if (error) return res.status(500).json({ error: error.message });
+
+    const { data } = supabase.storage.from("products").getPublicUrl(path);
+    res.json({ url: data.publicUrl });
+  } catch (err) {
+    res.status(500).json({ error: err.message });
+  }
+});
+
+// Quick-create a category or brand from the product form
+for (const table of ["categories", "brands"]) {
+  app.post(`/admin/${table}`, requireAuth, requireAdmin, async (req, res) => {
+    const name = String(req.body?.name || "").trim();
+    if (!name) return res.status(400).json({ error: "Name is required" });
+    const { data, error } = await supabase.from(table).insert({ name }).select("id, name").single();
+    if (error) return res.status(500).json({ error: error.message });
+    res.json({ item: data });
+  });
+}
 
 
 // ======================================================

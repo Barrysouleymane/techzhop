@@ -21,6 +21,7 @@ import Cart from "@/pages/Cart";
 import Checkout from "@/pages/Checkout";
 import Success from "@/pages/Success";
 import Admin from "@/pages/Admin";
+import ProductForm from "@/pages/admin/ProductForm";
 import NotFound from "@/pages/NotFound";
 import ProtectedRoute from "@/components/ProtectedRoute/ProtectedRoute";
 
@@ -58,6 +59,7 @@ export default function App() {
 
       {/* Admin */}
       <Route path="/admin" element={protect(<Admin />, true)} />
+      <Route path="/admin/products/:id" element={protect(<ProductForm />, true)} />
 
       <Route path="*" element={<NotFound />} />
     </Routes>

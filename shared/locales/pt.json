@@ -263,12 +263,30 @@
     "responseTime": "Normalmente respondemos em até 24 horas.",
     "faqTitle": "Perguntas frequentes",
     "faq": [
-      { "q": "Como acompanho meu pedido?", "a": "Vá em Conta → Meus pedidos e abra o pedido. Você verá o status (pago, em preparação, enviado, entregue) e o código de rastreio após o envio." },
-      { "q": "Quais formas de pagamento vocês aceitam?", "a": "Aceitamos os principais cartões de crédito e débito pelo Stripe, um provedor de pagamentos seguro. Nunca vemos nem guardamos os dados do seu cartão." },
-      { "q": "Por que sou cobrado em dólares americanos?", "a": "Os preços podem ser exibidos na sua moeda como referência, mas os pagamentos são processados em USD. Seu banco converte o valor pela própria taxa." },
-      { "q": "Posso devolver um produto?", "a": "Sim. Fale conosco em até 14 dias após a entrega com o número do pedido e vamos orientar você." },
-      { "q": "Como altero meu endereço de entrega?", "a": "Vá em Conta → Endereços para adicionar ou editar um endereço. Se o pedido já foi enviado, fale conosco o quanto antes." },
-      { "q": "Como excluo minha conta?", "a": "Vá em Conta → Excluir conta. Seus dados pessoais são removidos permanentemente." }
+      {
+        "q": "Como acompanho meu pedido?",
+        "a": "Vá em Conta → Meus pedidos e abra o pedido. Você verá o status (pago, em preparação, enviado, entregue) e o código de rastreio após o envio."
+      },
+      {
+        "q": "Quais formas de pagamento vocês aceitam?",
+        "a": "Aceitamos os principais cartões de crédito e débito pelo Stripe, um provedor de pagamentos seguro. Nunca vemos nem guardamos os dados do seu cartão."
+      },
+      {
+        "q": "Por que sou cobrado em dólares americanos?",
+        "a": "Os preços podem ser exibidos na sua moeda como referência, mas os pagamentos são processados em USD. Seu banco converte o valor pela própria taxa."
+      },
+      {
+        "q": "Posso devolver um produto?",
+        "a": "Sim. Fale conosco em até 14 dias após a entrega com o número do pedido e vamos orientar você."
+      },
+      {
+        "q": "Como altero meu endereço de entrega?",
+        "a": "Vá em Conta → Endereços para adicionar ou editar um endereço. Se o pedido já foi enviado, fale conosco o quanto antes."
+      },
+      {
+        "q": "Como excluo minha conta?",
+        "a": "Vá em Conta → Excluir conta. Seus dados pessoais são removidos permanentemente."
+      }
     ]
   },
   "legal": {
@@ -276,24 +294,72 @@
     "termsTitle": "Termos de uso",
     "privacyTitle": "Política de privacidade",
     "terms": [
-      { "h": "1. Sobre a TechZhop", "p": "A TechZhop é uma loja on-line de eletrônicos e acessórios. Ao usar nosso site ou aplicativo, você concorda com estes termos." },
-      { "h": "2. Sua conta", "p": "Você é responsável por manter sua senha em sigilo e por toda a atividade na sua conta. Você deve fornecer informações corretas." },
-      { "h": "3. Pedidos e preços", "p": "Os preços são exibidos em dólares americanos; outras moedas são estimativas. Um pedido é confirmado quando o pagamento é aceito. Podemos cancelar um pedido por erro de preço ou falta de estoque, com reembolso integral." },
-      { "h": "4. Pagamento", "p": "Os pagamentos são processados com segurança pelo Stripe. Não armazenamos os dados do seu cartão." },
-      { "h": "5. Entrega", "p": "Os prazos de entrega são estimativas. Você acompanha o status do pedido na sua conta." },
-      { "h": "6. Devoluções e reembolsos", "p": "Você pode devolver um produto não usado em até 14 dias após a entrega. O reembolso é feito na forma de pagamento original após o recebimento do produto." },
-      { "h": "7. Responsabilidade", "p": "Os produtos têm a garantia do fabricante. A TechZhop não se responsabiliza por danos indiretos decorrentes do uso dos produtos." },
-      { "h": "8. Contato", "p": "Para qualquer dúvida sobre estes termos, fale conosco pela página Ajuda e contato." }
+      {
+        "h": "1. Sobre a TechZhop",
+        "p": "A TechZhop é uma loja on-line de eletrônicos e acessórios. Ao usar nosso site ou aplicativo, você concorda com estes termos."
+      },
+      {
+        "h": "2. Sua conta",
+        "p": "Você é responsável por manter sua senha em sigilo e por toda a atividade na sua conta. Você deve fornecer informações corretas."
+      },
+      {
+        "h": "3. Pedidos e preços",
+        "p": "Os preços são exibidos em dólares americanos; outras moedas são estimativas. Um pedido é confirmado quando o pagamento é aceito. Podemos cancelar um pedido por erro de preço ou falta de estoque, com reembolso integral."
+      },
+      {
+        "h": "4. Pagamento",
+        "p": "Os pagamentos são processados com segurança pelo Stripe. Não armazenamos os dados do seu cartão."
+      },
+      {
+        "h": "5. Entrega",
+        "p": "Os prazos de entrega são estimativas. Você acompanha o status do pedido na sua conta."
+      },
+      {
+        "h": "6. Devoluções e reembolsos",
+        "p": "Você pode devolver um produto não usado em até 14 dias após a entrega. O reembolso é feito na forma de pagamento original após o recebimento do produto."
+      },
+      {
+        "h": "7. Responsabilidade",
+        "p": "Os produtos têm a garantia do fabricante. A TechZhop não se responsabiliza por danos indiretos decorrentes do uso dos produtos."
+      },
+      {
+        "h": "8. Contato",
+        "p": "Para qualquer dúvida sobre estes termos, fale conosco pela página Ajuda e contato."
+      }
     ],
     "privacy": [
-      { "h": "1. Dados que coletamos", "p": "Seu nome, e-mail, telefone, endereços de entrega, pedidos e, se quiser, uma foto de perfil." },
-      { "h": "2. Para que usamos", "p": "Para criar sua conta, processar e entregar seus pedidos, oferecer suporte e, somente com sua autorização, enviar ofertas." },
-      { "h": "3. Dados de pagamento", "p": "Os pagamentos com cartão são feitos pelo Stripe. Nunca recebemos nem armazenamos o número completo do seu cartão." },
-      { "h": "4. Compartilhamento", "p": "Compartilhamos dados apenas com os fornecedores necessários ao serviço (hospedagem, pagamento, entrega). Nunca vendemos seus dados." },
-      { "h": "5. Armazenamento e segurança", "p": "Seus dados são armazenados com segurança pelo nosso provedor (Supabase) e protegidos por controles de acesso." },
-      { "h": "6. Seus direitos", "p": "Você pode ver e editar suas informações a qualquer momento na sua conta e excluir sua conta permanentemente em Conta → Excluir conta." },
-      { "h": "7. Notificações", "p": "Você pode ativar ou desativar as notificações de pedidos e promoções a qualquer momento em Configurações." },
-      { "h": "8. Contato", "p": "Para qualquer dúvida sobre privacidade, fale conosco pela página Ajuda e contato." }
+      {
+        "h": "1. Dados que coletamos",
+        "p": "Seu nome, e-mail, telefone, endereços de entrega, pedidos e, se quiser, uma foto de perfil."
+      },
+      {
+        "h": "2. Para que usamos",
+        "p": "Para criar sua conta, processar e entregar seus pedidos, oferecer suporte e, somente com sua autorização, enviar ofertas."
+      },
+      {
+        "h": "3. Dados de pagamento",
+        "p": "Os pagamentos com cartão são feitos pelo Stripe. Nunca recebemos nem armazenamos o número completo do seu cartão."
+      },
+      {
+        "h": "4. Compartilhamento",
+        "p": "Compartilhamos dados apenas com os fornecedores necessários ao serviço (hospedagem, pagamento, entrega). Nunca vendemos seus dados."
+      },
+      {
+        "h": "5. Armazenamento e segurança",
+        "p": "Seus dados são armazenados com segurança pelo nosso provedor (Supabase) e protegidos por controles de acesso."
+      },
+      {
+        "h": "6. Seus direitos",
+        "p": "Você pode ver e editar suas informações a qualquer momento na sua conta e excluir sua conta permanentemente em Conta → Excluir conta."
+      },
+      {
+        "h": "7. Notificações",
+        "p": "Você pode ativar ou desativar as notificações de pedidos e promoções a qualquer momento em Configurações."
+      },
+      {
+        "h": "8. Contato",
+        "p": "Para qualquer dúvida sobre privacidade, fale conosco pela página Ajuda e contato."
+      }
     ]
   },
   "footer": {
@@ -322,6 +388,38 @@
     "status": "Status",
     "date": "Data",
     "trackingPlaceholder": "Código de rastreio",
-    "noOrders": "Nenhum pedido ainda."
+    "noOrders": "Nenhum pedido ainda.",
+    "dashboard": "Painel",
+    "revenue": "Faturamento",
+    "ordersCount": "Pedidos",
+    "toShip": "A enviar",
+    "lowStock": "Estoque baixo",
+    "newProduct": "Novo produto",
+    "editProduct": "Editar produto",
+    "deleteProduct": "Excluir produto",
+    "deleteConfirm": "Excluir este produto permanentemente?",
+    "deleted": "Produto excluído",
+    "hiddenInstead": "Este produto aparece em pedidos anteriores, então foi ocultado da loja em vez de excluído.",
+    "photos": "Fotos",
+    "addPhotos": "Adicionar fotos",
+    "mainPhoto": "Principal",
+    "setMain": "Definir como foto principal",
+    "removePhoto": "Remover",
+    "uploading": "Enviando...",
+    "category": "Categoria",
+    "brand": "Marca",
+    "none": "Nenhuma",
+    "newCategory": "Nova categoria",
+    "newBrand": "Nova marca",
+    "namePrompt": "Nome",
+    "visibility": "Visibilidade",
+    "visible": "Visível na loja",
+    "hidden": "Oculto",
+    "featured": "Destaque na página inicial",
+    "search": "Buscar produtos...",
+    "changeStatus": "Alterar status",
+    "all": "Todos",
+    "photosNeedSql": "Para adicionar várias fotos por produto, execute o último SQL (seção 8) no Supabase. Por enquanto só a primeira foto é salva.",
+    "saved": "Produto salvo"
   }
 }
