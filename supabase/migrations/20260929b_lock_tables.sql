@@ -88,3 +88,7 @@ alter default privileges in schema public grant all on sequences to service_role
 
 grant select on public.orders, public.order_items to authenticated;
 grant select on public.products, public.categories, public.brands to anon, authenticated;
+
+-- One order per Stripe payment (prevents duplicates)
+create unique index if not exists orders_stripe_session_id_key
+  on public.orders (stripe_session_id);

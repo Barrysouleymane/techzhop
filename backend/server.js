@@ -134,226 +134,12 @@ app.post(
       // CHECKOUT COMPLETED
       // ==================================================
 
-      if (event.type === "checkout.session.completed") {
-        const session = event.data.object;
-
-        console.log(
-          "CHECKOUT SESSION:",
-          session.id
-        );
-
-        console.log(
-          "PAYMENT STATUS:",
-          session.payment_status
-        );
-
-        console.log(
-          "CUSTOMER EMAIL:",
-          session.customer_details?.email || null
-        );
-
-        const userId =
-          session.metadata?.user_id || null;
-
-        const total =
-          Number(session.amount_total || 0) / 100;
-
-        // ------------------------------------------------
-        // Avoid duplicate orders
-        // ------------------------------------------------
-
-        const {
-          data: existingOrder,
-          error: existingOrderError,
-        } = await supabase
-          .from("orders")
-          .select("id")
-          .eq("stripe_session_id", session.id)
-          .maybeSingle();
-
-        if (existingOrderError) {
-          console.error(
-            "CHECK EXISTING ORDER ERROR:",
-            existingOrderError
-          );
-
-          return res.status(500).json({
-            error: existingOrderError.message,
-          });
-        }
-
-        if (existingOrder) {
-          console.log(
-            "ℹ️ ORDER ALREADY EXISTS:",
-            existingOrder.id
-          );
-
-          return res.json({
-            received: true,
-            already_processed: true,
-          });
-        }
-
-        // ------------------------------------------------
-        // Retrieve Stripe line items
-        // ------------------------------------------------
-
-        const lineItems =
-          await stripe.checkout.sessions.listLineItems(
-            session.id,
-            {
-              limit: 100,
-            }
-          );
-
-        console.log(
-          "LINE ITEMS:",
-          lineItems.data.length
-        );
-
-        // ------------------------------------------------
-        // Create order
-        // ------------------------------------------------
-
-        const {
-          data: order,
-          error: orderError,
-        } = await supabase
-          .from("orders")
-          .insert({
-            user_id: userId,
-            stripe_session_id: session.id,
-            total,
-            shipping_address:
-              session.metadata?.shipping_address || null,
-            status:
-              session.payment_status === "paid"
-                ? "paid"
-                : "pending",
-            created_at: new Date().toISOString(),
-            updated_at: new Date().toISOString(),
-          })
-          .select()
-          .single();
-
-        if (orderError) {
-          console.error(
-            "❌ CREATE ORDER ERROR:",
-            orderError
-          );
-
-          return res.status(500).json({
-            error: orderError.message,
-          });
-        }
-
-        console.log(
-          "✅ ORDER CREATED:",
-          order.id
-        );
-
-        // ------------------------------------------------
-        // Create order items
-        // ------------------------------------------------
-
-        const orderItems =
-          lineItems.data.map((item) => {
-            const productId =
-              item.price?.product_data?.metadata
-                ?.product_id
-                ? Number(
-                    item.price.product_data.metadata
-                      .product_id
-                  )
-                : null;
-
-            const productName =
-              item.description ||
-              item.price?.product_data?.name ||
-              "Product";
-
-            const price =
-              Number(
-                item.price?.unit_amount || 0
-              ) / 100;
-
-            const quantity =
-              Number(item.quantity || 1);
-
-            return {
-              order_id: order.id,
-              product_id: productId,
-              product_name: productName,
-              price,
-              quantity,
-              created_at: new Date().toISOString(),
-            };
-          });
-
-        if (orderItems.length > 0) {
-          const {
-            error: orderItemsError,
-          } = await supabase
-            .from("order_items")
-            .insert(orderItems);
-
-          if (orderItemsError) {
-            console.error(
-              "❌ CREATE ORDER ITEMS ERROR:",
-              orderItemsError
-            );
-
-            return res.status(500).json({
-              error: orderItemsError.message,
-            });
-          }
-        }
-
-        console.log(
-          "✅ ORDER ITEMS CREATED:",
-          orderItems.length
-        );
-
-        // ------------------------------------------------
-        // Clear cart
-        // ------------------------------------------------
-
-        if (userId) {
-          const {
-            error: cartDeleteError,
-          } = await supabase
-            .from("cart_items")
-            .delete()
-            .eq("user_id", userId);
-
-          if (cartDeleteError) {
-            console.error(
-              "❌ CART DELETE ERROR:",
-              cartDeleteError
-            );
-          } else {
-            console.log(
-              "🛒 CART CLEARED FOR USER:",
-              userId
-            );
-          }
-        } else {
-          console.log(
-            "⚠️ No user_id in Stripe metadata."
-          );
-        }
-
-        console.log("");
-        console.log("========================================");
-        console.log("✅ ORDER PROCESSING COMPLETE");
-        console.log("ORDER ID:", order.id);
-        console.log("TOTAL:", total);
-        console.log("STATUS:", order.status);
-        console.log("========================================");
-
-        if (userId) {
-          await sendOrderPush(userId, order.id, order.status);
-        }
+      if (
+        event.type === "checkout.session.completed" ||
+        event.type === "checkout.session.async_payment_succeeded"
+      ) {
+        const result = await fulfillCheckoutSession(event.data.object.id);
+        console.log("✅ CHECKOUT FULFILLED:", result.orderId || "not paid yet");
       }
 
       // ==================================================
@@ -495,6 +281,121 @@ async function sendOrderPush(userId, orderId, status) {
   } catch (err) {
     console.error("PUSH ERROR:", err.message);
   }
+}
+
+
+
+// ======================================================
+// ORDER CREATION AFTER PAYMENT
+// Called by the Stripe webhook AND when the customer comes back
+// from the payment page, so orders are saved even when Stripe
+// can't reach this server (e.g. while developing on localhost).
+// Safe to call several times for the same session.
+// ======================================================
+
+const fulfillingSessions = new Map();
+
+function fulfillCheckoutSession(sessionId) {
+  if (!fulfillingSessions.has(sessionId)) {
+    const job = doFulfill(sessionId).finally(() => fulfillingSessions.delete(sessionId));
+    fulfillingSessions.set(sessionId, job);
+  }
+  return fulfillingSessions.get(sessionId);
+}
+
+async function doFulfill(sessionId) {
+  const session = await stripe.checkout.sessions.retrieve(sessionId);
+
+  if (session.payment_status !== "paid") {
+    return { session, orderId: null };
+  }
+
+  const { data: existing } = await supabase
+    .from("orders")
+    .select("id")
+    .eq("stripe_session_id", session.id)
+    .maybeSingle();
+
+  if (existing) return { session, orderId: existing.id };
+
+  const userId = session.metadata?.user_id || null;
+  const now = new Date().toISOString();
+
+  const { data: order, error: orderError } = await supabase
+    .from("orders")
+    .insert({
+      user_id: userId,
+      stripe_session_id: session.id,
+      total: Number(session.amount_total || 0) / 100,
+      shipping_address: session.metadata?.shipping_address || null,
+      status: "paid",
+      created_at: now,
+      updated_at: now,
+    })
+    .select()
+    .single();
+
+  if (orderError) {
+    // Unique index hit: another request created it at the same time
+    if (orderError.code === "23505") {
+      const { data: again } = await supabase
+        .from("orders")
+        .select("id")
+        .eq("stripe_session_id", session.id)
+        .maybeSingle();
+      return { session, orderId: again?.id || null };
+    }
+    throw orderError;
+  }
+
+  const lineItems = await stripe.checkout.sessions.listLineItems(session.id, {
+    limit: 100,
+    expand: ["data.price.product"],
+  });
+
+  const orderItems = lineItems.data.map((item) => {
+    const product = item.price?.product;
+    const productId = Number(product?.metadata?.product_id) || null;
+    return {
+      order_id: order.id,
+      product_id: productId,
+      product_name: item.description || product?.name || "Product",
+      price: Number(item.price?.unit_amount || 0) / 100,
+      quantity: Number(item.quantity || 1),
+      created_at: now,
+    };
+  });
+
+  if (orderItems.length) {
+    const { error } = await supabase.from("order_items").insert(orderItems);
+    if (error) console.error("ORDER ITEMS ERROR:", error.message);
+  }
+
+  // Reduce stock
+  for (const item of orderItems) {
+    if (!item.product_id) continue;
+    const { data: p } = await supabase
+      .from("products")
+      .select("stock")
+      .eq("id", item.product_id)
+      .maybeSingle();
+    if (p && p.stock != null) {
+      await supabase
+        .from("products")
+        .update({ stock: Math.max(0, Number(p.stock) - item.quantity) })
+        .eq("id", item.product_id);
+    }
+  }
+
+  // Empty the customer's cart
+  if (userId) {
+    await supabase.from("cart_items").delete().eq("user_id", userId);
+  }
+
+  console.log("🧾 ORDER CREATED:", order.id, "items:", orderItems.length);
+  await sendOrderPush(userId, order.id, "paid");
+
+  return { session, orderId: order.id };
 }
 
 
@@ -981,7 +882,9 @@ app.post(
             },
 
             success_url:
-              `${FRONTEND_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+              req.body.return_to === "app"
+                ? `${req.protocol}://${req.get("host")}/checkout/return?session_id={CHECKOUT_SESSION_ID}`
+                : `${FRONTEND_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
 
             cancel_url:
               `${FRONTEND_URL}/cart`,
@@ -1065,12 +968,11 @@ app.get(
         });
       }
 
-      const session =
-        await stripe.checkout.sessions.retrieve(
-          sessionId
-        );
+      const { session, orderId } =
+        await fulfillCheckoutSession(sessionId);
 
       res.json({
+        order_id: orderId,
         id: session.id,
 
         status:
@@ -1616,6 +1518,33 @@ for (const table of ["categories", "brands"]) {
     res.json({ item: data });
   });
 }
+
+
+
+// ======================================================
+// RETURN PAGE FOR THE MOBILE APP
+// After paying in the phone's browser, Stripe sends the customer here.
+// ======================================================
+
+app.get("/checkout/return", async (req, res) => {
+  let ok = false;
+  try {
+    const { orderId } = await fulfillCheckoutSession(String(req.query.session_id || ""));
+    ok = !!orderId;
+  } catch (err) {
+    console.error("RETURN PAGE ERROR:", err.message);
+  }
+  res.set("Content-Type", "text/html; charset=utf-8").send(`<!doctype html>
+<html><head><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>TechZhop</title>
+<style>body{font-family:-apple-system,system-ui,sans-serif;background:#000;color:#fff;display:flex;min-height:100vh;align-items:center;justify-content:center;text-align:center;margin:0;padding:24px}
+h1{color:#06b6d4}p{color:#a1a1aa;font-size:18px}</style></head>
+<body><div><div style="font-size:64px">${ok ? "✅" : "⏳"}</div>
+<h1>TechZhop</h1>
+<p>${ok ? "Payment received — thank you!" : "Payment is being confirmed."}</p>
+<p>You can close this page and return to the app.<br>Vous pouvez fermer cette page et revenir à l'application.</p>
+</div></body></html>`);
+});
 
 
 // ======================================================

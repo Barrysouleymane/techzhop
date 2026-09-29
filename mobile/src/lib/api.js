@@ -109,8 +109,15 @@ export async function createCheckoutSession(cart, shippingAddress) {
   }));
   return request("/create-checkout-session", {
     method: "POST",
-    body: JSON.stringify({ items, shipping_address: shippingAddress || "" }),
+    body: JSON.stringify({ items, shipping_address: shippingAddress || "", return_to: "app" }),
   });
+}
+
+/** After payment: makes sure the order is saved and returns its id */
+export async function confirmCheckout(sessionId) {
+  const res = await fetch(`${API_URL}/checkout-session/${sessionId}`);
+  const body = await res.json().catch(() => ({}));
+  return body.order_id || null;
 }
 
 export async function getOrders() {

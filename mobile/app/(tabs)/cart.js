@@ -4,7 +4,7 @@ import { useFocusEffect, router } from "expo-router";
 import * as WebBrowser from "expo-web-browser";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { getCart, setQuantity, removeFromCart, createCheckoutSession, getAddresses, errorMessage } from "../../src/lib/api";
+import { getCart, setQuantity, removeFromCart, createCheckoutSession, confirmCheckout, getAddresses, errorMessage } from "../../src/lib/api";
 import useAuth from "../../src/lib/useAuth";
 import { useMoney, useCurrency } from "../../src/lib/money";
 import { Button, Loading, Empty, useStyles } from "../../src/components/ui";
@@ -55,10 +55,17 @@ export default function Cart() {
   async function checkout() {
     setPaying(true);
     try {
-      const { url } = await createCheckoutSession(cart, formatAddress(address));
+      const { url, id } = await createCheckoutSession(cart, formatAddress(address));
       if (!url) throw new Error(t("checkout.failed"));
       await WebBrowser.openBrowserAsync(url);
-      load(); // the Stripe webhook empties the cart after payment
+      // Back from the payment page: save the order if it was paid
+      const orderId = id ? await confirmCheckout(id).catch(() => null) : null;
+      await load();
+      if (orderId) {
+        Alert.alert(t("success.title"), t("success.thanks"), [
+          { text: t("orders.viewDetails"), onPress: () => router.push(`/orders/${orderId}`) },
+        ]);
+      }
     } catch (e) {
       Alert.alert(t("checkout.failed"), errorMessage(e, t));
     } finally {
