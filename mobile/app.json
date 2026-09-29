@@ -22,7 +22,11 @@
       }
     },
     "android": {
-      "package": "com.techzhop.app"
+      "package": "com.techzhop.app",
+      "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
+        "backgroundColor": "#000000"
+      }
     },
     "plugins": [
       "expo-router",
@@ -36,6 +40,15 @@
           "photosPermission": "TechZhop uses your photos to set your profile picture."
         }
       ]
-    ]
+    ],
+    "icon": "./assets/icon.png",
+    "splash": {
+      "image": "./assets/splash.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#000000"
+    },
+    "web": {
+      "favicon": "./assets/logo-mark.png"
+    }
   }
 }

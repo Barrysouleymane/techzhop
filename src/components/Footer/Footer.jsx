@@ -10,7 +10,7 @@ export default function Footer() {
     <footer className="bg-zinc-950 border-t border-zinc-800 text-gray-400">
       <div className="max-w-7xl mx-auto px-6 py-12 grid gap-10 sm:grid-cols-2 lg:grid-cols-4">
         <div>
-          <h2 className="text-xl font-bold text-cyan-400">TECHZHOP</h2>
+          <img src="/logo.png" alt="TechZhop" className="w-24 h-24 rounded-full" />
           <p className="mt-2">{t("footer.tagline")}</p>
           <LanguageSelect className="mt-4" />
         </div>

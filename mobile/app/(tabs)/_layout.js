@@ -1,8 +1,22 @@
 import { Tabs } from "expo-router";
+import { View, Text, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useColors } from "../../src/theme";
 import { useIsAdmin } from "../../src/lib/admin";
+
+function BrandTitle() {
+  const c = useColors();
+  return (
+    <View style={{ flexDirection: "row", alignItems: "center", gap: 8 }}>
+      <Image source={require("../../assets/logo-mark.png")} style={{ width: 30, height: 30, borderRadius: 15 }} />
+      <Text style={{ fontSize: 20, fontWeight: "900", letterSpacing: 1 }}>
+        <Text style={{ color: c.text }}>TECH</Text>
+        <Text style={{ color: "#2563eb" }}>ZHOP</Text>
+      </Text>
+    </View>
+  );
+}
 
 const icon = (name) => ({ color, size }) => <Ionicons name={name} color={color} size={size} />;
 
@@ -22,7 +36,7 @@ export default function TabsLayout() {
         sceneStyle: { backgroundColor: c.bg },
       }}
     >
-      <Tabs.Screen name="index" options={{ title: "TECHZHOP", tabBarLabel: t("nav.home"), tabBarIcon: icon("home-outline") }} />
+      <Tabs.Screen name="index" options={{ title: "TechZhop", headerTitle: () => <BrandTitle />, tabBarLabel: t("nav.home"), tabBarIcon: icon("home-outline") }} />
       <Tabs.Screen name="products" options={{ title: t("nav.products"), tabBarIcon: icon("grid-outline") }} />
       <Tabs.Screen name="cart" options={{ title: t("nav.cart"), tabBarIcon: icon("cart-outline") }} />
       <Tabs.Screen
