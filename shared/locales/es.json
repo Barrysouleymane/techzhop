@@ -529,7 +529,7 @@
   "team": {
     "title": "Equipo",
     "tab": "Equipo",
-    "subtitle": "Da a tu equipo acceso al área de administración. La persona debe crear antes una cuenta de cliente.",
+    "subtitle": "Da a tu equipo acceso al área de administración. Si la persona aún no tiene cuenta, recibirá una invitación por correo.",
     "add": "Dar acceso",
     "email": "Correo del cliente",
     "role": "Rol",
@@ -549,6 +549,7 @@
       "product_manager": "Añadir, editar y eliminar productos, fotos, categorías y marcas.",
       "seller": "Ver pedidos, cambiar su estado y añadir números de seguimiento.",
       "customer": "Sin acceso al área de administración."
-    }
+    },
+    "invited": "Invitación enviada a {{email}}"
   }
 }

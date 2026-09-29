@@ -1,0 +1,37 @@
+<!-- TechZhop — paste into Supabase → Authentication → Emails (Message body) -->
+{{ $l := printf "%v" .Data.language }}
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:24px 12px;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#18181b"><tr><td align="center">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-radius:16px;overflow:hidden">
+<tr><td style="background:#000;padding:22px 28px;text-align:center">
+<span style="font-size:26px;font-weight:900;letter-spacing:2px;color:#fff">TECH</span><span style="font-size:26px;font-weight:900;letter-spacing:2px;color:#2563eb">ZHOP</span>
+<div style="color:#a1a1aa;font-size:11px;letter-spacing:3px;margin-top:4px">TECH · GAMING · LIFESTYLE</div>
+</td></tr>
+<tr><td style="padding:28px">
+{{ if eq $l "fr" }}
+<h1 style="margin:0 0 16px;font-size:22px">Vous êtes invité dans l'équipe TechZhop</h1>
+<p style="margin:0 0 20px;font-size:15px;line-height:1.55;color:#3f3f46">Vous avez été invité à rejoindre l'équipe TechZhop. Cliquez ci-dessous pour créer votre mot de passe, puis ouvrez l'espace admin.</p>
+<p style="text-align:center;margin:24px 0"><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#06b6d4;color:#000;font-weight:700;text-decoration:none;padding:13px 26px;border-radius:10px">Accepter l'invitation</a></p>
+{{ else if eq $l "es" }}
+<h1 style="margin:0 0 16px;font-size:22px">Te han invitado al equipo de TechZhop</h1>
+<p style="margin:0 0 20px;font-size:15px;line-height:1.55;color:#3f3f46">Te han invitado a unirte al equipo de TechZhop. Haz clic abajo para crear tu contraseña y luego abre el área de administración.</p>
+<p style="text-align:center;margin:24px 0"><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#06b6d4;color:#000;font-weight:700;text-decoration:none;padding:13px 26px;border-radius:10px">Aceptar la invitación</a></p>
+{{ else if eq $l "pt" }}
+<h1 style="margin:0 0 16px;font-size:22px">Você foi convidado para a equipe TechZhop</h1>
+<p style="margin:0 0 20px;font-size:15px;line-height:1.55;color:#3f3f46">Você foi convidado para a equipe TechZhop. Clique abaixo para criar sua senha e depois abra a área de administração.</p>
+<p style="text-align:center;margin:24px 0"><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#06b6d4;color:#000;font-weight:700;text-decoration:none;padding:13px 26px;border-radius:10px">Aceitar o convite</a></p>
+{{ else if eq $l "de" }}
+<h1 style="margin:0 0 16px;font-size:22px">Einladung ins TechZhop-Team</h1>
+<p style="margin:0 0 20px;font-size:15px;line-height:1.55;color:#3f3f46">Du wurdest eingeladen, dem TechZhop-Team beizutreten. Klicke unten, um dein Passwort festzulegen, und öffne dann den Adminbereich.</p>
+<p style="text-align:center;margin:24px 0"><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#06b6d4;color:#000;font-weight:700;text-decoration:none;padding:13px 26px;border-radius:10px">Einladung annehmen</a></p>
+{{ else if eq $l "zh" }}
+<h1 style="margin:0 0 16px;font-size:22px">邀请您加入 TechZhop 团队</h1>
+<p style="margin:0 0 20px;font-size:15px;line-height:1.55;color:#3f3f46">您已被邀请加入 TechZhop 团队。点击下方按钮设置密码，然后打开管理后台。</p>
+<p style="text-align:center;margin:24px 0"><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#06b6d4;color:#000;font-weight:700;text-decoration:none;padding:13px 26px;border-radius:10px">接受邀请</a></p>
+{{ else }}
+<h1 style="margin:0 0 16px;font-size:22px">You're invited to the TechZhop team</h1>
+<p style="margin:0 0 20px;font-size:15px;line-height:1.55;color:#3f3f46">You've been invited to join the TechZhop team. Click below to create your password, then open the admin area.</p>
+<p style="text-align:center;margin:24px 0"><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#06b6d4;color:#000;font-weight:700;text-decoration:none;padding:13px 26px;border-radius:10px">Accept the invitation</a></p>
+{{ end }}
+</td></tr>
+<tr><td style="padding:18px 28px;background:#fafafa;color:#71717a;font-size:12px;text-align:center">TechZhop — Innovation at your fingertips</td></tr>
+</table></td></tr></table>

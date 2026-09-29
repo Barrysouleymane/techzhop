@@ -1,0 +1,37 @@
+<!-- TechZhop — paste into Supabase → Authentication → Emails (Message body) -->
+{{ $l := printf "%v" .Data.language }}
+<table width="100%" cellpadding="0" cellspacing="0" style="background:#f4f4f5;padding:24px 12px;font-family:-apple-system,Segoe UI,Roboto,Helvetica,Arial,sans-serif;color:#18181b"><tr><td align="center">
+<table width="100%" cellpadding="0" cellspacing="0" style="max-width:560px;background:#fff;border-radius:16px;overflow:hidden">
+<tr><td style="background:#000;padding:22px 28px;text-align:center">
+<span style="font-size:26px;font-weight:900;letter-spacing:2px;color:#fff">TECH</span><span style="font-size:26px;font-weight:900;letter-spacing:2px;color:#2563eb">ZHOP</span>
+<div style="color:#a1a1aa;font-size:11px;letter-spacing:3px;margin-top:4px">TECH · GAMING · LIFESTYLE</div>
+</td></tr>
+<tr><td style="padding:28px">
+{{ if eq $l "fr" }}
+<h1 style="margin:0 0 16px;font-size:22px">Confirmez votre e-mail</h1>
+<p style="margin:0 0 20px;font-size:15px;line-height:1.55;color:#3f3f46">Bienvenue chez TechZhop ! Confirmez votre adresse e-mail pour activer votre compte.</p>
+<p style="text-align:center;margin:24px 0"><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#06b6d4;color:#000;font-weight:700;text-decoration:none;padding:13px 26px;border-radius:10px">Confirmer mon e-mail</a></p>
+{{ else if eq $l "es" }}
+<h1 style="margin:0 0 16px;font-size:22px">Confirma tu correo</h1>
+<p style="margin:0 0 20px;font-size:15px;line-height:1.55;color:#3f3f46">¡Bienvenido a TechZhop! Confirma tu correo electrónico para activar tu cuenta.</p>
+<p style="text-align:center;margin:24px 0"><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#06b6d4;color:#000;font-weight:700;text-decoration:none;padding:13px 26px;border-radius:10px">Confirmar mi correo</a></p>
+{{ else if eq $l "pt" }}
+<h1 style="margin:0 0 16px;font-size:22px">Confirme seu e-mail</h1>
+<p style="margin:0 0 20px;font-size:15px;line-height:1.55;color:#3f3f46">Bem-vindo à TechZhop! Confirme seu e-mail para ativar sua conta.</p>
+<p style="text-align:center;margin:24px 0"><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#06b6d4;color:#000;font-weight:700;text-decoration:none;padding:13px 26px;border-radius:10px">Confirmar meu e-mail</a></p>
+{{ else if eq $l "de" }}
+<h1 style="margin:0 0 16px;font-size:22px">Bestätige deine E-Mail</h1>
+<p style="margin:0 0 20px;font-size:15px;line-height:1.55;color:#3f3f46">Willkommen bei TechZhop! Bitte bestätige deine E-Mail-Adresse, um dein Konto zu aktivieren.</p>
+<p style="text-align:center;margin:24px 0"><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#06b6d4;color:#000;font-weight:700;text-decoration:none;padding:13px 26px;border-radius:10px">E-Mail bestätigen</a></p>
+{{ else if eq $l "zh" }}
+<h1 style="margin:0 0 16px;font-size:22px">请确认您的邮箱</h1>
+<p style="margin:0 0 20px;font-size:15px;line-height:1.55;color:#3f3f46">欢迎来到 TechZhop！请确认您的邮箱地址以激活账户。</p>
+<p style="text-align:center;margin:24px 0"><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#06b6d4;color:#000;font-weight:700;text-decoration:none;padding:13px 26px;border-radius:10px">确认邮箱</a></p>
+{{ else }}
+<h1 style="margin:0 0 16px;font-size:22px">Confirm your email</h1>
+<p style="margin:0 0 20px;font-size:15px;line-height:1.55;color:#3f3f46">Welcome to TechZhop! Please confirm your email address to activate your account.</p>
+<p style="text-align:center;margin:24px 0"><a href="{{ .ConfirmationURL }}" style="display:inline-block;background:#06b6d4;color:#000;font-weight:700;text-decoration:none;padding:13px 26px;border-radius:10px">Confirm my email</a></p>
+{{ end }}
+</td></tr>
+<tr><td style="padding:18px 28px;background:#fafafa;color:#71717a;font-size:12px;text-align:center">TechZhop — Innovation at your fingertips</td></tr>
+</table></td></tr></table>

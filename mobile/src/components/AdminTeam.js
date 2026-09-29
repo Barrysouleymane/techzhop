@@ -8,7 +8,7 @@ import { Button, Input, Card, Choice, Group, useStyles } from "./ui";
 import { STAFF_ROLES } from "../../../shared/settings";
 
 export default function AdminTeam() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [members, setMembers] = useState([]);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("seller");
@@ -27,10 +27,10 @@ export default function AdminTeam() {
   async function apply(targetEmail, newRole) {
     setBusy(true);
     try {
-      await adminApi.setRole(targetEmail, newRole);
+      const res = await adminApi.setRole(targetEmail, newRole, i18n.language);
       setEmail("");
       await load();
-      Alert.alert(t("team.updated"));
+      Alert.alert(res.invited ? t("team.invited", { email: targetEmail }) : t("team.updated"));
     } catch (e) {
       Alert.alert(t("common.error"), errorMessage(e, t));
     } finally {

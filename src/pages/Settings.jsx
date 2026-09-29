@@ -7,7 +7,10 @@ import useAuth from "@/hooks/useAuth";
 import useSettingsStore from "@/store/settingsStore";
 import { useCurrency } from "@/hooks/useMoney";
 import { getLanguageChoice, setLanguageChoice } from "@/i18n";
-import { getProfile, updateProfile } from "@/api/account";
+import { getProfile, updateProfile, authHeaders } from "@/api/account";
+import axios from "axios";
+import i18n from "@/i18n";
+import { API_URL } from "@/config/constants";
 import { LANGUAGES, CURRENCIES } from "../../shared/settings";
 
 function Section({ id, title, children }) {
@@ -76,6 +79,8 @@ export default function Settings() {
             onChange={(e) => {
               setLang(e.target.value);
               setLanguageChoice(e.target.value === "auto" ? null : e.target.value);
+              // Emails are sent in this language
+              if (user) authHeaders().then((headers) => axios.post(`${API_URL}/me/language`, { language: i18n.language }, { headers })).catch(() => {});
             }}
             className={select}
           >

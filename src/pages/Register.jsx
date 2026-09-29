@@ -6,7 +6,7 @@ import { supabase } from "@/lib/supabase";
 import Page, { btnPrimary, inputClass, card } from "@/components/Page";
 
 export default function Register() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const navigate = useNavigate();
   const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
   const [busy, setBusy] = useState(false);
@@ -21,7 +21,10 @@ export default function Register() {
     const { data, error } = await supabase.auth.signUp({
       email: form.email,
       password: form.password,
-      options: { data: { full_name: form.name } },
+      options: {
+        data: { full_name: form.name, language: i18n.language },
+        emailRedirectTo: `${window.location.origin}/account`,
+      },
     });
     setBusy(false);
 

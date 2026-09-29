@@ -529,7 +529,7 @@
   "team": {
     "title": "Team",
     "tab": "Team",
-    "subtitle": "Gib deinem Team Zugriff auf den Admin-Bereich. Die Person muss zuerst ein Kundenkonto erstellen.",
+    "subtitle": "Gib deinem Team Zugriff auf den Admin-Bereich. Hat die Person noch kein Konto, erhält sie eine Einladung per E-Mail.",
     "add": "Zugriff geben",
     "email": "E-Mail des Kunden",
     "role": "Rolle",
@@ -549,6 +549,7 @@
       "product_manager": "Produkte, Fotos, Kategorien und Marken hinzufügen, bearbeiten und löschen.",
       "seller": "Bestellungen sehen, Status ändern und Sendungsnummern hinzufügen.",
       "customer": "Kein Zugriff auf den Admin-Bereich."
-    }
+    },
+    "invited": "Einladung an {{email}} gesendet"
   }
 }

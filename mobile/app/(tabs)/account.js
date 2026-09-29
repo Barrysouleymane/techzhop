@@ -11,7 +11,7 @@ import { useIsAdmin } from "../../src/lib/admin";
 import { Button, Loading, Input, Group, Row, SectionTitle, Badge, useStyles } from "../../src/components/ui";
 
 function AuthForm() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [mode, setMode] = useState("login");
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
@@ -25,7 +25,7 @@ function AuthForm() {
     const { error } =
       mode === "login"
         ? await supabase.auth.signInWithPassword({ email: email.trim(), password })
-        : await supabase.auth.signUp({ email: email.trim(), password, options: { data: { full_name: fullName } } });
+        : await supabase.auth.signUp({ email: email.trim(), password, options: { data: { full_name: fullName, language: i18n.language } } });
     setBusy(false);
     if (error) return Alert.alert(t("common.error"), error.message);
     if (mode === "register") Alert.alert(t("auth.accountCreated"));

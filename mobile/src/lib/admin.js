@@ -25,7 +25,7 @@ export const adminApi = {
   promos: () => request("/admin/promos").then((d) => d.promos),
   createPromo: (p) => request("/admin/promos", json("POST", p)),
   setPromoActive: (id, active) => request(`/admin/promos/${id}`, json("PATCH", { active })),
-  setRole: (email, role) => request("/admin/team", json("POST", { email, role })),
+  setRole: (email, role, language) => request("/admin/team", json("POST", { email, role, language })),
   updateOrder: (id, fields) => request(`/admin/orders/${id}`, json("PATCH", fields)).then((d) => d.order),
   createCategory: (name) => request("/admin/categories", json("POST", { name })).then((d) => d.item),
   createBrand: (name) => request("/admin/brands", json("POST", { name })).then((d) => d.item),

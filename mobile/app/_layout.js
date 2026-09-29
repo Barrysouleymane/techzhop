@@ -8,6 +8,7 @@ import { useSettings } from "../src/store/settings";
 import { useColors } from "../src/theme";
 import useAuth from "../src/lib/useAuth";
 import { registerForPush } from "../src/lib/push";
+import { request } from "../src/lib/api";
 import { useShop } from "../src/store/shop";
 
 // Applies the language chosen in Settings (or the phone language)
@@ -32,6 +33,16 @@ export default function RootLayout() {
   useEffect(() => {
     if (user) registerForPush(user.id, i.language);
   }, [user, i.language]);
+
+  // Welcome email (sent once by the server) + remember the language for emails
+  useEffect(() => {
+    if (!user) return;
+    request("/me/welcome", { method: "POST", body: JSON.stringify({ language: i.language }) }).catch(() => {});
+  }, [user?.id]); // eslint-disable-line react-hooks/exhaustive-deps
+
+  useEffect(() => {
+    if (user) request("/me/language", { method: "POST", body: JSON.stringify({ language: i.language }) }).catch(() => {});
+  }, [i.language]); // eslint-disable-line react-hooks/exhaustive-deps
 
   return (
     <>

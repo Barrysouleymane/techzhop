@@ -529,7 +529,7 @@
   "team": {
     "title": "Équipe",
     "tab": "Équipe",
-    "subtitle": "Donnez à votre équipe l'accès à l'espace admin. La personne doit d'abord créer un compte client.",
+    "subtitle": "Donnez à votre équipe l'accès à l'espace admin. Si la personne n'a pas encore de compte, elle recevra une invitation par e-mail.",
     "add": "Donner l'accès",
     "email": "E-mail du client",
     "role": "Rôle",
@@ -549,6 +549,7 @@
       "product_manager": "Ajouter, modifier et supprimer les produits, photos, catégories et marques.",
       "seller": "Voir les commandes, changer leur statut et ajouter les numéros de suivi.",
       "customer": "Aucun accès à l'espace admin."
-    }
+    },
+    "invited": "Invitation envoyée à {{email}}"
   }
 }

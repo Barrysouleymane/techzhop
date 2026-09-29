@@ -4,6 +4,7 @@ const express = require("express");
 const cors = require("cors");
 const Stripe = require("stripe");
 const { createClient } = require("@supabase/supabase-js");
+const emails = require("./emails");
 
 const app = express();
 
@@ -361,6 +362,38 @@ async function getShopSettings() {
 }
 
 
+
+// ======================================================
+// USER INFO FOR EMAILS (email, name, language)
+// ======================================================
+
+async function userInfo(userId) {
+  if (!userId) return null;
+  const [{ data: authData }, { data: profile }] = await Promise.all([
+    supabase.auth.admin.getUserById(userId),
+    supabase.from("profiles").select("full_name, notify_orders").eq("id", userId).maybeSingle(),
+  ]);
+  const u = authData?.user;
+  if (!u) return null;
+  return {
+    email: u.email,
+    name: profile?.full_name || u.user_metadata?.full_name || "",
+    language: u.user_metadata?.language || "en",
+    notifyOrders: profile?.notify_orders !== false,
+  };
+}
+
+const CARRIER_URLS = {
+  usps: "https://tools.usps.com/go/TrackConfirmAction?tLabels=",
+  ups: "https://www.ups.com/track?tracknum=",
+  fedex: "https://www.fedex.com/fedextrack/?trknbr=",
+  dhl: "https://www.dhl.com/global-en/home/tracking/tracking-express.html?submit=1&tracking-id=",
+  other: "https://parcelsapp.com/en/tracking/",
+};
+const trackingLink = (carrier, number) =>
+  number ? (CARRIER_URLS[carrier] || CARRIER_URLS.other) + encodeURIComponent(number) : null;
+
+
 // ======================================================
 // ORDER CREATION AFTER PAYMENT
 // Called by the Stripe webhook AND when the customer comes back
@@ -486,6 +519,20 @@ async function doFulfill(sessionId) {
 
   console.log("🧾 ORDER CREATED:", order.id, "items:", orderItems.length);
   await sendOrderPush(userId, order.id, "paid");
+
+  // Emails: confirmation to the customer + alert to the shop owners
+  const info = await userInfo(userId).catch(() => null);
+  const customerEmail = info?.email || session.customer_details?.email;
+  emails.orderConfirmationEmail({
+    to: customerEmail,
+    name: info?.name || session.customer_details?.name,
+    language: info?.language,
+    order: { ...order, ...orderRow },
+    items: orderItems,
+  });
+  if (ADMIN_EMAILS.length) {
+    emails.newOrderAdminEmail({ to: ADMIN_EMAILS, order: { ...order, ...orderRow }, items: orderItems });
+  }
 
   return { session, orderId: order.id };
 }
@@ -1140,6 +1187,7 @@ app.get(
 
 app.delete("/account", requireAuth, async (req, res) => {
   const userId = req.user.id;
+  const info = await userInfo(userId).catch(() => null);
 
   try {
     await supabase.from("cart_items").delete().eq("user_id", userId);
@@ -1176,6 +1224,7 @@ app.delete("/account", requireAuth, async (req, res) => {
     }
 
     console.log("🗑️ ACCOUNT DELETED:", userId);
+    if (info) emails.accountDeletedEmail(info && { to: info.email, name: info.name, language: info.language });
     res.json({ success: true });
   } catch (err) {
     console.error("DELETE ACCOUNT ERROR:", err);
@@ -1326,6 +1375,19 @@ app.patch("/admin/orders/:orderId", requireAuth, requirePermission("orders"), as
 
   if (status) {
     await sendOrderPush(data.user_id, data.id, data.status);
+
+    if (["processing", "shipped", "delivered", "cancelled"].includes(status)) {
+      const info = await userInfo(data.user_id).catch(() => null);
+      if (info?.notifyOrders) {
+        emails.orderUpdateEmail({
+          to: info.email,
+          name: info.name,
+          language: info.language,
+          order: data,
+          trackingUrl: trackingLink(data.carrier, data.tracking_number),
+        });
+      }
+    }
   }
 
   res.json({ success: true, order: data });
@@ -1449,9 +1511,20 @@ app.post("/admin/team", requireAuth, requirePermission("team"), async (req, res)
     return res.status(400).json({ error: "The shop owner is always admin" });
   }
 
-  const user = await findUserByEmail(email);
+  const language = String(req.body?.language || "en").slice(0, 5);
+  let user = await findUserByEmail(email);
+  let invited = false;
+
   if (!user) {
-    return res.status(404).json({ error: "No account with this email. Ask the person to sign up first." });
+    if (role === "customer") return res.status(404).json({ error: "No account with this email." });
+    // No account yet: Supabase sends an invitation email to create a password
+    const { data, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email, {
+      redirectTo: `${FRONTEND_URL}/reset-password`,
+      data: { language },
+    });
+    if (inviteError) return res.status(500).json({ error: inviteError.message });
+    user = data.user;
+    invited = true;
   }
 
   const { error } = await supabase
@@ -1459,8 +1532,19 @@ app.post("/admin/team", requireAuth, requirePermission("team"), async (req, res)
     .upsert({ id: user.id, role }, { onConflict: "id" });
   if (error) return res.status(500).json({ error: error.message });
 
-  console.log(`👥 ROLE: ${email} → ${role} (by ${req.user.email})`);
-  res.json({ success: true, member: { id: user.id, email, role } });
+  if (STAFF_ROLES.includes(role)) {
+    const { data: p } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
+    emails.staffEmail({
+      to: email,
+      name: p?.full_name || user.user_metadata?.full_name,
+      language: user.user_metadata?.language || language,
+      role,
+      invited,
+    });
+  }
+
+  console.log(`👥 ROLE: ${email} → ${role} (by ${req.user.email})${invited ? " [invited]" : ""}`);
+  res.json({ success: true, invited, member: { id: user.id, email, role } });
 });
 
 app.get("/admin/meta", requireAuth, requirePermission("products"), async (req, res) => {
@@ -1875,6 +1959,35 @@ app.patch("/admin/promos/:id", requireAuth, requirePermission("store"), async (r
   } catch (err) {
     res.status(400).json({ error: err.message });
   }
+});
+
+
+
+// ======================================================
+// WELCOME EMAIL — sent once, the first time a user is logged in
+// ======================================================
+
+app.post("/me/welcome", requireAuth, async (req, res) => {
+  const meta = req.user.user_metadata || {};
+  if (meta.welcome_sent) return res.json({ sent: false });
+
+  const language = meta.language || req.body?.language || "en";
+  await supabase.auth.admin.updateUserById(req.user.id, {
+    user_metadata: { ...meta, welcome_sent: true, language },
+  });
+  const { data: profile } = await supabase.from("profiles").select("full_name").eq("id", req.user.id).maybeSingle();
+  emails.welcomeEmail({ to: req.user.email, name: profile?.full_name || meta.full_name, language });
+  res.json({ sent: true });
+});
+
+// Remember the user's language (for emails)
+app.post("/me/language", requireAuth, async (req, res) => {
+  const language = String(req.body?.language || "").slice(0, 5);
+  if (!language) return res.status(400).json({ error: "language required" });
+  await supabase.auth.admin.updateUserById(req.user.id, {
+    user_metadata: { ...(req.user.user_metadata || {}), language },
+  });
+  res.json({ success: true });
 });
 
 

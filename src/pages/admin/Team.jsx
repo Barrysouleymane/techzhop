@@ -8,7 +8,7 @@ import { apiError } from "@/api/account";
 import { STAFF_ROLES } from "../../../shared/settings";
 
 export default function Team() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const [members, setMembers] = useState([]);
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
@@ -25,8 +25,8 @@ export default function Team() {
   async function setMemberRole(targetEmail, newRole) {
     setBusy(true);
     try {
-      await adminApi.setRole(targetEmail, newRole);
-      toast.success(t("team.updated"));
+      const res = await adminApi.setRole(targetEmail, newRole, i18n.language);
+      toast.success(res.invited ? t("team.invited", { email: targetEmail }) : t("team.updated"));
       setEmail("");
       await load();
     } catch (err) {
