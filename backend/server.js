@@ -431,15 +431,56 @@ async function requireAuth(req, res, next) {
   }
 }
 
-function requireAdmin(req, res, next) {
-  const email = (req.user?.email || "").toLowerCase();
+// ------------------------------------------------------
+// ROLES & PERMISSIONS
+//   admin           → everything (products, orders, team, revenue)
+//   product_manager → products, photos, categories, brands
+//   seller          → orders (status, tracking)
+//   customer        → no access to the admin area
+// Emails in ADMIN_EMAILS are the shop owners: always admin,
+// and their role can't be removed from the Team page.
+// ------------------------------------------------------
 
-  if (!ADMIN_EMAILS.includes(email)) {
-    return res.status(403).json({ error: "Admin access only" });
-  }
+const ROLE_PERMISSIONS = {
+  admin: ["products", "orders", "team", "revenue"],
+  product_manager: ["products"],
+  seller: ["orders"],
+  customer: [],
+};
+const STAFF_ROLES = ["admin", "product_manager", "seller"];
 
-  next();
+function isOwnerEmail(email) {
+  return ADMIN_EMAILS.includes((email || "").toLowerCase());
 }
+
+async function getRole(user) {
+  if (!user) return "customer";
+  if (isOwnerEmail(user.email)) return "admin";
+  const { data } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
+  return ROLE_PERMISSIONS[data?.role] ? data.role : "customer";
+}
+
+/** requirePermission("products") — also sets req.role / req.permissions */
+function requirePermission(...needed) {
+  return async (req, res, next) => {
+    try {
+      const role = await getRole(req.user);
+      const permissions = ROLE_PERMISSIONS[role] || [];
+      req.role = role;
+      req.permissions = permissions;
+      const ok = needed.length === 0
+        ? STAFF_ROLES.includes(role)
+        : needed.some((p) => permissions.includes(p));
+      if (!ok) return res.status(403).json({ error: "You don't have permission for this action" });
+      next();
+    } catch (err) {
+      next(err);
+    }
+  };
+}
+
+// Kept for older routes: full admin only
+const requireAdmin = requirePermission("team");
 
 
 app.get("/", (req, res) => {
@@ -564,7 +605,7 @@ app.get("/products/:id", async (req, res) => {
 // ADD PRODUCT
 // ======================================================
 
-app.post("/products", requireAuth, requireAdmin, async (req, res) => {
+app.post("/products", requireAuth, requirePermission("products"), async (req, res) => {
   try {
     const {
       name,
@@ -1252,7 +1293,7 @@ app.delete("/account", requireAuth, async (req, res) => {
 // ADMIN — LIST ALL ORDERS
 // ======================================================
 
-app.get("/admin/orders", requireAuth, requireAdmin, async (req, res) => {
+app.get("/admin/orders", requireAuth, requirePermission("orders"), async (req, res) => {
   const { data, error } = await supabase
     .from("orders")
     .select(
@@ -1285,7 +1326,7 @@ async function orderColumns() {
 }
 
 // ADMIN — ONE ORDER WITH CUSTOMER, PRODUCTS AND PAYMENT DETAILS
-app.get("/admin/orders/:orderId", requireAuth, requireAdmin, async (req, res) => {
+app.get("/admin/orders/:orderId", requireAuth, requirePermission("orders"), async (req, res) => {
   const { data: order, error } = await supabase
     .from("orders")
     .select("*, order_items (id, product_id, product_name, price, quantity)")
@@ -1354,7 +1395,7 @@ app.get("/admin/orders/:orderId", requireAuth, requireAdmin, async (req, res) =>
 // ADMIN — UPDATE ORDER STATUS / TRACKING NUMBER
 // ======================================================
 
-app.patch("/admin/orders/:orderId", requireAuth, requireAdmin, async (req, res) => {
+app.patch("/admin/orders/:orderId", requireAuth, requirePermission("orders"), async (req, res) => {
   const orderId = Number(req.params.orderId);
   const { status, tracking_number } = req.body || {};
 
@@ -1448,12 +1489,83 @@ async function cleanProduct(body) {
 }
 
 // Is the logged-in user an admin? (used by the app to show the Admin menu)
-app.get("/admin/me", requireAuth, (req, res) => {
-  const email = (req.user.email || "").toLowerCase();
-  res.json({ admin: ADMIN_EMAILS.includes(email) });
+app.get("/admin/me", requireAuth, async (req, res) => {
+  const role = await getRole(req.user);
+  res.json({
+    admin: STAFF_ROLES.includes(role),
+    role,
+    owner: isOwnerEmail(req.user.email),
+    permissions: ROLE_PERMISSIONS[role] || [],
+  });
 });
 
-app.get("/admin/meta", requireAuth, requireAdmin, async (req, res) => {
+// ------------------------------------------------------
+// TEAM (admins only): list staff, give / remove a role
+// ------------------------------------------------------
+
+async function findUserByEmail(email) {
+  const target = email.trim().toLowerCase();
+  for (let page = 1; page <= 20; page++) {
+    const { data, error } = await supabase.auth.admin.listUsers({ page, perPage: 1000 });
+    if (error) throw error;
+    const found = data.users.find((u) => (u.email || "").toLowerCase() === target);
+    if (found) return found;
+    if (data.users.length < 1000) return null;
+  }
+  return null;
+}
+
+app.get("/admin/team", requireAuth, requirePermission("team"), async (req, res) => {
+  const { data: staff, error } = await supabase
+    .from("profiles")
+    .select("id, full_name, avatar_url, role")
+    .in("role", STAFF_ROLES);
+  if (error) return res.status(500).json({ error: error.message });
+
+  const members = await Promise.all(
+    (staff || []).map(async (p) => {
+      const { data } = await supabase.auth.admin.getUserById(p.id);
+      const email = data?.user?.email || null;
+      return { ...p, email, owner: isOwnerEmail(email) };
+    })
+  );
+
+  // Owners listed even if their profile role isn't set
+  for (const email of ADMIN_EMAILS) {
+    if (members.some((m) => (m.email || "").toLowerCase() === email)) continue;
+    const user = await findUserByEmail(email).catch(() => null);
+    members.unshift({ id: user?.id || email, email, full_name: user?.user_metadata?.full_name || null, role: "admin", owner: true });
+  }
+
+  res.json({ members });
+});
+
+app.post("/admin/team", requireAuth, requirePermission("team"), async (req, res) => {
+  const email = String(req.body?.email || "").trim();
+  const role = String(req.body?.role || "");
+  if (!email) return res.status(400).json({ error: "Email is required" });
+  if (!STAFF_ROLES.includes(role) && role !== "customer") {
+    return res.status(400).json({ error: "Invalid role" });
+  }
+  if (isOwnerEmail(email)) {
+    return res.status(400).json({ error: "The shop owner is always admin" });
+  }
+
+  const user = await findUserByEmail(email);
+  if (!user) {
+    return res.status(404).json({ error: "No account with this email. Ask the person to sign up first." });
+  }
+
+  const { error } = await supabase
+    .from("profiles")
+    .upsert({ id: user.id, role }, { onConflict: "id" });
+  if (error) return res.status(500).json({ error: error.message });
+
+  console.log(`👥 ROLE: ${email} → ${role} (by ${req.user.email})`);
+  res.json({ success: true, member: { id: user.id, email, role } });
+});
+
+app.get("/admin/meta", requireAuth, requirePermission("products"), async (req, res) => {
   const cols = await productColumns();
   const [{ data: categories }, { data: brands }] = await Promise.all([
     supabase.from("categories").select("id, name").order("name"),
@@ -1472,7 +1584,7 @@ app.get("/admin/meta", requireAuth, requireAdmin, async (req, res) => {
   });
 });
 
-app.get("/admin/stats", requireAuth, requireAdmin, async (req, res) => {
+app.get("/admin/stats", requireAuth, requirePermission(), async (req, res) => {
   const [{ data: orders }, { data: products }] = await Promise.all([
     supabase.from("orders").select("total, status"),
     supabase.from("products").select("id, stock"),
@@ -1480,7 +1592,9 @@ app.get("/admin/stats", requireAuth, requireAdmin, async (req, res) => {
   const paidStatuses = ["paid", "processing", "shipped", "delivered"];
   const paid = (orders || []).filter((o) => paidStatuses.includes(o.status));
   res.json({
-    revenue: paid.reduce((t, o) => t + Number(o.total || 0), 0),
+    revenue: req.permissions.includes("revenue")
+      ? paid.reduce((t, o) => t + Number(o.total || 0), 0)
+      : null,
     orders: (orders || []).length,
     toShip: (orders || []).filter((o) => ["paid", "processing"].includes(o.status)).length,
     products: (products || []).length,
@@ -1488,7 +1602,7 @@ app.get("/admin/stats", requireAuth, requireAdmin, async (req, res) => {
   });
 });
 
-app.get("/admin/products", requireAuth, requireAdmin, async (req, res) => {
+app.get("/admin/products", requireAuth, requirePermission("products"), async (req, res) => {
   const { data, error } = await supabase
     .from("products")
     .select("*, brands(id, name), categories(id, name)")
@@ -1497,7 +1611,7 @@ app.get("/admin/products", requireAuth, requireAdmin, async (req, res) => {
   res.json({ products: data || [] });
 });
 
-app.get("/admin/products/:id", requireAuth, requireAdmin, async (req, res) => {
+app.get("/admin/products/:id", requireAuth, requirePermission("products"), async (req, res) => {
   const { data, error } = await supabase
     .from("products")
     .select("*")
@@ -1507,7 +1621,7 @@ app.get("/admin/products/:id", requireAuth, requireAdmin, async (req, res) => {
   res.json({ product: data });
 });
 
-app.post("/admin/products", requireAuth, requireAdmin, async (req, res) => {
+app.post("/admin/products", requireAuth, requirePermission("products"), async (req, res) => {
   const product = await cleanProduct(req.body || {});
   if (!product.name) return res.status(400).json({ error: "Product name is required" });
   if (!(product.price >= 0)) return res.status(400).json({ error: "Product price is required" });
@@ -1521,7 +1635,7 @@ app.post("/admin/products", requireAuth, requireAdmin, async (req, res) => {
   res.json({ product: data });
 });
 
-app.patch("/admin/products/:id", requireAuth, requireAdmin, async (req, res) => {
+app.patch("/admin/products/:id", requireAuth, requirePermission("products"), async (req, res) => {
   const product = await cleanProduct(req.body || {});
   const { data, error } = await supabase
     .from("products")
@@ -1535,7 +1649,7 @@ app.patch("/admin/products/:id", requireAuth, requireAdmin, async (req, res) => 
 
 // Delete a product. If it appears in past orders it can't be deleted,
 // so it is hidden from the store instead.
-app.delete("/admin/products/:id", requireAuth, requireAdmin, async (req, res) => {
+app.delete("/admin/products/:id", requireAuth, requirePermission("products"), async (req, res) => {
   const id = req.params.id;
   await supabase.from("cart_items").delete().eq("product_id", id);
 
@@ -1556,7 +1670,7 @@ app.delete("/admin/products/:id", requireAuth, requireAdmin, async (req, res) =>
 // Upload a product photo. Body: { data: "<base64>", contentType: "image/jpeg" }
 let productsBucketReady = false;
 
-app.post("/admin/upload", requireAuth, requireAdmin, async (req, res) => {
+app.post("/admin/upload", requireAuth, requirePermission("products"), async (req, res) => {
   try {
     const { data: base64, contentType = "image/jpeg" } = req.body || {};
     if (!base64) return res.status(400).json({ error: "No image" });
@@ -1585,7 +1699,7 @@ app.post("/admin/upload", requireAuth, requireAdmin, async (req, res) => {
 
 // Quick-create a category or brand from the product form
 for (const table of ["categories", "brands"]) {
-  app.post(`/admin/${table}`, requireAuth, requireAdmin, async (req, res) => {
+  app.post(`/admin/${table}`, requireAuth, requirePermission("products"), async (req, res) => {
     const name = String(req.body?.name || "").trim();
     if (!name) return res.status(400).json({ error: "Name is required" });
     const { data, error } = await supabase.from(table).insert({ name }).select("id, name").single();
