@@ -3,7 +3,6 @@ import ReactDOM from "react-dom/client";
 import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "sonner";
 
-import "bootstrap/dist/css/bootstrap.min.css";
 import "./index.css";
 import "./i18n";
 
