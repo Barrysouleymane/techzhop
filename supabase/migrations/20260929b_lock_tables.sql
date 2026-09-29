@@ -74,3 +74,17 @@ begin
     execute format('drop policy %I on public.%I', p.policyname, p.tablename);
   end loop;
 end $$;
+
+-- ---------------------------------------------------------------------
+-- Table permissions
+-- Newer Supabase projects don't grant table access automatically.
+-- service_role = the backend (bypasses RLS). authenticated = logged-in users
+-- (still limited to their own rows by the policies above).
+-- ---------------------------------------------------------------------
+grant all on all tables    in schema public to service_role;
+grant all on all sequences in schema public to service_role;
+alter default privileges in schema public grant all on tables    to service_role;
+alter default privileges in schema public grant all on sequences to service_role;
+
+grant select on public.orders, public.order_items to authenticated;
+grant select on public.products, public.categories, public.brands to anon, authenticated;
