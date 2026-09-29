@@ -1,5 +1,5 @@
 import { View, Text, Image, Pressable, StyleSheet } from "react-native";
-import { Link } from "expo-router";
+import { router } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { colors } from "../theme";
 import { useWishlist } from "../store/wishlist";
@@ -9,8 +9,10 @@ export default function ProductCard({ product, style }) {
   const liked = useWishlist((s) => s.items.some((i) => i.id === product.id));
 
   return (
-    <Link href={`/product/${product.id}`} asChild>
-      <Pressable style={[styles.card, style]}>
+    <Pressable
+      style={StyleSheet.flatten([styles.card, style])}
+      onPress={() => router.push(`/product/${product.id}`)}
+    >
         <View style={styles.imageBox}>
           {product.image ? (
             <Image source={{ uri: product.image }} style={styles.image} resizeMode="contain" />
@@ -18,10 +20,7 @@ export default function ProductCard({ product, style }) {
             <Ionicons name="image-outline" size={40} color="#999" />
           )}
           <Pressable
-            onPress={(e) => {
-              e.preventDefault?.();
-              toggle(product);
-            }}
+            onPress={() => toggle(product)}
             hitSlop={10}
             style={styles.heart}
           >
@@ -37,8 +36,7 @@ export default function ProductCard({ product, style }) {
           {product.brands?.name || product.categories?.name || " "}
         </Text>
         <Text style={styles.price}>${Number(product.price).toFixed(2)}</Text>
-      </Pressable>
-    </Link>
+    </Pressable>
   );
 }
 
