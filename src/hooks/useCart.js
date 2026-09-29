@@ -1,26 +1,14 @@
-import { useEffect, useState } from "react";
-import { fetchCart } from "@/services/cartService";
+import { useEffect } from "react";
+import useCartStore from "@/store/cartStore";
 
 export default function useCart() {
-  const [cart, setCart] = useState([]);
-  const [loading, setLoading] = useState(true);
-
-  async function loadCart() {
-    try {
-      const data = await fetchCart();
-      setCart(data);
-    } finally {
-      setLoading(false);
-    }
-  }
+  const items = useCartStore((s) => s.items);
+  const loading = useCartStore((s) => s.loading);
+  const load = useCartStore((s) => s.load);
 
   useEffect(() => {
-    loadCart();
-  }, []);
+    load();
+  }, [load]);
 
-  return {
-    cart,
-    loading,
-    reloadCart: loadCart,
-  };
+  return { cart: items, loading, reloadCart: load };
 }

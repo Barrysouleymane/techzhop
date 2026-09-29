@@ -1,37 +1,21 @@
-import useProducts from "@/hooks/useProducts";
+import { useTranslation } from "react-i18next";
 import ProductCard from "@/components/ProductCard/ProductCard";
 
-export default function FeaturedProducts() {
-  const { products, loading } = useProducts();
+export default function FeaturedProducts({ products = [], loading }) {
+  const { t } = useTranslation();
+  if (loading || products.length === 0) return null;
 
-  if (loading) {
-    return (
-      <section className="max-w-7xl mx-auto px-6 py-16">
-        <p className="text-white">Loading featured products...</p>
-      </section>
-    );
-  }
-
-  const featuredProducts = products.slice(0, 4);
+  const featured = products.filter((p) => p.featured || p.is_featured);
+  const list = (featured.length ? featured : products).slice(0, 4);
 
   return (
-    <section className="max-w-7xl mx-auto px-6 py-16">
-
-      <h2 className="text-4xl font-bold text-white mb-10">
-        ⭐ Featured Products
-      </h2>
-
-      <div className="grid gap-8 md:grid-cols-2 lg:grid-cols-4">
-
-        {featuredProducts.map((product) => (
-          <ProductCard
-            key={product.id}
-            product={product}
-          />
+    <section className="max-w-7xl mx-auto px-6 py-14">
+      <h2 className="text-3xl sm:text-4xl font-bold mb-8">⭐ {t("home.featured")}</h2>
+      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+        {list.map((p) => (
+          <ProductCard key={p.id} product={p} />
         ))}
-
       </div>
-
     </section>
   );
 }

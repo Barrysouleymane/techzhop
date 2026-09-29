@@ -128,3 +128,42 @@
     @apply font-sans;
     }
 }
+/* ==========================================================
+   LIGHT THEME
+   The site is designed dark-first. When <html class="light">
+   (see components/ThemeSync.jsx) these rules remap the dark
+   utility classes to light colors.
+   ========================================================== */
+html { background: #000; }
+html.light { background: #f4f4f5; }
+
+html.light .bg-black { background-color: #f4f4f5; }
+html.light .bg-zinc-950 { background-color: #ffffff; }
+html.light .bg-zinc-900,
+html.light .bg-gray-900 { background-color: #ffffff; }
+html.light .bg-zinc-800,
+html.light .bg-gray-800 { background-color: #e4e4e7; }
+html.light .bg-black\/70 { background-color: rgb(255 255 255 / 0.85); }
+html.light .hover\:bg-zinc-800:hover { background-color: #e4e4e7; }
+html.light .hover\:bg-zinc-700:hover { background-color: #d4d4d8; }
+
+html.light .text-white { color: #18181b; }
+html.light .text-gray-300 { color: #3f3f46; }
+html.light .text-gray-400 { color: #52525b; }
+html.light .text-gray-500 { color: #71717a; }
+html.light .text-cyan-400 { color: #0891b2; }
+html.light .hover\:text-cyan-400:hover { color: #0891b2; }
+
+html.light .border-zinc-800,
+html.light .border-gray-800 { border-color: #e4e4e7; }
+html.light .border-zinc-700 { border-color: #d4d4d8; }
+
+/* keep white text on colored buttons/badges */
+html.light .bg-cyan-500 .text-white,
+html.light .bg-red-600.text-white,
+html.light .bg-pink-500.text-white,
+html.light .bg-red-500.text-white { color: #fff; }
+
+html.light input,
+html.light textarea,
+html.light select { color: #18181b; }

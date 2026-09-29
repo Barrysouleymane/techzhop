@@ -1,128 +1,64 @@
 import { supabase } from "@/lib/supabase";
 
-export async function addToCart(productId) {
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+async function currentUser() {
+  const { data } = await supabase.auth.getUser();
+  return data?.user || null;
+}
 
-  console.log("USER:", user);
-  console.log("USER ERROR:", userError);
-  console.log("PRODUCT ID:", productId);
+export async function getCart() {
+  const user = await currentUser();
+  if (!user) return [];
 
-  if (userError) {
-    throw userError;
-  }
-
-  if (!user) {
-    throw new Error("Please login first.");
-  }
-
-  // Check if this product is already in the user's cart
-  const {
-    data: existing,
-    error: existingError,
-  } = await supabase
+  const { data, error } = await supabase
     .from("cart_items")
-    .select("*")
+    .select("*, products (id, name, price, image, stock)")
+    .eq("user_id", user.id)
+    .order("created_at", { ascending: false });
+
+  if (error) throw error;
+  return data || [];
+}
+
+export async function addToCart(productId) {
+  const user = await currentUser();
+  if (!user) {
+    const err = new Error("LOGIN_REQUIRED");
+    err.code = "LOGIN_REQUIRED";
+    throw err;
+  }
+
+  const { data: existing, error: existingError } = await supabase
+    .from("cart_items")
+    .select("id, quantity")
     .eq("user_id", user.id)
     .eq("product_id", productId)
     .maybeSingle();
 
-  console.log("EXISTING:", existing);
-  console.log("EXISTING ERROR:", existingError);
+  if (existingError) throw existingError;
 
-  if (existingError) {
-    throw existingError;
-  }
-
-  // Product already in cart → increase quantity
   if (existing) {
-    const {
-      data,
-      error,
-    } = await supabase
-      .from("cart_items")
-      .update({
-        quantity: existing.quantity + 1,
-        updated_at: new Date().toISOString(),
-      })
-      .eq("id", existing.id)
-      .select();
-
-    console.log("UPDATE DATA:", data);
-    console.log("UPDATE ERROR:", error);
-
-    if (error) {
-      throw error;
-    }
-
-    return data;
+    return setCartQuantity(existing.id, existing.quantity + 1);
   }
 
-  // Product not in cart → create cart item
-  const {
-    data,
-    error,
-  } = await supabase
+  const { error } = await supabase
     .from("cart_items")
-    .insert({
-      user_id: user.id,
-      product_id: productId,
-      quantity: 1,
-    })
-    .select();
+    .insert({ user_id: user.id, product_id: productId, quantity: 1 });
 
-  console.log("INSERT DATA:", data);
-  console.log("INSERT ERROR:", error);
-
-  if (error) {
-    throw error;
-  }
-
-  return data;
+  if (error) throw error;
 }
 
-export async function getCart() {
-  const {
-    data: { user },
-    error: userError,
-  } = await supabase.auth.getUser();
+export async function setCartQuantity(itemId, quantity) {
+  if (quantity < 1) return removeFromCart(itemId);
 
-  console.log("CART USER:", user);
-  console.log("CART USER ERROR:", userError);
-
-  if (userError) {
-    throw userError;
-  }
-
-  if (!user) {
-    return [];
-  }
-
-  const {
-    data,
-    error,
-  } = await supabase
+  const { error } = await supabase
     .from("cart_items")
-    .select(`
-      *,
-      products (
-        id,
-        name,
-        price,
-        image
-      )
-    `)
-    .eq("user_id", user.id)
-    .order("created_at", { ascending: false });
+    .update({ quantity, updated_at: new Date().toISOString() })
+    .eq("id", itemId);
 
-  console.log("CART DATA:", data);
-  console.log("CART ERROR:", error);
+  if (error) throw error;
+}
 
-  if (error) {
-    throw error;
-  }
-
-  return data;
+export async function removeFromCart(itemId) {
+  const { error } = await supabase.from("cart_items").delete().eq("id", itemId);
+  if (error) throw error;
 }

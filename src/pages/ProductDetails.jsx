@@ -1,107 +1,83 @@
-import { useParams } from "react-router-dom";
-import MainLayout from "@/layouts/MainLayout";
+import { useParams, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { Heart } from "lucide-react";
+import { toast } from "sonner";
+import Page, { btnPrimary } from "@/components/Page";
 import useProduct from "@/hooks/useProduct";
+import useMoney from "@/hooks/useMoney";
+import useCartStore from "@/store/cartStore";
+import useWishlistStore from "@/store/wishlistStore";
 
 export default function ProductDetails() {
+  const { t } = useTranslation();
   const { id } = useParams();
-
+  const navigate = useNavigate();
+  const money = useMoney();
   const { product, loading } = useProduct(id);
+  const addToCart = useCartStore((s) => s.add);
+  const toggleWishlist = useWishlistStore((s) => s.toggle);
+  const liked = useWishlistStore((s) => s.items.some((p) => String(p.id) === String(id)));
 
-  if (loading) {
-    return (
-      <MainLayout>
-        <div className="text-center py-20">
-          Loading...
-        </div>
-      </MainLayout>
-    );
-  }
+  if (loading) return <Page><p className="text-center py-20">{t("common.loading")}</p></Page>;
+  if (!product) return <Page><p className="text-center py-20">{t("product.notFound")}</p></Page>;
 
-  if (!product) {
-    return (
-      <MainLayout>
-        <div className="text-center py-20">
-          Product not found.
-        </div>
-      </MainLayout>
-    );
+  const inStock = Number(product.stock) > 0;
+
+  async function handleAdd() {
+    try {
+      await addToCart(product.id);
+      toast.success(t("product.addedToCart", { name: product.name }), {
+        action: { label: t("product.viewCart"), onClick: () => navigate("/cart") },
+      });
+    } catch (err) {
+      if (err.code === "LOGIN_REQUIRED") {
+        toast.error(t("product.loginFirst"));
+        navigate("/login", { state: { from: `/product/${product.id}` } });
+      } else toast.error(t("common.error"));
+    }
   }
 
   return (
-    <MainLayout>
-      <section className="max-w-7xl mx-auto px-8 py-16">
-
-        <div className="grid lg:grid-cols-2 gap-16">
-
-          {/* Image */}
-
-          <img
-            src={product.image}
-            alt={product.name}
-            className="rounded-xl w-full bg-zinc-900"
-          />
-
-          {/* Product Info */}
-
-          <div>
-
-            <h1 className="text-5xl font-bold">
-              {product.name}
-            </h1>
-
-            <p className="text-cyan-400 text-4xl mt-6">
-              ${product.price}
-            </p>
-
-            <div className="mt-6 space-y-3">
-
-              <p>
-                <strong>Brand:</strong>{" "}
-                {product.brands?.name}
-              </p>
-
-              <p>
-                <strong>Category:</strong>{" "}
-                {product.categories?.name}
-              </p>
-
-              <p>
-                <strong>SKU:</strong>{" "}
-                {product.sku}
-              </p>
-
-              <p>
-                <strong>Stock:</strong>{" "}
-                {product.stock}
-              </p>
-
-            </div>
-
-            <button
-              className="mt-10 w-full bg-cyan-500 hover:bg-cyan-600 py-4 rounded-lg text-xl font-bold"
-            >
-              Add to Cart
-            </button>
-
-          </div>
-
+    <Page width="max-w-7xl" back="/products" backLabel={t("nav.products")}>
+      <div className="grid lg:grid-cols-2 gap-12">
+        <div className="bg-white rounded-xl flex items-center justify-center p-6 min-h-[320px]">
+          <img src={product.image} alt={product.name} className="max-h-[480px] max-w-full object-contain" />
         </div>
 
-        {/* Description */}
-
-        <div className="mt-20">
-
-          <h2 className="text-3xl font-bold mb-6">
-            Description
-          </h2>
-
-          <p className="text-gray-300 leading-8">
-            {product.description}
+        <div>
+          <h1 className="text-3xl sm:text-5xl font-bold">{product.name}</h1>
+          <p className="text-cyan-400 text-4xl mt-6 font-bold">{money(product.price)}</p>
+          <p className={inStock ? "text-green-400" : "text-red-400"}>
+            {inStock ? t("product.inStock", { count: product.stock }) : t("product.outOfStock")}
           </p>
 
-        </div>
+          <dl className="mt-6 space-y-2">
+            {product.brands?.name && <div><dt className="inline font-bold">{t("product.brand")}: </dt><dd className="inline">{product.brands.name}</dd></div>}
+            {product.categories?.name && <div><dt className="inline font-bold">{t("product.category")}: </dt><dd className="inline">{product.categories.name}</dd></div>}
+            {product.sku && <div><dt className="inline font-bold">{t("product.sku")}: </dt><dd className="inline">{product.sku}</dd></div>}
+          </dl>
 
-      </section>
-    </MainLayout>
+          <div className="mt-10 flex gap-3">
+            <button onClick={handleAdd} disabled={!inStock} className={`${btnPrimary} flex-1 text-lg py-4`}>
+              {inStock ? t("product.addToCart") : t("product.outOfStock")}
+            </button>
+            <button
+              onClick={() => toggleWishlist(product)}
+              aria-label={liked ? t("product.removeFromWishlist") : t("product.addToWishlist")}
+              className="border border-zinc-700 hover:bg-zinc-800 rounded-lg px-4"
+            >
+              <Heart className={`w-6 h-6 ${liked ? "fill-pink-500 text-pink-500" : "text-white"}`} />
+            </button>
+          </div>
+        </div>
+      </div>
+
+      {product.description && (
+        <div className="mt-16">
+          <h2 className="text-3xl font-bold mb-6">{t("product.description")}</h2>
+          <p className="text-gray-300 leading-8 whitespace-pre-line">{product.description}</p>
+        </div>
+      )}
+    </Page>
   );
 }

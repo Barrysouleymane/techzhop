@@ -1,144 +1,49 @@
 import { useState } from "react";
-import { supabase } from "../lib/supabase";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
+import { toast } from "sonner";
+import { supabase } from "@/lib/supabase";
+import Page, { btnPrimary, inputClass, card } from "@/components/Page";
 
 export default function Register() {
-  const [name, setName] = useState("");
-  const [email, setEmail] = useState("");
-  const [password, setPassword] = useState("");
-  const [confirmPassword, setConfirmPassword] = useState("");
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const [form, setForm] = useState({ name: "", email: "", password: "", confirm: "" });
+  const [busy, setBusy] = useState(false);
+  const set = (k) => (e) => setForm({ ...form, [k]: e.target.value });
 
   async function handleRegister(e) {
     e.preventDefault();
+    if (form.password.length < 6) return toast.error(t("auth.passwordTooShort"));
+    if (form.password !== form.confirm) return toast.error(t("auth.passwordsNoMatch"));
 
-    if (password !== confirmPassword) {
-      alert("Passwords do not match");
-      return;
-    }
-
+    setBusy(true);
     const { data, error } = await supabase.auth.signUp({
-      email,
-      password,
-      options: {
-        data: {
-          full_name: name,
-        },
-      },
+      email: form.email,
+      password: form.password,
+      options: { data: { full_name: form.name } },
     });
+    setBusy(false);
 
-    console.log("SIGNUP DATA:", data);
-    console.log("SIGNUP ERROR:", error);
-
-    if (error) {
-      alert(error.message);
-      return;
-    }
-
-    if (!data.user) {
-      alert("User was not created.");
-      return;
-    }
-
-    alert("Account created successfully!");
-
-    // Clear the form
-    setName("");
-    setEmail("");
-    setPassword("");
-    setConfirmPassword("");
+    if (error) return toast.error(error.message);
+    toast.success(t("auth.accountCreated"));
+    navigate(data.session ? "/account" : "/login");
   }
 
   return (
-    <div className="min-h-screen bg-black text-white">
-
-      {/* NAVBAR */}
-      <nav className="flex justify-between items-center px-10 py-6 border-b border-gray-800">
-
-        <Link
-          to="/"
-          className="text-4xl font-bold text-cyan-400"
-        >
-          TECHZHOP
-        </Link>
-
-        <div className="space-x-6">
-          <Link to="/">Home</Link>
-
-          <Link to="/login">
-            Login
-          </Link>
-        </div>
-
-      </nav>
-
-      {/* REGISTER FORM */}
-
-      <div className="flex items-center justify-center px-5 py-20">
-
-        <form
-          onSubmit={handleRegister}
-          className="bg-gray-900 p-10 rounded-2xl w-full max-w-md"
-        >
-
-          <h1 className="text-4xl text-cyan-400 font-bold mb-8 text-center">
-            Create Account
-          </h1>
-
-          <input
-            type="text"
-            placeholder="Your name"
-            value={name}
-            onChange={(e) => setName(e.target.value)}
-            className="w-full p-4 mb-5 rounded-xl bg-gray-800 text-white outline-none"
-          />
-
-          <input
-            type="email"
-            placeholder="Email address"
-            value={email}
-            onChange={(e) => setEmail(e.target.value)}
-            className="w-full p-4 mb-5 rounded-xl bg-gray-800 text-white outline-none"
-          />
-
-          <input
-            type="password"
-            placeholder="Password"
-            value={password}
-            onChange={(e) => setPassword(e.target.value)}
-            className="w-full p-4 mb-5 rounded-xl bg-gray-800 text-white outline-none"
-          />
-
-          <input
-            type="password"
-            placeholder="Confirm Password"
-            value={confirmPassword}
-            onChange={(e) => setConfirmPassword(e.target.value)}
-            className="w-full p-4 mb-6 rounded-xl bg-gray-800 text-white outline-none"
-          />
-
-          <button
-            type="submit"
-            className="bg-cyan-500 hover:bg-cyan-600 w-full py-4 rounded-xl font-bold text-lg"
-          >
-            Create Account
-          </button>
-
-          <p className="text-center text-gray-400 mt-6">
-            Already have an account?
-
-            <Link
-              to="/login"
-              className="text-cyan-400 ml-2"
-            >
-              Login
-            </Link>
-
-          </p>
-
-        </form>
-
-      </div>
-
-    </div>
+    <Page width="max-w-md">
+      <form onSubmit={handleRegister} className={`${card} p-8 space-y-4`}>
+        <h1 className="text-3xl text-cyan-400 font-bold text-center mb-4">{t("auth.registerTitle")}</h1>
+        <input required autoComplete="name" placeholder={t("auth.fullName")} value={form.name} onChange={set("name")} className={inputClass} />
+        <input type="email" required autoComplete="email" placeholder={t("auth.email")} value={form.email} onChange={set("email")} className={inputClass} />
+        <input type="password" required autoComplete="new-password" placeholder={t("auth.password")} value={form.password} onChange={set("password")} className={inputClass} />
+        <input type="password" required autoComplete="new-password" placeholder={t("auth.confirmPassword")} value={form.confirm} onChange={set("confirm")} className={inputClass} />
+        <button disabled={busy} className={`${btnPrimary} w-full py-4 text-lg`}>{t("auth.register")}</button>
+        <p className="text-center text-gray-400 mb-0">
+          {t("auth.haveAccount")}{" "}
+          <Link to="/login" className="text-cyan-400 no-underline">{t("auth.login")}</Link>
+        </p>
+      </form>
+    </Page>
   );
 }

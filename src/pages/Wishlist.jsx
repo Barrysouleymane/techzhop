@@ -1,82 +1,61 @@
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import { Heart, Trash2 } from "lucide-react";
-import MainLayout from "@/layouts/MainLayout";
+import { toast } from "sonner";
+import Page, { btnPrimary, card } from "@/components/Page";
 import useWishlistStore from "@/store/wishlistStore";
-import { cartAdd } from "@/services/cartService";
+import useCartStore from "@/store/cartStore";
+import useMoney from "@/hooks/useMoney";
 
 export default function Wishlist() {
+  const { t } = useTranslation();
+  const navigate = useNavigate();
+  const money = useMoney();
   const items = useWishlistStore((s) => s.items);
   const remove = useWishlistStore((s) => s.remove);
+  const addToCart = useCartStore((s) => s.add);
 
-  async function moveToCart(product) {
+  async function moveToCart(p) {
     try {
-      await cartAdd(product.id);
-      remove(product.id);
-      alert(`${product.name} added to cart!`);
+      await addToCart(p.id);
+      remove(p.id);
+      toast.success(t("product.addedToCart", { name: p.name }));
     } catch (err) {
-      alert(err.message);
+      if (err.code === "LOGIN_REQUIRED") navigate("/login", { state: { from: "/wishlist" } });
+      else toast.error(t("common.error"));
     }
   }
 
   return (
-    <MainLayout>
-      <section className="max-w-5xl mx-auto px-6 py-12">
-        <h1 className="text-4xl font-bold mb-8">My Wishlist</h1>
-
-        {items.length === 0 ? (
-          <div className="text-center py-20 text-gray-400">
-            <Heart className="w-14 h-14 mx-auto mb-4" />
-            <p>Your wishlist is empty.</p>
-            <Link
-              to="/products"
-              className="inline-block mt-6 bg-cyan-500 hover:bg-cyan-600 text-black font-bold px-6 py-3 rounded-lg"
-            >
-              Browse products
-            </Link>
-          </div>
-        ) : (
-          <ul className="space-y-4">
-            {items.map((p) => (
-              <li
-                key={p.id}
-                className="flex items-center gap-5 bg-zinc-900 border border-zinc-800 rounded-xl p-4"
-              >
-                <Link
-                  to={`/product/${p.id}`}
-                  className="bg-white w-24 h-24 rounded-lg flex items-center justify-center shrink-0"
-                >
-                  <img src={p.image} alt={p.name} className="max-h-full max-w-full object-contain" />
-                </Link>
-
-                <div className="flex-1 min-w-0">
-                  <Link to={`/product/${p.id}`} className="font-bold text-lg hover:text-cyan-400">
-                    {p.name}
-                  </Link>
-                  <p className="text-cyan-400 font-bold mt-1">
-                    ${Number(p.price).toFixed(2)}
-                  </p>
-                </div>
-
-                <button
-                  onClick={() => moveToCart(p)}
-                  disabled={!p.stock || p.stock <= 0}
-                  className="bg-cyan-500 hover:bg-cyan-600 disabled:bg-gray-600 text-black font-bold px-4 py-2 rounded-lg"
-                >
-                  Add to cart
-                </button>
-
-                <button
-                  onClick={() => remove(p.id)}
-                  aria-label="Remove"
-                  className="p-2 hover:text-red-400"
-                >
-                  <Trash2 className="w-5 h-5" />
-                </button>
-              </li>
-            ))}
-          </ul>
-        )}
-      </section>
-    </MainLayout>
+    <Page title={t("wishlist.title")}>
+      {items.length === 0 ? (
+        <div className="text-center py-16 text-gray-400">
+          <Heart className="w-14 h-14 mx-auto mb-4" />
+          <p>{t("wishlist.empty")}</p>
+          <p className="text-sm">{t("wishlist.hint")}</p>
+          <Link to="/products" className={btnPrimary}>{t("wishlist.browse")}</Link>
+        </div>
+      ) : (
+        <ul className="list-none p-0 space-y-4">
+          {items.map((p) => (
+            <li key={p.id} className={`${card} flex items-center gap-4 p-4`}>
+              <Link to={`/product/${p.id}`} className="bg-white w-20 h-20 rounded-lg flex items-center justify-center shrink-0">
+                <img src={p.image} alt={p.name} className="max-h-full max-w-full object-contain" />
+              </Link>
+              <div className="flex-1 min-w-0">
+                <Link to={`/product/${p.id}`} className="font-bold text-lg text-white hover:text-cyan-400 no-underline">{p.name}</Link>
+                <p className="text-cyan-400 font-bold mt-1 mb-0">{money(p.price)}</p>
+              </div>
+              <button onClick={() => moveToCart(p)} disabled={!(p.stock > 0)} className="bg-cyan-500 hover:bg-cyan-600 disabled:bg-gray-600 text-black font-bold px-4 py-2 rounded-lg">
+                {t("product.addToCart")}
+              </button>
+              <button onClick={() => remove(p.id)} aria-label={t("common.delete")} className="p-2 text-red-400">
+                <Trash2 className="w-5 h-5" />
+              </button>
+            </li>
+          ))}
+        </ul>
+      )}
+    </Page>
   );
 }

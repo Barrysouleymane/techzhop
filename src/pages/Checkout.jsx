@@ -1,357 +1,154 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { Link } from "react-router-dom";
+import { useTranslation } from "react-i18next";
 import axios from "axios";
-import MainLayout from "@/layouts/MainLayout";
+import { MapPin } from "lucide-react";
+import Page, { btnPrimary, btnSecondary, card } from "@/components/Page";
 import useCart from "@/hooks/useCart";
+import useMoney, { useCurrency } from "@/hooks/useMoney";
+import useAuth from "@/hooks/useAuth";
 import { API_URL } from "@/config/constants";
-import { supabase } from "@/lib/supabase";
+import { authHeaders, getAddresses, apiError } from "@/api/account";
+import { formatAddress, formatUSD } from "../../shared/settings";
 
 export default function Checkout() {
+  const { t, i18n } = useTranslation();
+  const money = useMoney();
+  const currency = useCurrency();
+  const { user } = useAuth();
   const { cart, loading } = useCart();
-
+  const [addresses, setAddresses] = useState([]);
+  const [addressId, setAddressId] = useState(null);
   const [processing, setProcessing] = useState(false);
   const [error, setError] = useState("");
 
-  // ========================================
-  // TOTAL
-  // ========================================
+  useEffect(() => {
+    if (!user) return;
+    getAddresses(user.id)
+      .then((list) => {
+        setAddresses(list);
+        setAddressId((list.find((a) => a.is_default) || list[0])?.id ?? null);
+      })
+      .catch(() => {});
+  }, [user]);
 
-  const total = cart.reduce((sum, item) => {
-    const product = item.products;
-
-    const price = Number(product?.price || 0);
-    const quantity = Number(item.quantity || 0);
-
-    return sum + price * quantity;
-  }, 0);
-
-  // ========================================
-  // TOTAL ITEMS
-  // ========================================
-
-  const totalItems = cart.reduce((sum, item) => {
-    return sum + Number(item.quantity || 0);
-  }, 0);
-
-  // ========================================
-  // STRIPE CHECKOUT
-  // ========================================
+  const total = cart.reduce((s, i) => s + Number(i.products?.price || 0) * Number(i.quantity || 0), 0);
+  const totalItems = cart.reduce((s, i) => s + Number(i.quantity || 0), 0);
+  const address = addresses.find((a) => a.id === addressId);
 
   async function handleCheckout() {
-    if (!cart.length) {
-      setError("Your cart is empty.");
-      return;
-    }
-
+    setProcessing(true);
+    setError("");
     try {
-      setProcessing(true);
-      setError("");
+      const items = cart.map((item) => ({
+        product_id: item.product_id,
+        name: item.products?.name,
+        price: Number(item.products?.price || 0),
+        quantity: Number(item.quantity || 0),
+      }));
 
-      // IMPORTANT:
-      // Send name + price + quantity to backend
-      const items = cart.map((item) => {
-        const product = item.products;
-
-        return {
-          product_id: item.product_id,
-
-          name: product?.name,
-
-          price: Number(product?.price || 0),
-
-          quantity: Number(item.quantity || 0),
-        };
-      });
-
-      console.log("================================");
-      console.log("CHECKOUT ITEMS:");
-      console.log(items);
-      console.log("================================");
-
-      // Check for missing product information
-      const invalidItem = items.find(
-        (item) =>
-          !item.name ||
-          !Number.isFinite(item.price) ||
-          item.price <= 0 ||
-          !Number.isInteger(item.quantity) ||
-          item.quantity <= 0
-      );
-
-      if (invalidItem) {
-        console.error(
-          "INVALID CHECKOUT ITEM:",
-          invalidItem
-        );
-
-        throw new Error(
-          "One of the products in your cart is invalid."
-        );
+      if (items.some((i) => !i.name || !(i.price > 0) || !(i.quantity > 0))) {
+        throw new Error(t("checkout.invalidItem"));
       }
 
-      // ========================================
-      // SEND TO BACKEND
-      // ========================================
-
-      const {
-        data: { session },
-      } = await supabase.auth.getSession();
-
-      if (!session) {
-        throw new Error("Please login first.");
-      }
-
-      const response = await axios.post(
+      const res = await axios.post(
         `${API_URL}/create-checkout-session`,
-        {
-          items,
-        },
-        {
-          headers: {
-            "Content-Type": "application/json",
-            Authorization: `Bearer ${session.access_token}`,
-          },
-        }
+        { items, shipping_address: formatAddress(address) },
+        { headers: await authHeaders() }
       );
 
-      console.log("CHECKOUT RESPONSE:");
-      console.log(response.data);
-
-      // ========================================
-      // STRIPE URL
-      // ========================================
-
-      if (!response.data?.url) {
-        throw new Error(
-          "Stripe Checkout URL is missing."
-        );
-      }
-
-      // ========================================
-      // REDIRECT TO STRIPE
-      // ========================================
-
-      window.location.href = response.data.url;
+      if (!res.data?.url) throw new Error(t("checkout.failed"));
+      window.location.href = res.data.url;
     } catch (err) {
-      console.error("CHECKOUT ERROR:", err);
-
-      console.error(
-        "SERVER RESPONSE:",
-        err.response?.data
-      );
-
-      setError(
-        err.response?.data?.error ||
-          err.message ||
-          "Unable to start checkout."
-      );
-
+      setError(apiError(err, t));
       setProcessing(false);
     }
   }
 
-  // ========================================
-  // LOADING
-  // ========================================
-
-  if (loading) {
-    return (
-      <MainLayout>
-        <section className="max-w-7xl mx-auto px-6 py-16">
-          <div className="text-center text-gray-400">
-            Loading checkout...
-          </div>
-        </section>
-      </MainLayout>
-    );
-  }
-
-  // ========================================
-  // EMPTY CART
-  // ========================================
+  if (loading) return <Page><p className="text-center py-20">{t("common.loading")}</p></Page>;
 
   if (cart.length === 0) {
     return (
-      <MainLayout>
-        <section className="max-w-7xl mx-auto px-6 py-16">
-          <div className="text-center py-20">
-
-            <div className="text-7xl mb-6">
-              🛒
-            </div>
-
-            <h1 className="text-4xl font-bold mb-6">
-              Your cart is empty
-            </h1>
-
-            <Link
-              to="/"
-              className="inline-block bg-cyan-500 hover:bg-cyan-600 text-black font-bold px-6 py-3 rounded-lg"
-            >
-              Continue Shopping
-            </Link>
-
-          </div>
-        </section>
-      </MainLayout>
+      <Page title={t("checkout.title")}>
+        <div className="text-center py-16">
+          <div className="text-7xl mb-6">🛒</div>
+          <h2 className="text-2xl font-bold mb-6">{t("cart.empty")}</h2>
+          <Link to="/products" className={btnPrimary}>{t("cart.continueShopping")}</Link>
+        </div>
+      </Page>
     );
   }
 
-  // ========================================
-  // CHECKOUT PAGE
-  // ========================================
-
   return (
-    <MainLayout>
-
-      <section className="max-w-7xl mx-auto px-6 py-16">
-
-        <h1 className="text-4xl font-bold mb-10">
-          Checkout
-        </h1>
-
-        <div className="grid lg:grid-cols-3 gap-10">
-
-          {/* ================================= */}
-          {/* PRODUCTS */}
-          {/* ================================= */}
-
-          <div className="lg:col-span-2 space-y-6">
-
-            {cart.map((item) => {
-              const product = item.products;
-
-              const price = Number(
-                product?.price || 0
-              );
-
-              const quantity = Number(
-                item.quantity || 0
-              );
-
-              const subtotal =
-                price * quantity;
-
-              return (
-                <div
-                  key={item.id}
-                  className="bg-zinc-900 border border-zinc-800 rounded-xl p-6"
-                >
-
-                  <div className="flex gap-6">
-
-                    {/* IMAGE */}
-
-                    <img
-                      src={product?.image}
-                      alt={product?.name || "Product"}
-                      className="w-32 h-32 object-cover rounded-lg bg-zinc-800"
-                    />
-
-                    {/* INFORMATION */}
-
-                    <div className="flex-1">
-
-                      <h2 className="text-xl font-bold">
-                        {product?.name}
-                      </h2>
-
-                      <p className="text-cyan-400 text-lg mt-2">
-                        ${price.toFixed(2)}
-                      </p>
-
-                      <p className="text-gray-400 mt-2">
-                        Quantity: {quantity}
-                      </p>
-
-                      <p className="text-gray-300 mt-2">
-                        Subtotal: $
-                        {subtotal.toFixed(2)}
-                      </p>
-
-                    </div>
-
-                  </div>
-
-                </div>
-              );
-            })}
-
-          </div>
-
-          {/* ================================= */}
-          {/* ORDER SUMMARY */}
-          {/* ================================= */}
-
-          <div className="bg-zinc-900 border border-zinc-800 rounded-xl p-6 h-fit">
-
-            <h2 className="text-2xl font-bold mb-6">
-              Order Summary
+    <Page title={t("checkout.title")} width="max-w-7xl" back="/cart" backLabel={t("checkout.backToCart")}>
+      <div className="grid lg:grid-cols-3 gap-8">
+        <div className="lg:col-span-2 space-y-4">
+          {/* DELIVERY ADDRESS */}
+          <div className={`${card} p-6`}>
+            <h2 className="text-xl font-bold flex items-center gap-2 mb-4">
+              <MapPin className="w-5 h-5 text-cyan-400" /> {t("checkout.shipTo")}
             </h2>
-
-            <div className="flex justify-between mb-4">
-              <span>Products</span>
-
-              <span>
-                {cart.length}
-              </span>
-            </div>
-
-            <div className="flex justify-between mb-4">
-              <span>Items</span>
-
-              <span>
-                {totalItems}
-              </span>
-            </div>
-
-            <div className="border-t border-zinc-700 pt-5 flex justify-between text-xl font-bold">
-
-              <span>
-                Total
-              </span>
-
-              <span className="text-cyan-400">
-                ${total.toFixed(2)}
-              </span>
-
-            </div>
-
-            {/* ERROR */}
-
-            {error && (
-              <div className="mt-6 bg-red-900/30 border border-red-700 text-red-300 p-4 rounded-lg">
-                {error}
+            {addresses.length === 0 ? (
+              <Link to="/addresses" state={{ from: "/checkout" }} className={btnSecondary}>
+                {t("checkout.addAddress")}
+              </Link>
+            ) : (
+              <div className="space-y-2">
+                {addresses.map((a) => (
+                  <label key={a.id} className={`flex gap-3 p-3 rounded-lg border cursor-pointer ${a.id === addressId ? "border-cyan-500" : "border-zinc-800"}`}>
+                    <input type="radio" name="address" checked={a.id === addressId} onChange={() => setAddressId(a.id)} />
+                    <span>
+                      {a.label && <strong className="block">{a.label}</strong>}
+                      <span className="text-gray-400 text-sm">{formatAddress(a)}</span>
+                    </span>
+                  </label>
+                ))}
+                <Link to="/addresses" state={{ from: "/checkout" }} className="text-cyan-400 text-sm no-underline">
+                  {t("checkout.changeAddress")}
+                </Link>
               </div>
             )}
-
-            {/* PAY */}
-
-            <button
-              onClick={handleCheckout}
-              disabled={processing}
-              className="w-full mt-8 bg-cyan-500 hover:bg-cyan-600 disabled:opacity-50 text-black font-bold py-4 rounded-lg"
-            >
-              {processing
-                ? "Redirecting to Stripe..."
-                : "Pay Now"}
-            </button>
-
-            {/* BACK */}
-
-            <Link
-              to="/cart"
-              className="block text-center mt-4 border border-zinc-700 hover:bg-zinc-800 py-3 rounded-lg"
-            >
-              Back to Cart
-            </Link>
-
           </div>
 
+          {cart.map((item) => {
+            const p = item.products;
+            const qty = Number(item.quantity || 0);
+            return (
+              <div key={item.id} className={`${card} p-4 flex gap-4`}>
+                <div className="bg-white w-20 h-20 rounded-lg flex items-center justify-center shrink-0">
+                  <img src={p?.image} alt={p?.name} className="max-h-full max-w-full object-contain" />
+                </div>
+                <div className="flex-1">
+                  <h3 className="font-bold text-lg">{p?.name}</h3>
+                  <p className="text-gray-400 m-0">{t("cart.quantity")}: {qty}</p>
+                  <p className="text-cyan-400 font-bold m-0">{money(Number(p?.price || 0) * qty)}</p>
+                </div>
+              </div>
+            );
+          })}
         </div>
 
-      </section>
+        <div className={`${card} p-6 h-fit`}>
+          <h2 className="text-2xl font-bold mb-6">{t("cart.summary")}</h2>
+          <div className="flex justify-between mb-3"><span>{t("cart.products")}</span><span>{cart.length}</span></div>
+          <div className="flex justify-between mb-3"><span>{t("cart.items")}</span><span>{totalItems}</span></div>
+          <div className="border-t border-zinc-700 pt-5 flex justify-between text-xl font-bold">
+            <span>{t("cart.total")}</span>
+            <span className="text-cyan-400">{money(total)}</span>
+          </div>
+          {currency !== "USD" && (
+            <p className="text-gray-400 text-sm mt-3 mb-0">
+              {t("checkout.chargedInUsd", { amount: formatUSD(total, i18n.language) })}
+            </p>
+          )}
 
-    </MainLayout>
+          {error && <div className="mt-6 bg-red-900/30 border border-red-700 text-red-300 p-4 rounded-lg">{error}</div>}
+
+          <button onClick={handleCheckout} disabled={processing} className={`${btnPrimary} w-full mt-8 py-4`}>
+            {processing ? t("checkout.redirecting") : t("checkout.pay")}
+          </button>
+        </div>
+      </div>
+    </Page>
   );
 }

@@ -1,33 +1,43 @@
 import { create } from "zustand";
+import { getCart, addToCart, setCartQuantity, removeFromCart } from "@/api/cart";
 
-const useCartStore = create((set) => ({
-  cart: [],
+// One shared cart for the whole site (navbar badge, cart page, checkout…)
+const useCartStore = create((set, get) => ({
+  items: [],
+  loading: true,
 
-  addToCart: (product) =>
-    set((state) => ({
-      cart: [...state.cart, product],
-    })),
+  load: async () => {
+    try {
+      set({ items: await getCart() });
+    } catch (err) {
+      console.error("CART LOAD ERROR:", err);
+    } finally {
+      set({ loading: false });
+    }
+  },
 
-  removeFromCart: (id) =>
-    set((state) => ({
-      cart: state.cart.filter((item) => item.id !== id),
-    })),
+  add: async (productId) => {
+    await addToCart(productId);
+    await get().load();
+  },
 
-  clearCart: () =>
-    set({
-      cart: [],
-    }),
+  setQuantity: async (itemId, quantity) => {
+    await setCartQuantity(itemId, quantity);
+    await get().load();
+  },
 
-  totalItems: () =>
-    useCartStore.getState().cart.length,
+  remove: async (itemId) => {
+    await removeFromCart(itemId);
+    await get().load();
+  },
 
-  totalPrice: () =>
-    useCartStore
-      .getState()
-      .cart.reduce(
-        (total, item) => total + Number(item.price),
-        0
-      ),
+  count: () => get().items.reduce((t, i) => t + Number(i.quantity || 0), 0),
+
+  totalUSD: () =>
+    get().items.reduce(
+      (t, i) => t + Number(i.products?.price || 0) * Number(i.quantity || 0),
+      0
+    ),
 }));
 
 export default useCartStore;

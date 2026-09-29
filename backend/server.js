@@ -224,6 +224,8 @@ app.post(
             user_id: userId,
             stripe_session_id: session.id,
             total,
+            shipping_address:
+              session.metadata?.shipping_address || null,
             status:
               session.payment_status === "paid"
                 ? "paid"
@@ -348,6 +350,10 @@ app.post(
         console.log("TOTAL:", total);
         console.log("STATUS:", order.status);
         console.log("========================================");
+
+        if (userId) {
+          await sendOrderPush(userId, order.id, order.status);
+        }
       }
 
       // ==================================================
@@ -423,6 +429,74 @@ app.use(express.json());
 // ======================================================
 // HOME
 // ======================================================
+
+
+// ======================================================
+// PUSH NOTIFICATIONS (Expo)
+// Sent to the mobile app when an order changes status,
+// only if the customer kept "Order updates" enabled.
+// ======================================================
+
+const ORDER_STATUSES = [
+  "pending",
+  "paid",
+  "processing",
+  "shipped",
+  "delivered",
+  "cancelled",
+];
+
+const PUSH_TEXT = {
+  en: { title: "Order #{id}", paid: "Payment received, thank you!", processing: "Your order is being prepared.", shipped: "Your order has shipped!", delivered: "Your order has been delivered.", cancelled: "Your order was cancelled.", pending: "Your order is pending." },
+  fr: { title: "Commande n°{id}", paid: "Paiement reçu, merci !", processing: "Votre commande est en préparation.", shipped: "Votre commande a été expédiée !", delivered: "Votre commande a été livrée.", cancelled: "Votre commande a été annulée.", pending: "Votre commande est en attente." },
+  es: { title: "Pedido n.º {id}", paid: "¡Pago recibido, gracias!", processing: "Estamos preparando tu pedido.", shipped: "¡Tu pedido ha sido enviado!", delivered: "Tu pedido ha sido entregado.", cancelled: "Tu pedido fue cancelado.", pending: "Tu pedido está pendiente." },
+  pt: { title: "Pedido n.º {id}", paid: "Pagamento recebido, obrigado!", processing: "Seu pedido está sendo preparado.", shipped: "Seu pedido foi enviado!", delivered: "Seu pedido foi entregue.", cancelled: "Seu pedido foi cancelado.", pending: "Seu pedido está pendente." },
+  de: { title: "Bestellung #{id}", paid: "Zahlung erhalten, danke!", processing: "Deine Bestellung wird vorbereitet.", shipped: "Deine Bestellung wurde versandt!", delivered: "Deine Bestellung wurde zugestellt.", cancelled: "Deine Bestellung wurde storniert.", pending: "Deine Bestellung ist ausstehend." },
+  zh: { title: "订单 #{id}", paid: "已收到付款，谢谢！", processing: "您的订单正在准备中。", shipped: "您的订单已发货！", delivered: "您的订单已送达。", cancelled: "您的订单已取消。", pending: "您的订单待处理。" },
+};
+
+async function sendOrderPush(userId, orderId, status) {
+  try {
+    if (!userId || !status) return;
+
+    const { data: profile } = await supabase
+      .from("profiles")
+      .select("notify_orders")
+      .eq("id", userId)
+      .maybeSingle();
+
+    if (profile && profile.notify_orders === false) return;
+
+    const { data: tokens } = await supabase
+      .from("push_tokens")
+      .select("token, language")
+      .eq("user_id", userId);
+
+    if (!tokens || tokens.length === 0) return;
+
+    const messages = tokens.map(({ token, language }) => {
+      const t = PUSH_TEXT[language] || PUSH_TEXT.en;
+      return {
+        to: token,
+        sound: "default",
+        title: t.title.replace("{id}", orderId),
+        body: t[status] || status,
+        data: { orderId },
+      };
+    });
+
+    await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(messages),
+    });
+
+    console.log("📲 PUSH SENT:", userId, status);
+  } catch (err) {
+    console.error("PUSH ERROR:", err.message);
+  }
+}
+
 
 // ======================================================
 // AUTH HELPERS
@@ -900,6 +974,10 @@ app.post(
             metadata: {
               user_id:
                 String(user_id),
+              // Chosen delivery address (Stripe metadata max 500 chars)
+              shipping_address: String(
+                req.body.shipping_address || ""
+              ).slice(0, 490),
             },
 
             success_url:
@@ -1075,6 +1153,8 @@ app.get(
             stripe_session_id,
             total,
             status,
+            tracking_number,
+            shipping_address,
             created_at,
             updated_at,
             order_items (
@@ -1168,6 +1248,8 @@ app.get(
             stripe_session_id,
             total,
             status,
+            tracking_number,
+            shipping_address,
             created_at,
             updated_at,
             order_items (
@@ -1222,6 +1304,119 @@ app.get(
     }
   }
 );
+
+
+
+// ======================================================
+// DELETE MY ACCOUNT
+// Removes the user's personal data and login.
+// Orders are kept (accounting) but detached from the user.
+// ======================================================
+
+app.delete("/account", requireAuth, async (req, res) => {
+  const userId = req.user.id;
+
+  try {
+    await supabase.from("cart_items").delete().eq("user_id", userId);
+    await supabase.from("addresses").delete().eq("user_id", userId);
+    await supabase.from("push_tokens").delete().eq("user_id", userId);
+
+    const { error: ordersError } = await supabase
+      .from("orders")
+      .update({ user_id: null })
+      .eq("user_id", userId);
+
+    if (ordersError) {
+      console.error("DETACH ORDERS ERROR:", ordersError.message);
+    }
+
+    // Avatar files
+    const { data: files } = await supabase.storage
+      .from("avatars")
+      .list(userId);
+
+    if (files?.length) {
+      await supabase.storage
+        .from("avatars")
+        .remove(files.map((f) => `${userId}/${f.name}`));
+    }
+
+    await supabase.from("profiles").delete().eq("id", userId);
+
+    const { error } = await supabase.auth.admin.deleteUser(userId);
+
+    if (error) {
+      console.error("DELETE USER ERROR:", error);
+      return res.status(500).json({ error: error.message });
+    }
+
+    console.log("🗑️ ACCOUNT DELETED:", userId);
+    res.json({ success: true });
+  } catch (err) {
+    console.error("DELETE ACCOUNT ERROR:", err);
+    res.status(500).json({ error: err.message });
+  }
+});
+
+
+// ======================================================
+// ADMIN — LIST ALL ORDERS
+// ======================================================
+
+app.get("/admin/orders", requireAuth, requireAdmin, async (req, res) => {
+  const { data, error } = await supabase
+    .from("orders")
+    .select(
+      "id, user_id, total, status, tracking_number, shipping_address, created_at, updated_at, order_items (id, product_id, product_name, price, quantity)"
+    )
+    .order("created_at", { ascending: false })
+    .limit(200);
+
+  if (error) {
+    return res.status(500).json({ error: error.message });
+  }
+
+  res.json({ success: true, orders: data || [] });
+});
+
+
+// ======================================================
+// ADMIN — UPDATE ORDER STATUS / TRACKING NUMBER
+// ======================================================
+
+app.patch("/admin/orders/:orderId", requireAuth, requireAdmin, async (req, res) => {
+  const orderId = Number(req.params.orderId);
+  const { status, tracking_number } = req.body || {};
+
+  if (!Number.isInteger(orderId)) {
+    return res.status(400).json({ error: "Invalid order ID" });
+  }
+
+  if (status && !ORDER_STATUSES.includes(status)) {
+    return res.status(400).json({ error: "Invalid status" });
+  }
+
+  const update = { updated_at: new Date().toISOString() };
+  if (status) update.status = status;
+  if (tracking_number !== undefined) update.tracking_number = tracking_number || null;
+
+  const { data, error } = await supabase
+    .from("orders")
+    .update(update)
+    .eq("id", orderId)
+    .select("id, user_id, status, tracking_number")
+    .single();
+
+  if (error) {
+    return res.status(500).json({ error: error.message });
+  }
+
+  if (status) {
+    await sendOrderPush(data.user_id, data.id, data.status);
+  }
+
+  res.json({ success: true, order: data });
+});
 
 
 // ======================================================

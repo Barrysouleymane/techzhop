@@ -1,18 +1,26 @@
 import { useEffect, useMemo, useState } from "react";
 import { useSearchParams } from "react-router-dom";
-import MainLayout from "@/layouts/MainLayout";
+import { useTranslation } from "react-i18next";
+import Page from "@/components/Page";
 import ProductCard from "@/components/ProductCard/ProductCard";
 import useProducts from "@/hooks/useProducts";
 import { getCategories } from "@/api/categories";
 
 const SORTS = {
-  newest: { label: "Newest", fn: () => 0 },
-  "price-asc": { label: "Price: low to high", fn: (a, b) => a.price - b.price },
-  "price-desc": { label: "Price: high to low", fn: (a, b) => b.price - a.price },
-  name: { label: "Name", fn: (a, b) => (a.name || "").localeCompare(b.name || "") },
+  newest: () => 0,
+  "price-asc": (a, b) => a.price - b.price,
+  "price-desc": (a, b) => b.price - a.price,
+  name: (a, b) => (a.name || "").localeCompare(b.name || ""),
+};
+const SORT_LABEL = {
+  newest: "products.sortNewest",
+  "price-asc": "products.sortPriceAsc",
+  "price-desc": "products.sortPriceDesc",
+  name: "products.sortName",
 };
 
 export default function Products() {
+  const { t } = useTranslation();
   const { products, loading } = useProducts();
   const [params, setParams] = useSearchParams();
   const [categories, setCategories] = useState([]);
@@ -35,76 +43,61 @@ export default function Products() {
   const filtered = useMemo(() => {
     const text = q.toLowerCase();
     return products
-      .filter((p) =>
-        !text
-          ? true
-          : [p.name, p.description, p.brands?.name, p.categories?.name]
-              .filter(Boolean)
-              .some((v) => v.toLowerCase().includes(text))
+      .filter(
+        (p) =>
+          !text ||
+          [p.name, p.description, p.brands?.name, p.categories?.name]
+            .filter(Boolean)
+            .some((v) => v.toLowerCase().includes(text))
       )
       .filter((p) => !category || p.categories?.name === category)
-      .sort(SORTS[sort]?.fn || SORTS.newest.fn);
+      .sort(SORTS[sort] || SORTS.newest);
   }, [products, q, category, sort]);
 
+  const select = "bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2 text-white";
+
   return (
-    <MainLayout>
-      <section className="max-w-7xl mx-auto px-6 py-12">
-        <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
-          <div>
-            <h1 className="text-4xl font-bold">All Products</h1>
-            <p className="text-gray-400 mt-2">
-              {loading ? "Loading..." : `${filtered.length} product(s)`}
-              {q && <> for “<span className="text-cyan-400">{q}</span>”</>}
-            </p>
-          </div>
-
-          <div className="flex flex-wrap gap-3">
-            <select
-              value={category}
-              onChange={(e) => update("category", e.target.value)}
-              className="bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2"
-            >
-              <option value="">All categories</option>
-              {categories.map((c) => (
-                <option key={c.id} value={c.name}>
-                  {c.name}
-                </option>
-              ))}
-            </select>
-
-            <select
-              value={sort}
-              onChange={(e) => update("sort", e.target.value)}
-              className="bg-zinc-900 border border-zinc-700 rounded-lg px-4 py-2"
-            >
-              {Object.entries(SORTS).map(([key, s]) => (
-                <option key={key} value={key}>
-                  {s.label}
-                </option>
-              ))}
-            </select>
-
-            {(q || category) && (
-              <button
-                onClick={() => setParams({})}
-                className="border border-zinc-700 hover:bg-zinc-800 rounded-lg px-4 py-2"
-              >
-                Clear filters
-              </button>
-            )}
-          </div>
+    <Page width="max-w-7xl">
+      <div className="flex flex-col md:flex-row md:items-end md:justify-between gap-6 mb-10">
+        <div>
+          <h1 className="text-4xl font-bold">{t("products.title")}</h1>
+          <p className="text-gray-400 mt-2 mb-0">
+            {loading ? t("common.loading") : t("products.count", { count: filtered.length })}{" "}
+            {q && <span className="text-cyan-400">{t("products.for", { q })}</span>}
+          </p>
         </div>
 
-        {!loading && filtered.length === 0 ? (
-          <p className="text-gray-400 py-20 text-center">No products found.</p>
-        ) : (
-          <div className="grid gap-8 sm:grid-cols-2 lg:grid-cols-4">
-            {filtered.map((product) => (
-              <ProductCard key={product.id} product={product} />
+        <div className="flex flex-wrap gap-3">
+          <select value={category} onChange={(e) => update("category", e.target.value)} className={select}>
+            <option value="">{t("products.allCategories")}</option>
+            {categories.map((c) => (
+              <option key={c.id} value={c.name}>{c.name}</option>
             ))}
-          </div>
-        )}
-      </section>
-    </MainLayout>
+          </select>
+
+          <select value={sort} onChange={(e) => update("sort", e.target.value)} className={select}>
+            {Object.keys(SORTS).map((key) => (
+              <option key={key} value={key}>{t(SORT_LABEL[key])}</option>
+            ))}
+          </select>
+
+          {(q || category) && (
+            <button onClick={() => setParams({})} className="border border-zinc-700 hover:bg-zinc-800 rounded-lg px-4 py-2 text-white">
+              {t("common.clearFilters")}
+            </button>
+          )}
+        </div>
+      </div>
+
+      {!loading && filtered.length === 0 ? (
+        <p className="text-gray-400 py-20 text-center">{t("products.noResults")}</p>
+      ) : (
+        <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+          {filtered.map((p) => (
+            <ProductCard key={p.id} product={p} />
+          ))}
+        </div>
+      )}
+    </Page>
   );
 }
