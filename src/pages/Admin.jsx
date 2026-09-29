@@ -6,12 +6,21 @@ import { Plus, Pencil, Trash2, EyeOff } from "lucide-react";
 import Page, { btnPrimary, card } from "@/components/Page";
 import { StatusBadge } from "@/components/Orders/OrderStatus";
 import { adminApi } from "@/api/admin";
+import useAuth from "@/hooks/useAuth";
+import Team from "@/pages/admin/Team";
 import { adminGetOrders, adminUpdateOrder, apiError } from "@/api/account";
 import { ORDER_STATUSES, formatUSD } from "../../shared/settings";
 
 export default function Admin() {
   const { t } = useTranslation();
-  const [tab, setTab] = useState(() => sessionStorage.getItem("admin-tab") || "products");
+  const { can, role } = useAuth();
+  const tabs = [
+    can("products") && ["products", t("admin.productsTab")],
+    can("orders") && ["orders", t("admin.ordersTab")],
+    can("team") && ["team", t("team.tab")],
+  ].filter(Boolean);
+  const [chosen, setTab] = useState(() => sessionStorage.getItem("admin-tab") || "");
+  const tab = tabs.some(([id]) => id === chosen) ? chosen : tabs[0]?.[0];
 
   function select(id) {
     setTab(id);
@@ -28,13 +37,14 @@ export default function Admin() {
   );
 
   return (
-    <Page title={t("admin.title")} width="max-w-7xl">
+    <Page title={t("admin.title")} width="max-w-7xl" actions={<span className="text-gray-400">{t(`team.roles.${role}`)}</span>}>
       <Stats />
       <div className="flex flex-wrap gap-2 mb-6">
-        {tabBtn("products", t("admin.productsTab"))}
-        {tabBtn("orders", t("admin.ordersTab"))}
+        {tabs.map(([id, label]) => tabBtn(id, label))}
       </div>
-      {tab === "orders" ? <OrdersAdmin /> : <ProductsAdmin />}
+      {tab === "orders" && <OrdersAdmin />}
+      {tab === "products" && <ProductsAdmin />}
+      {tab === "team" && <Team />}
     </Page>
   );
 }
@@ -48,15 +58,15 @@ function Stats() {
   }, []);
 
   const items = [
-    [t("admin.revenue"), stats ? formatUSD(stats.revenue, i18n.language) : "…"],
+    stats?.revenue !== null && [t("admin.revenue"), stats ? formatUSD(stats.revenue, i18n.language) : "…"],
     [t("admin.ordersCount"), stats?.orders ?? "…"],
     [t("admin.toShip"), stats?.toShip ?? "…"],
     [t("admin.products"), stats?.products ?? "…"],
     [t("admin.lowStock"), stats?.lowStock ?? "…"],
-  ];
+  ].filter(Boolean);
 
   return (
-    <div className="grid grid-cols-2 md:grid-cols-5 gap-4 mb-8">
+    <div className={`grid grid-cols-2 ${items.length === 5 ? "md:grid-cols-5" : "md:grid-cols-4"} gap-4 mb-8`}>
       {items.map(([label, value]) => (
         <div key={label} className={`${card} p-5`}>
           <p className="text-gray-400 text-sm m-0">{label}</p>

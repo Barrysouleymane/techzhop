@@ -436,5 +436,30 @@
     "markAs": "标记为{{status}}",
     "needSql": "请在 Supabase 中运行最新的 SQL（第 9 部分）以保存承运商和备注。",
     "guest": "访客"
+  },
+  "team": {
+    "title": "团队",
+    "tab": "团队",
+    "subtitle": "为你的员工开通管理后台权限。对方需要先注册一个客户账户。",
+    "add": "开通权限",
+    "email": "客户邮箱",
+    "role": "角色",
+    "owner": "店主",
+    "remove": "移除权限",
+    "removeConfirm": "确定移除 {{email}} 的管理后台权限？",
+    "updated": "角色已更新",
+    "empty": "暂无团队成员。",
+    "roles": {
+      "admin": "管理员",
+      "product_manager": "商品管理员",
+      "seller": "销售 / 订单处理员",
+      "customer": "客户"
+    },
+    "desc": {
+      "admin": "全部权限：商品、订单、销售额和团队。",
+      "product_manager": "添加、编辑和删除商品、图片、分类和品牌。",
+      "seller": "查看订单、更改状态并添加运单号。",
+      "customer": "无管理后台权限。"
+    }
   }
 }

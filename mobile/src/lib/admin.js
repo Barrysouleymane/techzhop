@@ -15,6 +15,8 @@ export const adminApi = {
   remove: (id) => request(`/admin/products/${id}`, { method: "DELETE" }),
   orders: () => request("/admin/orders").then((d) => d.orders),
   order: (id) => request(`/admin/orders/${id}`),
+  team: () => request("/admin/team").then((d) => d.members),
+  setRole: (email, role) => request("/admin/team", json("POST", { email, role })),
   updateOrder: (id, fields) => request(`/admin/orders/${id}`, json("PATCH", fields)).then((d) => d.order),
   createCategory: (name) => request("/admin/categories", json("POST", { name })).then((d) => d.item),
   createBrand: (name) => request("/admin/brands", json("POST", { name })).then((d) => d.item),
@@ -22,13 +24,20 @@ export const adminApi = {
     request("/admin/upload", json("POST", { data: base64, contentType })).then((d) => d.url),
 };
 
-/** true when the logged-in user is in ADMIN_EMAILS on the server */
-export function useIsAdmin() {
+const NONE = { admin: false, role: "customer", owner: false, permissions: [] };
+
+/** Staff info for the logged-in user: { admin, role, owner, permissions, can(p) } */
+export function useStaff() {
   const { user } = useAuth();
-  const [admin, setAdmin] = useState(false);
+  const [info, setInfo] = useState(NONE);
   useEffect(() => {
-    if (!user) return setAdmin(false);
-    adminApi.me().then(setAdmin).catch(() => setAdmin(false));
+    if (!user) return setInfo(NONE);
+    request("/admin/me").then((d) => setInfo({ ...NONE, ...d })).catch(() => setInfo(NONE));
   }, [user]);
-  return admin;
+  return { ...info, can: (p) => info.permissions.includes(p) };
+}
+
+/** true when the logged-in user has any staff role */
+export function useIsAdmin() {
+  return useStaff().admin;
 }

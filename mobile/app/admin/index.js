@@ -3,7 +3,8 @@ import { View, Text, FlatList, Pressable, Image, TextInput, Alert, ScrollView } 
 import { router, useFocusEffect } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { adminApi } from "../../src/lib/admin";
+import { adminApi, useStaff } from "../../src/lib/admin";
+import AdminTeam from "../../src/components/AdminTeam";
 import { errorMessage } from "../../src/lib/api";
 import { Loading, Empty, useStyles } from "../../src/components/ui";
 import { StatusBadge } from "../../src/components/OrderStatus";
@@ -11,7 +12,14 @@ import { ORDER_STATUSES, formatUSD } from "../../../shared/settings";
 
 export default function AdminHome() {
   const { t, i18n } = useTranslation();
-  const [tab, setTab] = useState("products");
+  const staff = useStaff();
+  const tabs = [
+    staff.can("products") && ["products", t("admin.productsTab")],
+    staff.can("orders") && ["orders", t("admin.ordersTab")],
+    staff.can("team") && ["team", t("team.tab")],
+  ].filter(Boolean);
+  const [chosen, setTab] = useState("");
+  const tab = tabs.some(([id]) => id === chosen) ? chosen : tabs[0]?.[0];
   const [stats, setStats] = useState(null);
   const [products, setProducts] = useState([]);
   const [orders, setOrders] = useState([]);
@@ -35,17 +43,19 @@ export default function AdminHome() {
   }));
 
   const load = useCallback(async () => {
-    try {
-      const [st, pr, or] = await Promise.all([adminApi.stats(), adminApi.products(), adminApi.orders()]);
-      setStats(st);
-      setProducts(pr);
-      setOrders(or);
-    } catch (e) {
-      Alert.alert(t("common.error"), errorMessage(e, t));
-    } finally {
-      setLoading(false);
-    }
-  }, [t]);
+    if (!staff.admin) return;
+    const [st, pr, or] = await Promise.allSettled([
+      adminApi.stats(),
+      staff.can("products") ? adminApi.products() : Promise.resolve([]),
+      staff.can("orders") ? adminApi.orders() : Promise.resolve([]),
+    ]);
+    if (st.status === "fulfilled") setStats(st.value);
+    if (pr.status === "fulfilled") setProducts(pr.value);
+    if (or.status === "fulfilled") setOrders(or.value);
+    const failed = [st, pr, or].find((r) => r.status === "rejected");
+    if (failed) Alert.alert(t("common.error"), errorMessage(failed.reason, t));
+    setLoading(false);
+  }, [t, staff.admin, staff.role]); // eslint-disable-line react-hooks/exhaustive-deps
 
   useFocusEffect(useCallback(() => { load(); }, [load]));
 
@@ -73,7 +83,8 @@ export default function AdminHome() {
     }
   }
 
-  if (loading) return <Loading />;
+  if (loading && staff.admin) return <Loading />;
+  if (!staff.admin) return <Loading />;
 
   const usd = (n) => formatUSD(n, i18n.language);
 
@@ -81,12 +92,12 @@ export default function AdminHome() {
     <>
       <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={{ paddingHorizontal: 16, paddingTop: 12 }}>
         {[
-          [t("admin.revenue"), usd(stats?.revenue || 0)],
+          stats?.revenue !== null && stats?.revenue !== undefined && [t("admin.revenue"), usd(stats.revenue)],
           [t("admin.ordersCount"), stats?.orders ?? 0],
           [t("admin.toShip"), stats?.toShip ?? 0],
           [t("admin.products"), stats?.products ?? 0],
           [t("admin.lowStock"), stats?.lowStock ?? 0],
-        ].map(([label, value]) => (
+        ].filter(Boolean).map(([label, value]) => (
           <View key={label} style={s.stat}>
             <Text style={s.statLabel}>{label}</Text>
             <Text style={s.statValue}>{value}</Text>
@@ -94,7 +105,7 @@ export default function AdminHome() {
         ))}
       </ScrollView>
       <View style={s.tabs}>
-        {[["products", t("admin.productsTab")], ["orders", t("admin.ordersTab")]].map(([id, label]) => (
+        {tabs.map(([id, label]) => (
           <Pressable key={id} onPress={() => setTab(id)} style={[s.tab, tab === id && s.tabOn]}>
             <Text style={{ color: tab === id ? c.onPrimary : c.text, fontWeight: "700" }}>{label}</Text>
           </Pressable>
@@ -102,6 +113,17 @@ export default function AdminHome() {
       </View>
     </>
   );
+
+  if (tab === "team") {
+    return (
+      <ScrollView style={{ backgroundColor: c.bg }} contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled">
+        {header}
+        <View style={{ padding: 16 }}>
+          <AdminTeam />
+        </View>
+      </ScrollView>
+    );
+  }
 
   if (tab === "orders") {
     return (

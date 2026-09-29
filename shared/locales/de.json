@@ -437,5 +437,30 @@
     "markAs": "Als {{status}} markieren",
     "needSql": "Führe das neueste SQL (Abschnitt 9) in Supabase aus, um Versanddienst und Notizen zu speichern.",
     "guest": "Gast"
+  },
+  "team": {
+    "title": "Team",
+    "tab": "Team",
+    "subtitle": "Gib deinem Team Zugriff auf den Admin-Bereich. Die Person muss zuerst ein Kundenkonto erstellen.",
+    "add": "Zugriff geben",
+    "email": "E-Mail des Kunden",
+    "role": "Rolle",
+    "owner": "Inhaber",
+    "remove": "Zugriff entfernen",
+    "removeConfirm": "Admin-Zugriff für {{email}} entfernen?",
+    "updated": "Rolle aktualisiert",
+    "empty": "Noch keine Teammitglieder.",
+    "roles": {
+      "admin": "Administrator",
+      "product_manager": "Produktmanager",
+      "seller": "Verkäufer / Versand",
+      "customer": "Kunde"
+    },
+    "desc": {
+      "admin": "Alles: Produkte, Bestellungen, Umsatz und Team.",
+      "product_manager": "Produkte, Fotos, Kategorien und Marken hinzufügen, bearbeiten und löschen.",
+      "seller": "Bestellungen sehen, Status ändern und Sendungsnummern hinzufügen.",
+      "customer": "Kein Zugriff auf den Admin-Bereich."
+    }
   }
 }

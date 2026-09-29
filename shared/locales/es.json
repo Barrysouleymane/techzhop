@@ -437,5 +437,30 @@
     "markAs": "Marcar como {{status}}",
     "needSql": "Ejecuta el último SQL (sección 9) en Supabase para guardar el transportista y las notas.",
     "guest": "Invitado"
+  },
+  "team": {
+    "title": "Equipo",
+    "tab": "Equipo",
+    "subtitle": "Da a tu equipo acceso al área de administración. La persona debe crear antes una cuenta de cliente.",
+    "add": "Dar acceso",
+    "email": "Correo del cliente",
+    "role": "Rol",
+    "owner": "Propietario",
+    "remove": "Quitar acceso",
+    "removeConfirm": "¿Quitar el acceso al área de administración a {{email}}?",
+    "updated": "Rol actualizado",
+    "empty": "Aún no hay miembros.",
+    "roles": {
+      "admin": "Administrador",
+      "product_manager": "Gestor de productos",
+      "seller": "Vendedor / preparador",
+      "customer": "Cliente"
+    },
+    "desc": {
+      "admin": "Todo: productos, pedidos, ingresos y equipo.",
+      "product_manager": "Añadir, editar y eliminar productos, fotos, categorías y marcas.",
+      "seller": "Ver pedidos, cambiar su estado y añadir números de seguimiento.",
+      "customer": "Sin acceso al área de administración."
+    }
   }
 }

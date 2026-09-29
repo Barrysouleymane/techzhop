@@ -437,5 +437,30 @@
     "markAs": "Mark as {{status}}",
     "needSql": "Run the latest SQL (section 9) in Supabase to save the carrier and notes.",
     "guest": "Guest"
+  },
+  "team": {
+    "title": "Team",
+    "tab": "Team",
+    "subtitle": "Give your staff access to the admin area. They must first create a customer account.",
+    "add": "Give access",
+    "email": "Customer email",
+    "role": "Role",
+    "owner": "Owner",
+    "remove": "Remove access",
+    "removeConfirm": "Remove admin-area access for {{email}}?",
+    "updated": "Role updated",
+    "empty": "No team members yet.",
+    "roles": {
+      "admin": "Administrator",
+      "product_manager": "Product manager",
+      "seller": "Seller / order handler",
+      "customer": "Customer"
+    },
+    "desc": {
+      "admin": "Everything: products, orders, revenue and team.",
+      "product_manager": "Add, edit and delete products, photos, categories and brands.",
+      "seller": "See orders, change their status and add tracking numbers.",
+      "customer": "No access to the admin area."
+    }
   }
 }

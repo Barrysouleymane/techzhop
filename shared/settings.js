@@ -120,3 +120,6 @@ export function trackingUrl(carrier, number) {
   const c = CARRIERS.find((x) => x.code === carrier) || CARRIERS[CARRIERS.length - 1];
   return c.url + encodeURIComponent(number);
 }
+
+// Staff roles (must match backend ROLE_PERMISSIONS)
+export const STAFF_ROLES = ["admin", "product_manager", "seller"];

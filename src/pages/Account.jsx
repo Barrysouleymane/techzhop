@@ -14,7 +14,7 @@ import { getProfile, getMyOrders, getAddresses } from "@/api/account";
 export default function Account() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, role } = useAuth();
   const wishlistCount = useWishlistStore((s) => s.items.length);
   const [profile, setProfile] = useState(null);
   const [ordersCount, setOrdersCount] = useState(null);
@@ -69,7 +69,7 @@ export default function Account() {
   ];
 
   if (isAdmin) {
-    sections[0].items.push({ to: "/admin", icon: Shield, label: t("account.adminPanel") });
+    sections[0].items.push({ to: "/admin", icon: Shield, label: `${t("account.adminPanel")} · ${t(`team.roles.${role}`)}` });
   }
 
   return (
