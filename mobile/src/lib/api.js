@@ -1,8 +1,22 @@
 import { supabase } from "./supabase";
 
 export const API_URL = process.env.EXPO_PUBLIC_API_URL || "http://localhost:8000";
+export const WEB_URL = process.env.EXPO_PUBLIC_WEB_URL || "http://localhost:5173";
+export const SUPPORT_EMAIL = process.env.EXPO_PUBLIC_SUPPORT_EMAIL || "support@techzhop.com";
+export const SUPPORT_WHATSAPP = process.env.EXPO_PUBLIC_SUPPORT_WHATSAPP || "";
 
-// ---------- Products (Supabase, same queries as the website) ----------
+function loginRequired() {
+  const err = new Error("LOGIN_REQUIRED");
+  err.code = "LOGIN_REQUIRED";
+  return err;
+}
+
+async function currentUser() {
+  const { data } = await supabase.auth.getUser();
+  return data?.user || null;
+}
+
+// ---------- Catalog ----------
 
 export async function getProducts() {
   const { data, error } = await supabase
@@ -24,16 +38,10 @@ export async function getProduct(id) {
   return data;
 }
 
-// ---------- Cart (table cart_items) ----------
-
-async function requireUser() {
-  const { data: { user } } = await supabase.auth.getUser();
-  if (!user) throw new Error("Please login first.");
-  return user;
-}
+// ---------- Cart ----------
 
 export async function getCart() {
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await currentUser();
   if (!user) return [];
   const { data, error } = await supabase
     .from("cart_items")
@@ -45,19 +53,16 @@ export async function getCart() {
 }
 
 export async function addToCart(productId) {
-  const user = await requireUser();
+  const user = await currentUser();
+  if (!user) throw loginRequired();
   const { data: existing, error: e1 } = await supabase
     .from("cart_items")
-    .select("*")
+    .select("id, quantity")
     .eq("user_id", user.id)
     .eq("product_id", productId)
     .maybeSingle();
   if (e1) throw e1;
-
-  if (existing) {
-    return setQuantity(existing.id, existing.quantity + 1);
-  }
-
+  if (existing) return setQuantity(existing.id, existing.quantity + 1);
   const { error } = await supabase
     .from("cart_items")
     .insert({ user_id: user.id, product_id: productId, quantity: 1 });
@@ -78,28 +83,24 @@ export async function removeFromCart(cartItemId) {
   if (error) throw error;
 }
 
-// ---------- Backend (Express) ----------
-
-async function authHeaders() {
-  const { data: { session } } = await supabase.auth.getSession();
-  if (!session) throw new Error("Please login first.");
-  return {
-    "Content-Type": "application/json",
-    Authorization: `Bearer ${session.access_token}`,
-  };
-}
+// ---------- Backend helper ----------
 
 async function request(path, options = {}) {
+  const { data } = await supabase.auth.getSession();
+  if (!data.session) throw loginRequired();
   const res = await fetch(`${API_URL}${path}`, {
     ...options,
-    headers: await authHeaders(),
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${data.session.access_token}`,
+    },
   });
   const body = await res.json().catch(() => ({}));
   if (!res.ok) throw new Error(body.error || `Server error (${res.status})`);
   return body;
 }
 
-export async function createCheckoutSession(cart) {
+export async function createCheckoutSession(cart, shippingAddress) {
   const items = cart.map((item) => ({
     product_id: item.product_id,
     name: item.products?.name,
@@ -108,13 +109,113 @@ export async function createCheckoutSession(cart) {
   }));
   return request("/create-checkout-session", {
     method: "POST",
-    body: JSON.stringify({ items }),
+    body: JSON.stringify({ items, shipping_address: shippingAddress || "" }),
   });
 }
 
 export async function getOrders() {
-  const { data: { user } } = await supabase.auth.getUser();
+  const user = await currentUser();
   if (!user) return [];
-  const body = await request(`/orders/${user.id}`);
-  return body.orders || [];
+  return (await request(`/orders/${user.id}`)).orders || [];
+}
+
+export async function getOrder(id) {
+  return (await request(`/order/${id}`)).order;
+}
+
+export async function deleteMyAccount() {
+  await request("/account", { method: "DELETE" });
+  await supabase.auth.signOut();
+}
+
+// ---------- Profile ----------
+
+export async function getProfile(userId) {
+  const { data, error } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function updateProfile(userId, fields) {
+  const { error } = await supabase.from("profiles").update(fields).eq("id", userId);
+  if (error) throw error;
+}
+
+export async function uploadAvatar(userId, asset) {
+  const ext = (asset.uri.split(".").pop() || "jpg").split("?")[0].toLowerCase();
+  const path = `${userId}/avatar-${Date.now()}.${ext}`;
+  const buffer = await (await fetch(asset.uri)).arrayBuffer();
+
+  const { error } = await supabase.storage
+    .from("avatars")
+    .upload(path, buffer, { upsert: true, contentType: asset.mimeType || "image/jpeg" });
+  if (error) throw error;
+
+  const { data } = supabase.storage.from("avatars").getPublicUrl(path);
+  await updateProfile(userId, { avatar_url: data.publicUrl });
+  return data.publicUrl;
+}
+
+// ---------- Addresses ----------
+
+export async function getAddresses(userId) {
+  const { data, error } = await supabase
+    .from("addresses")
+    .select("*")
+    .eq("user_id", userId)
+    .order("is_default", { ascending: false })
+    .order("created_at", { ascending: true });
+  if (error) throw error;
+  return data || [];
+}
+
+export async function getAddress(id) {
+  const { data, error } = await supabase.from("addresses").select("*").eq("id", id).single();
+  if (error) throw error;
+  return data;
+}
+
+export async function saveAddress(userId, address) {
+  const { id, created_at, ...fields } = address;
+  const payload = { ...fields, user_id: userId, updated_at: new Date().toISOString() };
+  if (payload.is_default) {
+    await supabase.from("addresses").update({ is_default: false }).eq("user_id", userId);
+  }
+  const { error } = id
+    ? await supabase.from("addresses").update(payload).eq("id", id)
+    : await supabase.from("addresses").insert(payload);
+  if (error) throw error;
+}
+
+export async function deleteAddress(id) {
+  const { error } = await supabase.from("addresses").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// ---------- Security ----------
+
+export async function changePassword(email, currentPassword, newPassword) {
+  const { error: e1 } = await supabase.auth.signInWithPassword({ email, password: currentPassword });
+  if (e1) {
+    const err = new Error("WRONG_PASSWORD");
+    err.code = "WRONG_PASSWORD";
+    throw err;
+  }
+  const { error } = await supabase.auth.updateUser({ password: newPassword });
+  if (error) throw error;
+}
+
+export async function sendPasswordReset(email) {
+  // The link opens the website's reset page
+  const { error } = await supabase.auth.resetPasswordForEmail(email, {
+    redirectTo: `${WEB_URL}/reset-password`,
+  });
+  if (error) throw error;
+}
+
+export function errorMessage(err, t) {
+  if (!err) return t("common.error");
+  if (err.code === "LOGIN_REQUIRED") return t("product.loginFirst");
+  if (err.message && !/^[A-Z_]+$/.test(err.message)) return err.message;
+  return t("common.error");
 }
