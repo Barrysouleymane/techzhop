@@ -6,6 +6,11 @@ import useCart from "@/hooks/useCart";
 import useCartStore from "@/store/cartStore";
 import useMoney from "@/hooks/useMoney";
 import useAuth from "@/hooks/useAuth";
+import PriceTag from "@/components/Shop/PriceTag";
+import OrderSummary from "@/components/Shop/OrderSummary";
+import { getAddresses } from "@/api/account";
+import { useEffect, useState } from "react";
+import { effectivePrice } from "../../shared/settings";
 
 export default function Cart() {
   const { t } = useTranslation();
@@ -16,6 +21,11 @@ export default function Cart() {
   const remove = useCartStore((s) => s.remove);
 
   const run = (fn) => fn().catch(() => toast.error(t("common.error")));
+  const [address, setAddress] = useState(null);
+
+  useEffect(() => {
+    if (user) getAddresses(user.id).then((l) => setAddress(l.find((a) => a.is_default) || l[0] || null)).catch(() => {});
+  }, [user]);
 
   if (loading || authLoading) return <Page><p className="text-center py-20">{t("common.loading")}</p></Page>;
 
@@ -30,8 +40,6 @@ export default function Cart() {
     );
   }
 
-  const total = cart.reduce((s, i) => s + Number(i.products?.price || 0) * Number(i.quantity || 0), 0);
-  const totalItems = cart.reduce((s, i) => s + Number(i.quantity || 0), 0);
 
   if (cart.length === 0) {
     return (
@@ -59,8 +67,8 @@ export default function Cart() {
                 </Link>
                 <div className="flex-1 min-w-0">
                   <h2 className="text-lg sm:text-xl font-bold">{p?.name}</h2>
-                  <p className="text-cyan-400 text-lg mt-1 mb-0">{money(p?.price)}</p>
-                  <p className="text-gray-400 mt-1">{t("cart.subtotal")}: {money(Number(p?.price || 0) * qty)}</p>
+                  <div className="mt-1"><PriceTag product={p} /></div>
+                  <p className="text-gray-400 mt-1">{t("cart.subtotal")}: {money(effectivePrice(p) * qty)}</p>
                   <div className="flex flex-wrap items-center gap-3 mt-3">
                     <span className="text-gray-400">{t("cart.quantity")}:</span>
                     <button onClick={() => run(() => setQuantity(item.id, qty - 1))} disabled={qty <= 1} className="w-9 h-9 rounded-lg bg-zinc-800 hover:bg-zinc-700 disabled:opacity-40 text-white">−</button>
@@ -75,13 +83,7 @@ export default function Cart() {
         </div>
 
         <div className={`${card} p-6 h-fit`}>
-          <h2 className="text-2xl font-bold mb-6">{t("cart.summary")}</h2>
-          <div className="flex justify-between mb-3"><span>{t("cart.items")}</span><span>{totalItems}</span></div>
-          <div className="flex justify-between mb-3"><span>{t("cart.products")}</span><span>{cart.length}</span></div>
-          <div className="border-t border-zinc-700 pt-5 flex justify-between text-xl font-bold">
-            <span>{t("cart.total")}</span>
-            <span className="text-cyan-400">{money(total)}</span>
-          </div>
+          <OrderSummary cart={cart} address={address} />
           <Link to="/checkout" className={`${btnPrimary} w-full mt-8 py-4`}>{t("cart.checkout")}</Link>
           <Link to="/products" className={`${btnSecondary} w-full mt-3`}>{t("cart.continueShopping")}</Link>
         </div>

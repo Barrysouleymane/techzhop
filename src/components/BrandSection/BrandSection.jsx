@@ -20,7 +20,7 @@ export default function BrandSection() {
         {brands.map((b) => (
           <Link
             key={b.id}
-            to={`/products?q=${encodeURIComponent(b.name)}`}
+            to={`/products?brand=${encodeURIComponent(b.name)}`}
             className="bg-white rounded-xl h-24 flex items-center justify-center p-4 no-underline hover:ring-2 hover:ring-cyan-500 transition"
           >
             {b.logo ? (

@@ -10,8 +10,11 @@ import App from "./App";
 import ThemeSync from "./components/ThemeSync";
 import { supabase } from "./lib/supabase";
 import useCartStore from "./store/cartStore";
+import useShopStore from "./store/shopStore";
 
 // Reload the cart whenever the user logs in or out
+useShopStore.getState().load();
+
 supabase.auth.onAuthStateChange(() => {
   useCartStore.getState().load();
 });

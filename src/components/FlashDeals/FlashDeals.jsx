@@ -1,26 +1,21 @@
 import { useTranslation } from "react-i18next";
-import ProductCard from "@/components/ProductCard/ProductCard";
+import ProductRow from "@/components/Shop/ProductRow";
+import { isOnSale, discountPercent } from "../../../shared/settings";
 
+/** Products on sale (biggest discount first); cheapest products if none */
 export default function FlashDeals({ products = [], loading }) {
   const { t } = useTranslation();
   if (loading) return null;
 
-  const deals = products
-    .filter((p) => Number(p.stock) > 0)
-    .sort((a, b) => Number(a.price) - Number(b.price))
-    .slice(0, 4);
-
-  if (deals.length === 0) return null;
+  const onSale = products.filter(isOnSale).sort((a, b) => discountPercent(b) - discountPercent(a));
+  const list = (onSale.length ? onSale : products.filter((p) => Number(p.stock) > 0).sort((a, b) => a.price - b.price)).slice(0, 4);
 
   return (
-    <section className="max-w-7xl mx-auto px-6 py-14">
-      <h2 className="text-3xl sm:text-4xl font-bold text-red-500 mb-2">🔥 {t("home.deals")}</h2>
-      <p className="text-gray-400 mb-8">{t("home.dealsText")}</p>
-      <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
-        {deals.map((p) => (
-          <ProductCard key={p.id} product={p} />
-        ))}
-      </div>
-    </section>
+    <ProductRow
+      title={`🔥 ${onSale.length ? t("home.limitedDeals") : t("home.deals")}`}
+      subtitle={t("home.dealsText")}
+      titleClass="text-red-500"
+      products={list}
+    />
   );
 }

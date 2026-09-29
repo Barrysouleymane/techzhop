@@ -8,6 +8,9 @@ import { StatusBadge } from "@/components/Orders/OrderStatus";
 import { adminApi } from "@/api/admin";
 import useAuth from "@/hooks/useAuth";
 import Team from "@/pages/admin/Team";
+import StoreSettings from "@/pages/admin/StoreSettings";
+import Banners from "@/pages/admin/Banners";
+import Promos from "@/pages/admin/Promos";
 import { adminGetOrders, adminUpdateOrder, apiError } from "@/api/account";
 import { ORDER_STATUSES, formatUSD } from "../../shared/settings";
 
@@ -17,6 +20,9 @@ export default function Admin() {
   const tabs = [
     can("products") && ["products", t("admin.productsTab")],
     can("orders") && ["orders", t("admin.ordersTab")],
+    can("store") && ["store", t("admin.storeTab")],
+    can("store") && ["banners", t("admin.bannersTab")],
+    can("store") && ["promos", t("admin.promosTab")],
     can("team") && ["team", t("team.tab")],
   ].filter(Boolean);
   const [chosen, setTab] = useState(() => sessionStorage.getItem("admin-tab") || "");
@@ -45,6 +51,9 @@ export default function Admin() {
       {tab === "orders" && <OrdersAdmin />}
       {tab === "products" && <ProductsAdmin />}
       {tab === "team" && <Team />}
+      {tab === "store" && <StoreSettings />}
+      {tab === "banners" && <Banners />}
+      {tab === "promos" && <Promos />}
     </Page>
   );
 }

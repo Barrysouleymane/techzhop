@@ -1,21 +1,40 @@
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import { useParams, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { Heart } from "lucide-react";
+import { Heart, Truck } from "lucide-react";
 import { toast } from "sonner";
 import Page, { btnPrimary } from "@/components/Page";
 import useProduct from "@/hooks/useProduct";
 import useMoney from "@/hooks/useMoney";
+import useProducts from "@/hooks/useProducts";
+import PriceTag from "@/components/Shop/PriceTag";
+import Countdown from "@/components/Shop/Countdown";
+import Stars from "@/components/Shop/Stars";
+import Reviews from "@/components/Shop/Reviews";
+import ProductCard from "@/components/ProductCard/ProductCard";
+import useShopStore from "@/store/shopStore";
+import useRecentStore from "@/store/recentStore";
+import { isOnSale, deliveryRange } from "../../shared/settings";
 import useCartStore from "@/store/cartStore";
 import useWishlistStore from "@/store/wishlistStore";
 
 export default function ProductDetails() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { id } = useParams();
   const navigate = useNavigate();
   const money = useMoney();
   const { product, loading } = useProduct(id);
   const [photo, setPhoto] = useState(0);
+  const { products: all } = useProducts();
+  const settings = useShopStore((s) => s.settings);
+  const rating = useShopStore((s) => s.ratings[id]);
+  const addRecent = useRecentStore((s) => s.add);
+
+  useEffect(() => {
+    setPhoto(0);
+    if (id) addRecent(Number(id));
+    window.scrollTo(0, 0);
+  }, [id, addRecent]);
   const addToCart = useCartStore((s) => s.add);
   const toggleWishlist = useWishlistStore((s) => s.toggle);
   const liked = useWishlistStore((s) => s.items.some((p) => String(p.id) === String(id)));
@@ -24,6 +43,9 @@ export default function ProductDetails() {
   if (!product) return <Page><p className="text-center py-20">{t("product.notFound")}</p></Page>;
 
   const inStock = Number(product.stock) > 0;
+  const similar = all
+    .filter((p) => p.id !== product.id && (p.categories?.name || "") === (product.categories?.name || "") )
+    .slice(0, 4);
   const photos = product.images?.length ? product.images : product.image ? [product.image] : [];
 
   async function handleAdd() {
@@ -64,7 +86,9 @@ export default function ProductDetails() {
 
         <div>
           <h1 className="text-3xl sm:text-5xl font-bold">{product.name}</h1>
-          <p className="text-cyan-400 text-4xl mt-6 font-bold">{money(product.price)}</p>
+          {rating && <div className="mt-3"><Stars value={rating.avg} count={rating.count} size={18} /></div>}
+          <div className="mt-4"><PriceTag product={product} size="lg" /></div>
+          {isOnSale(product) && product.sale_ends_at && <div className="mt-2"><Countdown until={product.sale_ends_at} /></div>}
           <p className={inStock ? "text-green-400" : "text-red-400"}>
             {inStock ? t("product.inStock", { count: product.stock }) : t("product.outOfStock")}
           </p>
@@ -74,6 +98,18 @@ export default function ProductDetails() {
             {product.categories?.name && <div><dt className="inline font-bold">{t("product.category")}: </dt><dd className="inline">{product.categories.name}</dd></div>}
             {product.sku && <div><dt className="inline font-bold">{t("product.sku")}: </dt><dd className="inline">{product.sku}</dd></div>}
           </dl>
+
+          {inStock && (
+            <div className="mt-6 flex items-start gap-3 text-gray-300">
+              <Truck className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
+              <div>
+                <div className="font-semibold">{t("product.delivery", deliveryRange(settings, i18n.language))}</div>
+                {Number(settings.shipping?.free_over) > 0 && (
+                  <div className="text-gray-400 text-sm">{t("product.freeShippingOver", { amount: money(settings.shipping.free_over) })}</div>
+                )}
+              </div>
+            </div>
+          )}
 
           <div className="mt-10 flex gap-3">
             <button onClick={handleAdd} disabled={!inStock} className={`${btnPrimary} flex-1 text-lg py-4`}>
@@ -95,6 +131,16 @@ export default function ProductDetails() {
           <h2 className="text-3xl font-bold mb-6">{t("product.description")}</h2>
           <p className="text-gray-300 leading-8 whitespace-pre-line">{product.description}</p>
         </div>
+      )}
+      <Reviews productId={product.id} />
+
+      {similar.length > 0 && (
+        <section className="mt-16">
+          <h2 className="text-3xl font-bold mb-6">{t("product.similar")}</h2>
+          <div className="grid gap-6 sm:grid-cols-2 lg:grid-cols-4">
+            {similar.map((p) => <ProductCard key={p.id} product={p} />)}
+          </div>
+        </section>
       )}
     </Page>
   );

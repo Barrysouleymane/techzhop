@@ -5,16 +5,16 @@ import axios from "axios";
 import { MapPin } from "lucide-react";
 import Page, { btnPrimary, btnSecondary, card } from "@/components/Page";
 import useCart from "@/hooks/useCart";
-import useMoney, { useCurrency } from "@/hooks/useMoney";
+import useMoney from "@/hooks/useMoney";
+import OrderSummary from "@/components/Shop/OrderSummary";
 import useAuth from "@/hooks/useAuth";
 import { API_URL } from "@/config/constants";
 import { authHeaders, getAddresses, apiError } from "@/api/account";
-import { formatAddress, formatUSD } from "../../shared/settings";
+import { formatAddress, effectivePrice } from "../../shared/settings";
 
 export default function Checkout() {
-  const { t, i18n } = useTranslation();
+  const { t } = useTranslation();
   const money = useMoney();
-  const currency = useCurrency();
   const { user } = useAuth();
   const { cart, loading } = useCart();
   const [addresses, setAddresses] = useState([]);
@@ -32,8 +32,6 @@ export default function Checkout() {
       .catch(() => {});
   }, [user]);
 
-  const total = cart.reduce((s, i) => s + Number(i.products?.price || 0) * Number(i.quantity || 0), 0);
-  const totalItems = cart.reduce((s, i) => s + Number(i.quantity || 0), 0);
   const address = addresses.find((a) => a.id === addressId);
 
   async function handleCheckout() {
@@ -43,7 +41,7 @@ export default function Checkout() {
       const items = cart.map((item) => ({
         product_id: item.product_id,
         name: item.products?.name,
-        price: Number(item.products?.price || 0),
+        price: effectivePrice(item.products),
         quantity: Number(item.quantity || 0),
       }));
 
@@ -53,7 +51,7 @@ export default function Checkout() {
 
       const res = await axios.post(
         `${API_URL}/create-checkout-session`,
-        { items, shipping_address: formatAddress(address) },
+        { items, shipping_address: formatAddress(address), address: address ? { country: address.country, state: address.state } : null },
         { headers: await authHeaders() }
       );
 
@@ -121,7 +119,7 @@ export default function Checkout() {
                 <div className="flex-1">
                   <h3 className="font-bold text-lg">{p?.name}</h3>
                   <p className="text-gray-400 m-0">{t("cart.quantity")}: {qty}</p>
-                  <p className="text-cyan-400 font-bold m-0">{money(Number(p?.price || 0) * qty)}</p>
+                  <p className="text-cyan-400 font-bold m-0">{money(effectivePrice(p) * qty)}</p>
                 </div>
               </div>
             );
@@ -129,18 +127,7 @@ export default function Checkout() {
         </div>
 
         <div className={`${card} p-6 h-fit`}>
-          <h2 className="text-2xl font-bold mb-6">{t("cart.summary")}</h2>
-          <div className="flex justify-between mb-3"><span>{t("cart.products")}</span><span>{cart.length}</span></div>
-          <div className="flex justify-between mb-3"><span>{t("cart.items")}</span><span>{totalItems}</span></div>
-          <div className="border-t border-zinc-700 pt-5 flex justify-between text-xl font-bold">
-            <span>{t("cart.total")}</span>
-            <span className="text-cyan-400">{money(total)}</span>
-          </div>
-          {currency !== "USD" && (
-            <p className="text-gray-400 text-sm mt-3 mb-0">
-              {t("checkout.chargedInUsd", { amount: formatUSD(total, i18n.language) })}
-            </p>
-          )}
+          <OrderSummary cart={cart} address={address} />
 
           {error && <div className="mt-6 bg-red-900/30 border border-red-700 text-red-300 p-4 rounded-lg">{error}</div>}
 

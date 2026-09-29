@@ -4,12 +4,16 @@ import { Heart } from "lucide-react";
 import { toast } from "sonner";
 import useWishlistStore from "@/store/wishlistStore";
 import useCartStore from "@/store/cartStore";
-import useMoney from "@/hooks/useMoney";
+import PriceTag from "@/components/Shop/PriceTag";
+import Stars from "@/components/Shop/Stars";
+import Countdown from "@/components/Shop/Countdown";
+import useShopStore from "@/store/shopStore";
+import { isOnSale, discountPercent } from "../../../shared/settings";
 
 export default function ProductCard({ product }) {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const money = useMoney();
+  const rating = useShopStore((s) => s.ratings[product.id]);
   const addToCart = useCartStore((s) => s.add);
   const toggleWishlist = useWishlistStore((s) => s.toggle);
   const inWishlist = useWishlistStore((s) => s.items.some((p) => p.id === product.id));
@@ -49,6 +53,11 @@ export default function ProductCard({ product }) {
           <Heart className={`w-5 h-5 ${inWishlist ? "fill-pink-500 text-pink-500" : "text-white"}`} />
         </button>
 
+        {isOnSale(product) && (
+          <span className="absolute top-3 left-3 z-10 bg-red-600 text-white text-xs font-bold rounded px-2 py-1">
+            {t("product.off", { percent: discountPercent(product) })}
+          </span>
+        )}
         <div className="bg-white h-56 flex items-center justify-center">
           <img
             src={product.image}
@@ -70,7 +79,9 @@ export default function ProductCard({ product }) {
           {product.brands?.name || product.categories?.name || " "}
         </p>
 
-        <p className="text-cyan-400 text-2xl font-bold mt-3 mb-0">{money(product.price)}</p>
+        {rating && <div className="mt-1"><Stars value={rating.avg} count={rating.count} size={14} /></div>}
+        <div className="mt-2"><PriceTag product={product} /></div>
+        {isOnSale(product) && product.sale_ends_at && <Countdown until={product.sale_ends_at} compact />}
 
         <p className={`text-sm mt-1 ${inStock ? "text-gray-400" : "text-red-400"}`}>
           {inStock ? t("product.inStock", { count: product.stock }) : t("product.outOfStock")}

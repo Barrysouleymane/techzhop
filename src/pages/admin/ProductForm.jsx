@@ -7,7 +7,14 @@ import Page, { Field, btnPrimary, btnSecondary, btnDanger, inputClass, card } fr
 import { adminApi } from "@/api/admin";
 import { apiError } from "@/api/account";
 
-const EMPTY = { name: "", description: "", price: "", stock: "", sku: "", category_id: "", brand_id: "", status: "active", featured: false, images: [] };
+const EMPTY = { name: "", description: "", price: "", sale_price: "", sale_ends_at: "", stock: "", sku: "", category_id: "", brand_id: "", status: "active", featured: false, images: [] };
+
+// ISO date → value for <input type="datetime-local">
+const toLocalInput = (iso) => {
+  if (!iso) return "";
+  const d = new Date(iso);
+  return new Date(d.getTime() - d.getTimezoneOffset() * 60000).toISOString().slice(0, 16);
+};
 
 export default function ProductForm() {
   const { t } = useTranslation();
@@ -32,6 +39,8 @@ export default function ProductForm() {
             ...p,
             price: p.price ?? "",
             stock: p.stock ?? "",
+            sale_price: p.sale_price ?? "",
+            sale_ends_at: toLocalInput(p.sale_ends_at),
             category_id: p.category_id ?? "",
             brand_id: p.brand_id ?? "",
             images: p.images?.length ? p.images : p.image ? [p.image] : [],
@@ -78,7 +87,11 @@ export default function ProductForm() {
   async function handleSubmit(e) {
     e.preventDefault();
     setSaving(true);
-    const payload = { ...form, image: form.images[0] || null };
+    const payload = {
+      ...form,
+      image: form.images[0] || null,
+      sale_ends_at: form.sale_ends_at ? new Date(form.sale_ends_at).toISOString() : null,
+    };
     if (!meta.fields.images) delete payload.images;
     try {
       if (isNew) await adminApi.create(payload);
@@ -144,6 +157,11 @@ export default function ProductForm() {
             <Field label={`${t("admin.price")} (USD) *`}><input type="number" step="0.01" min="0" required value={form.price} onChange={set("price")} className={inputClass} /></Field>
             <Field label={t("admin.stock")}><input type="number" min="0" value={form.stock} onChange={set("stock")} className={inputClass} /></Field>
           </div>
+          <div className="grid grid-cols-2 gap-4">
+            <Field label={t("admin.salePrice")}><input type="number" step="0.01" min="0" value={form.sale_price} onChange={set("sale_price")} className={inputClass} /></Field>
+            <Field label={t("admin.saleEnds")}><input type="datetime-local" value={form.sale_ends_at} onChange={set("sale_ends_at")} className={inputClass} /></Field>
+          </div>
+          <p className="text-gray-500 text-xs -mt-2">{t("admin.saleHelp")}</p>
           <Field label={t("admin.sku")}><input value={form.sku || ""} onChange={set("sku")} className={inputClass} /></Field>
 
           {meta.fields.category && (
