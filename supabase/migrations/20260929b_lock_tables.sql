@@ -56,15 +56,20 @@ create policy "order_items_select_own" on public.order_items
     exists (select 1 from public.orders o where o.id = order_items.order_id and o.user_id = auth.uid())
   );
 
--- Remove any old "allow everything" policies left on these tables
+-- Remove any old, too-permissive policies left on these tables
+-- (keeps only the policies created above)
 do $$
 declare p record;
 begin
   for p in
-    select policyname, tablename from pg_policies
+    select policyname, tablename, cmd from pg_policies
     where schemaname = 'public'
-      and tablename in ('products','categories','brands','orders','order_items')
-      and cmd in ('INSERT','UPDATE','DELETE','ALL')
+      and tablename in ('products','categories','brands','cart_items','orders','order_items')
+      and policyname not in (
+        'products_public_read','categories_public_read','brands_public_read',
+        'cart_select_own','cart_insert_own','cart_update_own','cart_delete_own',
+        'orders_select_own','order_items_select_own'
+      )
   loop
     execute format('drop policy %I on public.%I', p.policyname, p.tablename);
   end loop;
