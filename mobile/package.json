@@ -7,22 +7,12 @@
     "start": "expo start",
     "android": "expo start --android",
     "ios": "expo start --ios",
-    "web": "expo start --web"
+    "web": "expo start --web",
+    "setup": "expo install react react-native expo-router expo-constants expo-linking expo-status-bar expo-web-browser react-native-safe-area-context react-native-screens @expo/vector-icons @react-native-async-storage/async-storage"
   },
   "dependencies": {
-    "@expo/vector-icons": "^15.0.0",
-    "@react-native-async-storage/async-storage": "^2.2.0",
     "@supabase/supabase-js": "^2.110.0",
     "expo": "~56.0.0",
-    "expo-constants": "*",
-    "expo-linking": "*",
-    "expo-router": "*",
-    "expo-status-bar": "*",
-    "expo-web-browser": "*",
-    "react": "19.2.0",
-    "react-native": "0.85.0",
-    "react-native-safe-area-context": "*",
-    "react-native-screens": "*",
     "react-native-url-polyfill": "^2.0.0",
     "zustand": "^5.0.14"
   },
