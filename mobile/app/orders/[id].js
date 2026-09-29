@@ -6,6 +6,7 @@ import { useTranslation } from "react-i18next";
 import { getOrder, errorMessage } from "../../src/lib/api";
 import { Loading, Empty, Card, Button, useStyles } from "../../src/components/ui";
 import { StatusBadge, StatusTimeline } from "../../src/components/OrderStatus";
+import OrderHelp from "../../src/components/OrderHelp";
 import { formatUSD, carrierName, trackingUrl } from "../../../shared/settings";
 
 export default function OrderDetails() {
@@ -80,6 +81,8 @@ export default function OrderDetails() {
           <Text style={{ color: c.primary, fontWeight: "800" }}>{usd(order.total)}</Text>
         </View>
       </Card>
+
+      <OrderHelp order={order} onChange={setOrder} />
     </ScrollView>
   );
 }

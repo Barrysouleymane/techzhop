@@ -8,10 +8,50 @@ const emails = require("./emails");
 
 const app = express();
 
+const IS_PROD = process.env.NODE_ENV === "production";
+app.set("trust proxy", 1); // behind Render / Railway / Vercel proxies
+app.disable("x-powered-by");
+
+// Basic security headers (no extra package needed)
+app.use((req, res, next) => {
+  res.setHeader("X-Content-Type-Options", "nosniff");
+  res.setHeader("X-Frame-Options", "DENY");
+  res.setHeader("Referrer-Policy", "strict-origin-when-cross-origin");
+  res.setHeader("Permissions-Policy", "camera=(), microphone=(), geolocation=()");
+  if (IS_PROD) res.setHeader("Strict-Transport-Security", "max-age=31536000; includeSubDomains");
+  next();
+});
+
+// Simple in-memory rate limiter: rateLimit("checkout", 20, 10 * 60 * 1000)
+const rateBuckets = new Map();
+function rateLimit(name, max, windowMs) {
+  return (req, res, next) => {
+    const key = `${name}:${req.ip}`;
+    const now = Date.now();
+    let b = rateBuckets.get(key);
+    if (!b || now > b.reset) {
+      b = { count: 0, reset: now + windowMs };
+      rateBuckets.set(key, b);
+    }
+    b.count++;
+    if (b.count > max) {
+      res.setHeader("Retry-After", Math.ceil((b.reset - now) / 1000));
+      return res.status(429).json({ error: "Too many requests, please try again in a moment." });
+    }
+    next();
+  };
+}
+setInterval(() => {
+  const now = Date.now();
+  for (const [k, b] of rateBuckets) if (now > b.reset) rateBuckets.delete(k);
+}, 60 * 1000).unref();
+
 const PORT = process.env.PORT || 8000;
 
 const FRONTEND_URL =
   process.env.FRONTEND_URL || "http://localhost:5173";
+// Main site address (first one) for links in emails / Stripe
+const SITE_URL = FRONTEND_URL.split(",")[0].trim().replace(/\/$/, "");
 
 const STRIPE_SECRET_KEY = process.env.STRIPE_SECRET_KEY;
 
@@ -62,17 +102,22 @@ console.log("");
 // CORS
 // ======================================================
 
+// FRONTEND_URL can hold several sites, comma-separated:
+// FRONTEND_URL=https://techzhop.com,https://www.techzhop.com
+const ALLOWED_ORIGINS = [
+  ...FRONTEND_URL.split(",").map((u) => u.trim().replace(/\/$/, "")).filter(Boolean),
+  ...(IS_PROD ? [] : ["http://localhost:5173", "http://localhost:5174", "http://localhost:5175"]),
+];
+
 app.use(
   cors({
-    origin: [
-      "http://localhost:5173",
-      "http://localhost:5174",
-      "http://localhost:5175",
-      FRONTEND_URL,
-    ],
+    origin: ALLOWED_ORIGINS,
     credentials: true,
   })
 );
+
+// Global limit per IP (very generous — stops floods, not customers)
+app.use(rateLimit("all", 600, 60 * 1000));
 
 
 // ======================================================
@@ -828,7 +873,7 @@ app.post("/products", requireAuth, requirePermission("products"), async (req, re
 // CREATE STRIPE CHECKOUT SESSION
 // ======================================================
 
-app.post("/create-checkout-session", requireAuth, async (req, res) => {
+app.post("/create-checkout-session", rateLimit("checkout", 30, 10 * 60 * 1000), requireAuth, async (req, res) => {
   try {
     const { items, shipping_address, address, return_to } = req.body || {};
 
@@ -844,6 +889,7 @@ app.post("/create-checkout-session", requireAuth, async (req, res) => {
     const line_items = items.map((item) => {
       const product = (products || []).find((p) => Number(p.id) === Number(item.product_id));
       if (!product) throw new Error(`Product ${item.product_id} not found`);
+      if (product.status && product.status !== "active") throw new Error(`${product.name} is no longer available`);
 
       const quantity = Number(item.quantity);
       if (!Number.isInteger(quantity) || quantity <= 0) throw new Error(`Invalid quantity for ${product.name}`);
@@ -917,8 +963,8 @@ app.post("/create-checkout-session", requireAuth, async (req, res) => {
       success_url:
         return_to === "app"
           ? `${req.protocol}://${req.get("host")}/checkout/return?session_id={CHECKOUT_SESSION_ID}`
-          : `${FRONTEND_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
-      cancel_url: return_to === "app" ? `${req.protocol}://${req.get("host")}/checkout/return` : `${FRONTEND_URL}/cart`,
+          : `${SITE_URL}/success?session_id={CHECKOUT_SESSION_ID}`,
+      cancel_url: return_to === "app" ? `${req.protocol}://${req.get("host")}/checkout/return` : `${SITE_URL}/cart`,
     });
 
     console.log("🛒 CHECKOUT:", session.id, "subtotal", subtotal, "shipping", shipping, "tax", tax);
@@ -1157,11 +1203,9 @@ app.get(
         });
       }
 
-      const { admin_note, ...publicOrder } = data;
-
       res.json({
         success: true,
-        order: publicOrder,
+        order: publicOrderView(data),
       });
 
     } catch (err) {
@@ -1179,13 +1223,187 @@ app.get(
 
 
 
+
+// ======================================================
+// CANCELLATIONS, RETURNS AND REFUNDS
+// Customer: POST /orders/:id/request { type: "cancel" | "return", reason }
+// Staff:    POST /admin/orders/:id/decision { decision: "approved" | "rejected", message }
+// Admin:    POST /admin/orders/:id/refund { amount, restock, cancel }
+// ======================================================
+
+const RETURN_DAYS = Number(process.env.RETURN_DAYS || 14);
+const round2 = (n) => Math.round(Number(n || 0) * 100) / 100;
+
+function requestOptions(order) {
+  const open = !order.request_status || order.request_status === "rejected";
+  const deliveredAt = order.delivered_at || (order.status === "delivered" ? order.updated_at : null);
+  const deadline = deliveredAt ? new Date(new Date(deliveredAt).getTime() + RETURN_DAYS * 86400000) : null;
+  const refundedAll = Number(order.refunded_amount || 0) >= Number(order.total || 0) - 0.001;
+  return {
+    can_cancel: ["paid", "processing"].includes(order.status) && !order.request_status && !refundedAll,
+    can_return: order.status === "delivered" && !!deadline && deadline > new Date() && open && order.request_type !== "return" && !refundedAll,
+    return_deadline: deadline ? deadline.toISOString() : null,
+    return_days: RETURN_DAYS,
+  };
+}
+
+function publicOrderView(order) {
+  const { admin_note, ...rest } = order;
+  return { ...rest, ...requestOptions(order) };
+}
+
+async function needReturnColumns(res) {
+  const cols = await orderColumns();
+  if (!cols.includes("request_type") || !cols.includes("refunded_amount")) {
+    res.status(400).json({ error: "Returns are not enabled yet: run the SQL file supabase/migrations/20260929e_returns.sql in Supabase." });
+    return false;
+  }
+  return true;
+}
+
+app.post("/orders/:orderId/request", rateLimit("request", 10, 60 * 60 * 1000), requireAuth, async (req, res) => {
+  if (!(await needReturnColumns(res))) return;
+  const orderId = Number(req.params.orderId);
+  const type = req.body?.type;
+  const reason = String(req.body?.reason || "").trim().slice(0, 1000);
+
+  if (!["cancel", "return"].includes(type)) return res.status(400).json({ error: "Invalid request type" });
+  if (!reason) return res.status(400).json({ error: "Please tell us why" });
+
+  const { data: order } = await supabase.from("orders").select("*").eq("id", orderId).maybeSingle();
+  if (!order || order.user_id !== req.user.id) return res.status(404).json({ error: "Order not found" });
+
+  const opts = requestOptions(order);
+  if ((type === "cancel" && !opts.can_cancel) || (type === "return" && !opts.can_return)) {
+    return res.status(400).json({ error: "This request is no longer possible for this order." });
+  }
+
+  const now = new Date().toISOString();
+  const { data, error } = await supabase
+    .from("orders")
+    .update({ request_type: type, request_status: "pending", request_reason: reason, requested_at: now, updated_at: now })
+    .eq("id", orderId)
+    .select("*")
+    .single();
+  if (error) return res.status(500).json({ error: error.message });
+
+  const info = await userInfo(order.user_id).catch(() => null);
+  emails.requestReceivedEmail({ to: info?.email, name: info?.name, language: info?.language, order: data });
+  if (ADMIN_EMAILS.length) emails.requestAdminEmail({ to: ADMIN_EMAILS, order: data, customer: info });
+
+  res.json({ success: true, order: publicOrderView(data) });
+});
+
+app.post("/admin/orders/:orderId/decision", requireAuth, requirePermission("orders"), async (req, res) => {
+  if (!(await needReturnColumns(res))) return;
+  const orderId = Number(req.params.orderId);
+  const decision = req.body?.decision;
+  const message = String(req.body?.message || "").trim().slice(0, 2000);
+  if (!["approved", "rejected"].includes(decision)) return res.status(400).json({ error: "Invalid decision" });
+
+  const { data: order } = await supabase.from("orders").select("*").eq("id", orderId).maybeSingle();
+  if (!order) return res.status(404).json({ error: "Order not found" });
+  if (!order.request_type) return res.status(400).json({ error: "No request on this order" });
+
+  const cols = await orderColumns();
+  const update = { request_status: decision, updated_at: new Date().toISOString() };
+  if (cols.includes("request_message")) update.request_message = message || null;
+
+  const { data, error } = await supabase.from("orders").update(update).eq("id", orderId).select("*").single();
+  if (error) return res.status(500).json({ error: error.message });
+
+  const info = await userInfo(order.user_id).catch(() => null);
+  emails.requestDecisionEmail({ to: info?.email, name: info?.name, language: info?.language, order: data, message });
+
+  res.json({ success: true, order: data });
+});
+
+app.post("/admin/orders/:orderId/refund", rateLimit("refund", 30, 60 * 60 * 1000), requireAuth, requirePermission("revenue"), async (req, res) => {
+  if (!(await needReturnColumns(res))) return;
+  const orderId = Number(req.params.orderId);
+
+  const { data: order } = await supabase
+    .from("orders")
+    .select("*, order_items (product_id, quantity)")
+    .eq("id", orderId)
+    .maybeSingle();
+  if (!order) return res.status(404).json({ error: "Order not found" });
+
+  const refundable = round2(Number(order.total) - Number(order.refunded_amount || 0));
+  const amount = round2(req.body?.amount === undefined || req.body?.amount === "" ? refundable : req.body.amount);
+  if (!(amount > 0) || amount > refundable + 0.001) {
+    return res.status(400).json({ error: `Amount must be between 0.01 and ${refundable}` });
+  }
+  if (!order.stripe_session_id) return res.status(400).json({ error: "No Stripe payment on this order" });
+
+  try {
+    const session = await stripe.checkout.sessions.retrieve(order.stripe_session_id);
+    if (!session.payment_intent) return res.status(400).json({ error: "No Stripe payment on this order" });
+    await stripe.refunds.create({
+      payment_intent: session.payment_intent,
+      amount: Math.round(amount * 100),
+      metadata: { order_id: String(order.id), by: req.user.email || req.user.id },
+    });
+  } catch (err) {
+    console.error("REFUND ERROR:", err.message);
+    return res.status(400).json({ error: err.message });
+  }
+
+  const now = new Date().toISOString();
+  const update = { refunded_amount: round2(Number(order.refunded_amount || 0) + amount), refunded_at: now, updated_at: now };
+  if (order.request_status === "pending") update.request_status = "approved";
+  const cancel = req.body?.cancel ?? (order.request_type === "cancel");
+  if (cancel && order.status !== "delivered") update.status = "cancelled";
+
+  // Put the products back in stock
+  if (req.body?.restock) {
+    for (const item of order.order_items || []) {
+      if (!item.product_id) continue;
+      const { data: p } = await supabase.from("products").select("stock").eq("id", item.product_id).maybeSingle();
+      if (p && p.stock != null) {
+        await supabase.from("products").update({ stock: Number(p.stock) + Number(item.quantity || 0) }).eq("id", item.product_id);
+      }
+    }
+  }
+
+  const { data, error } = await supabase.from("orders").update(update).eq("id", orderId).select("*").single();
+  if (error) return res.status(500).json({ error: error.message });
+
+  console.log("💸 REFUND:", order.id, amount);
+  if (update.status) await sendOrderPush(order.user_id, order.id, update.status);
+  const info = await userInfo(order.user_id).catch(() => null);
+  emails.refundEmail({ to: info?.email, name: info?.name, language: info?.language, order: data, amount });
+
+  res.json({ success: true, order: data, refunded: amount });
+});
+
+
+// ======================================================
+// SITEMAP (for Google) — list of public pages and products
+// ======================================================
+
+app.get("/sitemap.xml", async (req, res) => {
+  const { data } = await supabase.from("products").select("*").limit(5000);
+  const products = (data || []).filter((p) => !p.status || ["active", "published"].includes(p.status));
+  const esc = (u) => u.replace(/&/g, "&amp;");
+  const urls = [
+    "/", "/products", "/help", "/terms", "/privacy",
+    ...products.map((p) => `/product/${p.id}`),
+  ];
+  const xml =
+    `<?xml version="1.0" encoding="UTF-8"?>\n<urlset xmlns="http://www.sitemaps.org/schemas/sitemap/0.9">\n` +
+    urls.map((u) => `  <url><loc>${esc(SITE_URL + u)}</loc></url>`).join("\n") +
+    `\n</urlset>\n`;
+  res.set("Content-Type", "application/xml").set("Cache-Control", "public, max-age=3600").send(xml);
+});
+
 // ======================================================
 // DELETE MY ACCOUNT
 // Removes the user's personal data and login.
 // Orders are kept (accounting) but detached from the user.
 // ======================================================
 
-app.delete("/account", requireAuth, async (req, res) => {
+app.delete("/account", rateLimit("account", 5, 60 * 60 * 1000), requireAuth, async (req, res) => {
   const userId = req.user.id;
   const info = await userInfo(userId).catch(() => null);
 
@@ -1241,7 +1459,7 @@ app.get("/admin/orders", requireAuth, requirePermission("orders"), async (req, r
   const { data, error } = await supabase
     .from("orders")
     .select(
-      "id, user_id, total, status, tracking_number, shipping_address, created_at, updated_at, order_items (id, product_id, product_name, price, quantity)"
+      "*, order_items (id, product_id, product_name, price, quantity)"
     )
     .order("created_at", { ascending: false })
     .limit(200);
@@ -1262,12 +1480,25 @@ let orderColumnsAt = 0;
 async function orderColumns() {
   if (orderColumnsCache && Date.now() - orderColumnsAt < 60000) return orderColumnsCache;
   const { data } = await supabase.from("orders").select("*").limit(1);
-  if (data?.[0]) {
-    orderColumnsCache = Object.keys(data[0]);
-    orderColumnsAt = Date.now();
+  let cols = data?.[0] ? Object.keys(data[0]) : null;
+  if (!cols) {
+    // No order yet: ask for each optional column (an unknown column returns an error)
+    cols = ["id", "user_id", "total", "status", "stripe_session_id", "created_at", "updated_at"];
+    const checks = await Promise.all(
+      OPTIONAL_ORDER_COLUMNS.map((c) => supabase.from("orders").select(c).limit(1).then(({ error }) => (error ? null : c)))
+    );
+    cols.push(...checks.filter(Boolean));
   }
-  return orderColumnsCache || [];
+  orderColumnsCache = cols;
+  orderColumnsAt = Date.now();
+  return cols;
 }
+
+const OPTIONAL_ORDER_COLUMNS = [
+  "shipping_address", "tracking_number", "carrier", "admin_note", "subtotal", "shipping_amount", "tax_amount",
+  "discount_amount", "request_type", "request_status", "request_reason", "request_message", "requested_at",
+  "refunded_amount", "refunded_at", "delivered_at",
+];
 
 // ADMIN — ONE ORDER WITH CUSTOMER, PRODUCTS AND PAYMENT DETAILS
 app.get("/admin/orders/:orderId", requireAuth, requirePermission("orders"), async (req, res) => {
@@ -1330,7 +1561,7 @@ app.get("/admin/orders/:orderId", requireAuth, requirePermission("orders"), asyn
     order,
     customer,
     payment,
-    fields: { carrier: cols.includes("carrier"), note: cols.includes("admin_note") },
+    fields: { carrier: cols.includes("carrier"), note: cols.includes("admin_note"), returns: cols.includes("refunded_amount") && cols.includes("request_type") },
   });
 });
 
@@ -1356,6 +1587,7 @@ app.patch("/admin/orders/:orderId", requireAuth, requirePermission("orders"), as
   if (tracking_number !== undefined) update.tracking_number = tracking_number || null;
 
   const orderCols = await orderColumns();
+  if (status === "delivered" && orderCols.includes("delivered_at")) update.delivered_at = new Date().toISOString();
   for (const key of ["carrier", "admin_note"]) {
     if (req.body?.[key] !== undefined && orderCols.includes(key)) {
       update[key] = req.body[key] || null;
@@ -1500,7 +1732,7 @@ app.get("/admin/team", requireAuth, requirePermission("team"), async (req, res) 
   res.json({ members });
 });
 
-app.post("/admin/team", requireAuth, requirePermission("team"), async (req, res) => {
+app.post("/admin/team", rateLimit("team", 30, 60 * 60 * 1000), requireAuth, requirePermission("team"), async (req, res) => {
   const email = String(req.body?.email || "").trim();
   const role = String(req.body?.role || "");
   if (!email) return res.status(400).json({ error: "Email is required" });
@@ -1519,7 +1751,7 @@ app.post("/admin/team", requireAuth, requirePermission("team"), async (req, res)
     if (role === "customer") return res.status(404).json({ error: "No account with this email." });
     // No account yet: Supabase sends an invitation email to create a password
     const { data, error: inviteError } = await supabase.auth.admin.inviteUserByEmail(email, {
-      redirectTo: `${FRONTEND_URL}/reset-password`,
+      redirectTo: `${SITE_URL}/reset-password`,
       data: { language },
     });
     if (inviteError) return res.status(500).json({ error: inviteError.message });
@@ -1652,7 +1884,7 @@ app.delete("/admin/products/:id", requireAuth, requirePermission("products"), as
 // Upload a product photo. Body: { data: "<base64>", contentType: "image/jpeg" }
 let productsBucketReady = false;
 
-app.post("/admin/upload", requireAuth, requirePermission("products", "store"), async (req, res) => {
+app.post("/admin/upload", rateLimit("upload", 120, 10 * 60 * 1000), requireAuth, requirePermission("products", "store"), async (req, res) => {
   try {
     const { data: base64, contentType = "image/jpeg" } = req.body || {};
     if (!base64) return res.status(400).json({ error: "No image" });
@@ -1795,7 +2027,7 @@ app.get("/products/:id/can-review", requireAuth, async (req, res) => {
   res.json({ canReview: await hasBought(req.user.id, Number(req.params.id)) });
 });
 
-app.post("/products/:id/reviews", requireAuth, async (req, res) => {
+app.post("/products/:id/reviews", rateLimit("review", 10, 60 * 60 * 1000), requireAuth, async (req, res) => {
   const productId = Number(req.params.id);
   const rating = parseInt(req.body?.rating, 10);
   if (!(rating >= 1 && rating <= 5)) return res.status(400).json({ error: "Rating must be 1 to 5" });
@@ -1967,7 +2199,7 @@ app.patch("/admin/promos/:id", requireAuth, requirePermission("store"), async (r
 // WELCOME EMAIL — sent once, the first time a user is logged in
 // ======================================================
 
-app.post("/me/welcome", requireAuth, async (req, res) => {
+app.post("/me/welcome", rateLimit("welcome", 10, 60 * 60 * 1000), requireAuth, async (req, res) => {
   const meta = req.user.user_metadata || {};
   if (meta.welcome_sent) return res.json({ sent: false });
 
@@ -2053,10 +2285,11 @@ app.use(
       err
     );
 
-    res.status(500).json({
-      error:
-        err.message ||
-        "Internal server error",
+    if (err.type === "entity.too.large") {
+      return res.status(413).json({ error: "File too large" });
+    }
+    res.status(err.status || 500).json({
+      error: IS_PROD ? "Internal server error" : err.message || "Internal server error",
     });
   }
 );

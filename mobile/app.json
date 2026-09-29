@@ -3,7 +3,7 @@
     "name": "TechZhop",
     "slug": "techzhop",
     "scheme": "techzhop",
-    "version": "0.1.0",
+    "version": "1.0.0",
     "orientation": "portrait",
     "userInterfaceStyle": "automatic",
     "backgroundColor": "#000000",
@@ -18,15 +18,21 @@
           "pt",
           "de",
           "zh"
-        ]
-      }
+        ],
+        "ITSAppUsesNonExemptEncryption": false
+      },
+      "buildNumber": "1"
     },
     "android": {
       "package": "com.techzhop.app",
       "adaptiveIcon": {
         "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#000000"
-      }
+      },
+      "versionCode": 1,
+      "permissions": [
+        "android.permission.POST_NOTIFICATIONS"
+      ]
     },
     "plugins": [
       "expo-router",
@@ -49,6 +55,7 @@
     },
     "web": {
       "favicon": "./assets/logo-mark.png"
-    }
+    },
+    "description": "TechZhop — Tech, gaming & lifestyle store."
   }
 }

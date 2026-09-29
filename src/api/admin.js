@@ -28,6 +28,8 @@ export const adminApi = {
   createPromo: (p) => call("post", "/admin/promos", p),
   setPromoActive: (id, active) => call("patch", `/admin/promos/${id}`, { active }),
   setRole: (email, role, language) => call("post", "/admin/team", { email, role, language }),
+  decide: (id, decision, message) => call("post", `/admin/orders/${id}/decision`, { decision, message }).then((d) => d.order),
+  refund: (id, body) => call("post", `/admin/orders/${id}/refund`, body).then((d) => d.order),
   updateOrder: (id, fields) => call("patch", `/admin/orders/${id}`, fields).then((d) => d.order),
   createCategory: (name) => call("post", "/admin/categories", { name }).then((d) => d.item),
   createBrand: (name) => call("post", "/admin/brands", { name }).then((d) => d.item),

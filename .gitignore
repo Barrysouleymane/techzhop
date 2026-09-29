@@ -32,3 +32,6 @@ backend/.env
 
 # Backups
 *.zip
+
+# Temporary archives
+*.tgz

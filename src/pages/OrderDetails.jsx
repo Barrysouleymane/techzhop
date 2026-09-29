@@ -4,6 +4,7 @@ import { useTranslation } from "react-i18next";
 import { Truck, MapPin, ExternalLink } from "lucide-react";
 import Page, { card } from "@/components/Page";
 import { StatusBadge, StatusTimeline } from "@/components/Orders/OrderStatus";
+import OrderHelp from "@/components/Orders/OrderHelp";
 import { getOrder, apiError } from "@/api/account";
 import { formatUSD, carrierName, trackingUrl } from "../../shared/settings";
 
@@ -70,6 +71,8 @@ export default function OrderDetails() {
               <span className="text-cyan-400">{usd(order.total)}</span>
             </div>
           </div>
+
+          <OrderHelp order={order} onChange={setOrder} />
         </div>
       )}
     </Page>

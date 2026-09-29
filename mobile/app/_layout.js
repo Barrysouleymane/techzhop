@@ -1,6 +1,7 @@
 import "../src/i18n";
 import { useEffect } from "react";
 import { Stack } from "expo-router";
+import { View, Text, Pressable } from "react-native";
 import { StatusBar } from "expo-status-bar";
 import { useTranslation } from "react-i18next";
 import i18n, { deviceLanguage } from "../src/i18n";
@@ -75,5 +76,19 @@ export default function RootLayout() {
       </Stack>
       <LocationModal />
     </>
+  );
+}
+
+// Friendly screen instead of a crash (expo-router picks this up automatically)
+export function ErrorBoundary({ error, retry }) {
+  console.error("APP ERROR:", error);
+  return (
+    <View style={{ flex: 1, backgroundColor: "#000", alignItems: "center", justifyContent: "center", padding: 24 }}>
+      <Text style={{ color: "#fff", fontSize: 22, fontWeight: "800", marginBottom: 10, textAlign: "center" }}>{i18n.t("errorPage.title")}</Text>
+      <Text style={{ color: "#a1a1aa", textAlign: "center", marginBottom: 24 }}>{i18n.t("errorPage.text")}</Text>
+      <Pressable onPress={retry} style={{ backgroundColor: "#06b6d4", paddingVertical: 12, paddingHorizontal: 24, borderRadius: 10 }}>
+        <Text style={{ color: "#000", fontWeight: "800" }}>{i18n.t("errorPage.retry")}</Text>
+      </Pressable>
+    </View>
   );
 }

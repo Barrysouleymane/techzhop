@@ -162,6 +162,10 @@ export async function getOrder(id) {
   return (await request(`/order/${id}`)).order;
 }
 
+export async function requestOrderHelp(id, type, reason) {
+  return (await request(`/orders/${id}/request`, { method: "POST", body: JSON.stringify({ type, reason }) })).order;
+}
+
 export async function deleteMyAccount() {
   await request("/account", { method: "DELETE" });
   await supabase.auth.signOut();

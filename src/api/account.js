@@ -92,6 +92,13 @@ export async function getOrder(orderId) {
   return res.data.order;
 }
 
+export async function requestOrderHelp(orderId, type, reason) {
+  const res = await axios.post(`${API_URL}/orders/${orderId}/request`, { type, reason }, {
+    headers: await authHeaders(),
+  });
+  return res.data.order;
+}
+
 // ---------- Security ----------
 
 export async function changePassword(email, currentPassword, newPassword) {

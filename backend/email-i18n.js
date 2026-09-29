@@ -1,6 +1,8 @@
 // Texts of the emails sent by the backend, in the 6 shop languages.
 module.exports = {
   en: {
+    request: { cancel: "Cancellation", return: "Return", reasonLabel: "Reason", messageLabel: "Message from our team", receivedSubject: "{type} request received — order #{id}", receivedBody: "We have received your request. Our team will review it and reply by email, usually within 48 hours.", adminSubject: "↩️ {type} request — order #{id}", approvedSubject: "{type} accepted — order #{id}", approvedBody: "Good news: your request has been accepted. Please follow the instructions below if any.", rejectedSubject: "{type} declined — order #{id}", rejectedBody: "We are sorry, we could not accept your request. See the explanation below, and reply to this email if you have questions." },
+    refund: { subject: "Refund issued — order #{id}", title: "Your refund is on its way", body: "We have refunded {amount} for order #{id} to your original payment method. It may take 5 to 10 business days to appear on your statement." },
     hi: "Hi {name},", hiNoName: "Hello,",
     footer: "TechZhop — Innovation at your fingertips",
     why: "You receive this email because you have an account on TechZhop.",
@@ -15,6 +17,8 @@ module.exports = {
     deleted: { subject: "Your TechZhop account has been deleted", title: "Account deleted", body: "As requested, your account and personal data have been deleted. We're sorry to see you go — you're always welcome back." },
   },
   fr: {
+    request: { cancel: "annulation", return: "retour", reasonLabel: "Motif", messageLabel: "Message de notre équipe", receivedSubject: "Demande reçue ({type}) — commande n°{id}", receivedBody: "Nous avons bien reçu votre demande. Notre équipe va l'examiner et vous répondra par e-mail, en général sous 48 heures.", adminSubject: "↩️ Nouvelle demande ({type}) — commande n°{id}", approvedSubject: "Demande acceptée ({type}) — commande n°{id}", approvedBody: "Bonne nouvelle : votre demande a été acceptée. Suivez les instructions ci-dessous s'il y en a.", rejectedSubject: "Demande refusée ({type}) — commande n°{id}", rejectedBody: "Nous sommes désolés, nous n'avons pas pu accepter votre demande. Voir l'explication ci-dessous ; répondez à cet e-mail si vous avez des questions." },
+    refund: { subject: "Remboursement effectué — commande n°{id}", title: "Votre remboursement est en route", body: "Nous avons remboursé {amount} pour la commande n°{id} sur votre moyen de paiement d'origine. Il peut falloir 5 à 10 jours ouvrés pour le voir sur votre relevé." },
     hi: "Bonjour {name},", hiNoName: "Bonjour,",
     footer: "TechZhop — L'innovation à portée de main",
     why: "Vous recevez cet e-mail car vous avez un compte sur TechZhop.",
@@ -29,6 +33,8 @@ module.exports = {
     deleted: { subject: "Votre compte TechZhop a été supprimé", title: "Compte supprimé", body: "Comme demandé, votre compte et vos données personnelles ont été supprimés. Nous sommes tristes de vous voir partir — vous serez toujours le bienvenu." },
   },
   es: {
+    request: { cancel: "cancelación", return: "devolución", reasonLabel: "Motivo", messageLabel: "Mensaje de nuestro equipo", receivedSubject: "Solicitud de {type} recibida — pedido #{id}", receivedBody: "Hemos recibido tu solicitud. Nuestro equipo la revisará y te responderá por correo, normalmente en 48 horas.", adminSubject: "↩️ Solicitud de {type} — pedido #{id}", approvedSubject: "Solicitud aceptada ({type}) — pedido #{id}", approvedBody: "Buenas noticias: tu solicitud ha sido aceptada. Sigue las instrucciones de abajo si las hay.", rejectedSubject: "Solicitud rechazada ({type}) — pedido #{id}", rejectedBody: "Lo sentimos, no pudimos aceptar tu solicitud. Consulta la explicación de abajo y responde a este correo si tienes preguntas." },
+    refund: { subject: "Reembolso realizado — pedido #{id}", title: "Tu reembolso está en camino", body: "Hemos reembolsado {amount} del pedido #{id} a tu método de pago original. Puede tardar de 5 a 10 días hábiles en aparecer en tu extracto." },
     hi: "Hola {name}:", hiNoName: "Hola:",
     footer: "TechZhop — La innovación a tu alcance",
     why: "Recibes este correo porque tienes una cuenta en TechZhop.",
@@ -43,6 +49,8 @@ module.exports = {
     deleted: { subject: "Tu cuenta de TechZhop ha sido eliminada", title: "Cuenta eliminada", body: "Como pediste, tu cuenta y tus datos personales han sido eliminados. Sentimos verte partir: siempre serás bienvenido." },
   },
   pt: {
+    request: { cancel: "cancelamento", return: "devolução", reasonLabel: "Motivo", messageLabel: "Mensagem da nossa equipe", receivedSubject: "Pedido de {type} recebido — encomenda #{id}", receivedBody: "Recebemos o seu pedido. Nossa equipe vai analisá-lo e responder por e-mail, normalmente em até 48 horas.", adminSubject: "↩️ Pedido de {type} — encomenda #{id}", approvedSubject: "Pedido aceito ({type}) — encomenda #{id}", approvedBody: "Boa notícia: o seu pedido foi aceito. Siga as instruções abaixo, se houver.", rejectedSubject: "Pedido recusado ({type}) — encomenda #{id}", rejectedBody: "Lamentamos, não foi possível aceitar o seu pedido. Veja a explicação abaixo e responda a este e-mail se tiver dúvidas." },
+    refund: { subject: "Reembolso efetuado — encomenda #{id}", title: "Seu reembolso está a caminho", body: "Reembolsamos {amount} da encomenda #{id} no seu meio de pagamento original. Pode levar de 5 a 10 dias úteis para aparecer no extrato." },
     hi: "Olá, {name},", hiNoName: "Olá,",
     footer: "TechZhop — Inovação ao seu alcance",
     why: "Você recebe este e-mail porque tem uma conta na TechZhop.",
@@ -57,6 +65,8 @@ module.exports = {
     deleted: { subject: "Sua conta TechZhop foi excluída", title: "Conta excluída", body: "Como solicitado, sua conta e seus dados pessoais foram excluídos. Sentimos muito ver você partir — você será sempre bem-vindo de volta." },
   },
   de: {
+    request: { cancel: "Stornierung", return: "Rücksendung", reasonLabel: "Grund", messageLabel: "Nachricht von unserem Team", receivedSubject: "{type}sanfrage erhalten — Bestellung #{id}", receivedBody: "Wir haben deine Anfrage erhalten. Unser Team prüft sie und antwortet dir per E-Mail, meist innerhalb von 48 Stunden.", adminSubject: "↩️ {type}sanfrage — Bestellung #{id}", approvedSubject: "{type} angenommen — Bestellung #{id}", approvedBody: "Gute Nachricht: Deine Anfrage wurde angenommen. Bitte folge ggf. den Anweisungen unten.", rejectedSubject: "{type} abgelehnt — Bestellung #{id}", rejectedBody: "Leider konnten wir deine Anfrage nicht annehmen. Die Erklärung findest du unten; antworte auf diese E-Mail, wenn du Fragen hast." },
+    refund: { subject: "Erstattung veranlasst — Bestellung #{id}", title: "Deine Erstattung ist unterwegs", body: "Wir haben {amount} für Bestellung #{id} auf dein ursprüngliches Zahlungsmittel erstattet. Es kann 5 bis 10 Werktage dauern, bis der Betrag erscheint." },
     hi: "Hallo {name},", hiNoName: "Hallo,",
     footer: "TechZhop — Innovation zum Greifen nah",
     why: "Du erhältst diese E-Mail, weil du ein Konto bei TechZhop hast.",
@@ -71,6 +81,8 @@ module.exports = {
     deleted: { subject: "Dein TechZhop-Konto wurde gelöscht", title: "Konto gelöscht", body: "Wie gewünscht wurden dein Konto und deine persönlichen Daten gelöscht. Schade, dass du gehst — du bist jederzeit wieder willkommen." },
   },
   zh: {
+    request: { cancel: "取消", return: "退货", reasonLabel: "原因", messageLabel: "我们团队的留言", receivedSubject: "已收到{type}申请 — 订单 #{id}", receivedBody: "我们已收到您的申请。我们的团队将进行审核，通常会在 48 小时内通过邮件回复您。", adminSubject: "↩️ {type}申请 — 订单 #{id}", approvedSubject: "{type}已通过 — 订单 #{id}", approvedBody: "好消息：您的申请已通过。如有说明，请按照下方说明操作。", rejectedSubject: "{type}未通过 — 订单 #{id}", rejectedBody: "很抱歉，我们无法接受您的申请。请查看下方说明，如有疑问请直接回复此邮件。" },
+    refund: { subject: "已退款 — 订单 #{id}", title: "您的退款正在处理中", body: "我们已将订单 #{id} 的 {amount} 退回至您的原支付方式。可能需要 5 到 10 个工作日才会显示在您的账单上。" },
     hi: "{name}，您好：", hiNoName: "您好：",
     footer: "TechZhop — 创新触手可及",
     why: "您收到此邮件是因为您在 TechZhop 拥有账户。",

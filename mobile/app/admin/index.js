@@ -145,6 +145,7 @@ export default function AdminHome() {
               <Text style={s.name}>#{o.id} · {usd(o.total)}</Text>
               <Pressable onPress={() => changeStatus(o)} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                 <StatusBadge status={o.status} />
+                {o.request_status === "pending" ? <Text style={{ color: c.warning, fontSize: 12, fontWeight: "700" }}>↩️ {t("returns.badge")}</Text> : null}
                 <Ionicons name="chevron-down" size={16} color={c.muted} />
               </Pressable>
             </View>

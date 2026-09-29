@@ -3,7 +3,8 @@ import { ScrollView, View, Text, Image, Pressable, Alert, Linking, KeyboardAvoid
 import { Stack, useLocalSearchParams } from "expo-router";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
-import { adminApi } from "../../src/lib/admin";
+import { adminApi, useStaff } from "../../src/lib/admin";
+import AdminOrderMoney from "../../src/components/AdminOrderMoney";
 import { errorMessage } from "../../src/lib/api";
 import { Loading, Card, Button, Input, useStyles } from "../../src/components/ui";
 import { StatusBadge, StatusTimeline } from "../../src/components/OrderStatus";
@@ -15,6 +16,7 @@ export default function AdminOrder() {
   const [data, setData] = useState(null);
   const [form, setForm] = useState({ carrier: "", tracking_number: "", admin_note: "" });
   const [saving, setSaving] = useState(false);
+  const staff = useStaff();
   const [s, c] = useStyles((c) => ({
     h2: { color: c.text, fontSize: 16, fontWeight: "800", marginBottom: 10 },
     text: { color: c.text },
@@ -147,6 +149,14 @@ export default function AdminOrder() {
             </View>
           ) : null}
         </Card>
+
+        <AdminOrderMoney
+          key={`${order.request_status}-${order.refunded_amount}`}
+          order={order}
+          fields={fields}
+          canRefund={staff.can("revenue")}
+          onChange={(o) => setData((d) => ({ ...d, order: { ...d.order, ...o } }))}
+        />
 
         {payment && (
           <Card style={{ gap: 6 }}>

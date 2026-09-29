@@ -571,5 +571,59 @@
     "shippingTo": "Shipping: {{amount}}",
     "freeShipping": "Free shipping",
     "change": "Change"
+  },
+  "returns": {
+    "needHelp": "Need help with this order?",
+    "cancel": "Cancel order",
+    "return": "Return items",
+    "returnUntil": "Returnable until {{date}}",
+    "policy": "Returns are accepted within {{days}} days of delivery.",
+    "reason": "Reason",
+    "reasons": {
+      "changedMind": "I changed my mind",
+      "damaged": "Damaged or defective",
+      "wrongItem": "Wrong item received",
+      "late": "Not received / arrived too late",
+      "other": "Other"
+    },
+    "details": "Details (optional)",
+    "send": "Send request",
+    "sent": "Request sent. We'll reply by email.",
+    "status": {
+      "cancel": {
+        "pending": "Cancellation requested — under review",
+        "approved": "Cancellation accepted",
+        "rejected": "Cancellation declined"
+      },
+      "return": {
+        "pending": "Return requested — under review",
+        "approved": "Return accepted — see the instructions sent by email",
+        "rejected": "Return declined"
+      }
+    },
+    "teamMessage": "Message from our team",
+    "refunded": "Refunded: {{amount}}",
+    "requestTitle": "Customer request",
+    "approveRefund": "Accept and refund",
+    "approve": "Accept",
+    "reject": "Decline",
+    "messagePlaceholder": "Message to the customer (e.g. return address, explanation)",
+    "refundTitle": "Refund",
+    "refundAmount": "Amount (USD)",
+    "restock": "Put the items back in stock",
+    "cancelOrder": "Mark the order as cancelled",
+    "refundBtn": "Refund {{amount}}",
+    "refundConfirm": "Refund {{amount}} to the customer? This cannot be undone.",
+    "refundDone": "Refund issued",
+    "alreadyRefunded": "Already refunded: {{amount}}",
+    "fullyRefunded": "Fully refunded",
+    "needSql": "Run the SQL file 20260929e_returns.sql in Supabase to enable returns and refunds.",
+    "badge": "Request"
+  },
+  "errorPage": {
+    "title": "Something went wrong",
+    "text": "Sorry, this page ran into a problem. Please go back to the home page and try again.",
+    "home": "Back to home",
+    "retry": "Try again"
   }
 }

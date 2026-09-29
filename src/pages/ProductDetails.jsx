@@ -16,6 +16,7 @@ import useShopStore from "@/store/shopStore";
 import useRecentStore from "@/store/recentStore";
 import { isOnSale, deliveryRange, shippingCost, effectivePrice, locationPlace } from "../../shared/settings";
 import useDeliveryLocation from "@/hooks/useDeliveryLocation";
+import usePageTitle from "@/hooks/usePageTitle";
 import useLocationStore from "@/store/locationStore";
 import useCartStore from "@/store/cartStore";
 import useWishlistStore from "@/store/wishlistStore";
@@ -32,6 +33,7 @@ export default function ProductDetails() {
   const rating = useShopStore((s) => s.ratings[id]);
   const addRecent = useRecentStore((s) => s.add);
   const loc = useDeliveryLocation();
+  usePageTitle(product?.name, product?.description);
   const openLocation = useLocationStore((s) => s.setOpen);
 
   useEffect(() => {

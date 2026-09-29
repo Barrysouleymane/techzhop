@@ -6,6 +6,8 @@ import { User, Mail, Phone, MapPin, CreditCard, Truck, ExternalLink, StickyNote 
 import Page, { Field, btnPrimary, btnSecondary, inputClass, card } from "@/components/Page";
 import { StatusBadge, StatusTimeline } from "@/components/Orders/OrderStatus";
 import { adminApi } from "@/api/admin";
+import AdminOrderMoney from "@/components/Orders/AdminOrderMoney";
+import useAuth from "@/hooks/useAuth";
 import { apiError } from "@/api/account";
 import { ORDER_STATUSES, CARRIERS, formatUSD, trackingUrl } from "../../../shared/settings";
 
@@ -15,6 +17,7 @@ export default function AdminOrderDetail() {
   const [data, setData] = useState(null);
   const [tracking, setTracking] = useState({ carrier: "", tracking_number: "", admin_note: "" });
   const [saving, setSaving] = useState(false);
+  const { can } = useAuth();
 
   useEffect(() => {
     adminApi
@@ -137,6 +140,15 @@ export default function AdminOrderDetail() {
         </div>
 
         <div className="space-y-6">
+          {/* REQUEST + REFUND */}
+          <AdminOrderMoney
+            key={`${order.request_status}-${order.refunded_amount}`}
+            order={order}
+            fields={fields}
+            canRefund={can("revenue")}
+            onChange={(o) => setData((d) => ({ ...d, order: { ...d.order, ...o } }))}
+          />
+
           {/* CUSTOMER */}
           <div className={`${card} p-6 space-y-3`}>
             <h2 className="text-lg font-bold m-0">{t("admin.customer")}</h2>

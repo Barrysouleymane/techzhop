@@ -571,5 +571,59 @@
     "shippingTo": "Frete: {{amount}}",
     "freeShipping": "Frete grátis",
     "change": "Alterar"
+  },
+  "returns": {
+    "needHelp": "Algum problema com esta encomenda?",
+    "cancel": "Cancelar encomenda",
+    "return": "Devolver itens",
+    "returnUntil": "Devolução possível até {{date}}",
+    "policy": "Aceitamos devoluções até {{days}} dias após a entrega.",
+    "reason": "Motivo",
+    "reasons": {
+      "changedMind": "Mudei de ideia",
+      "damaged": "Danificado ou com defeito",
+      "wrongItem": "Recebi o item errado",
+      "late": "Não recebido / chegou tarde",
+      "other": "Outro"
+    },
+    "details": "Detalhes (opcional)",
+    "send": "Enviar pedido",
+    "sent": "Pedido enviado. Responderemos por e-mail.",
+    "status": {
+      "cancel": {
+        "pending": "Cancelamento solicitado — em análise",
+        "approved": "Cancelamento aceito",
+        "rejected": "Cancelamento recusado"
+      },
+      "return": {
+        "pending": "Devolução solicitada — em análise",
+        "approved": "Devolução aceita — siga as instruções enviadas por e-mail",
+        "rejected": "Devolução recusada"
+      }
+    },
+    "teamMessage": "Mensagem da nossa equipe",
+    "refunded": "Reembolsado: {{amount}}",
+    "requestTitle": "Pedido do cliente",
+    "approveRefund": "Aceitar e reembolsar",
+    "approve": "Aceitar",
+    "reject": "Recusar",
+    "messagePlaceholder": "Mensagem ao cliente (ex.: endereço de devolução, explicação)",
+    "refundTitle": "Reembolso",
+    "refundAmount": "Valor (USD)",
+    "restock": "Repor os itens no estoque",
+    "cancelOrder": "Marcar a encomenda como cancelada",
+    "refundBtn": "Reembolsar {{amount}}",
+    "refundConfirm": "Reembolsar {{amount}} ao cliente? Não pode ser desfeito.",
+    "refundDone": "Reembolso efetuado",
+    "alreadyRefunded": "Já reembolsado: {{amount}}",
+    "fullyRefunded": "Totalmente reembolsada",
+    "needSql": "Execute o arquivo SQL 20260929e_returns.sql no Supabase para ativar devoluções e reembolsos.",
+    "badge": "Pedido"
+  },
+  "errorPage": {
+    "title": "Algo deu errado",
+    "text": "Desculpe, esta página teve um problema. Volte ao início e tente novamente.",
+    "home": "Voltar ao início",
+    "retry": "Tentar novamente"
   }
 }

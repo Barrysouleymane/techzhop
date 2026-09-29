@@ -8,7 +8,7 @@ const T = require("./email-i18n");
 
 const RESEND_API_KEY = process.env.RESEND_API_KEY || "";
 const EMAIL_FROM = process.env.EMAIL_FROM || "TechZhop <onboarding@resend.dev>";
-const SITE = process.env.FRONTEND_URL || "http://localhost:5173";
+const SITE = (process.env.FRONTEND_URL || "http://localhost:5173").split(",")[0].trim().replace(/\/$/, "");
 
 const LANGS = Object.keys(T);
 const lang = (l) => (LANGS.includes(String(l || "").slice(0, 2)) ? String(l).slice(0, 2) : "en");
@@ -160,7 +160,84 @@ function accountDeletedEmail({ to, name, language }) {
   });
 }
 
+
+// ---------- Cancellations / returns / refunds ----------
+
+function messageBox(label, text) {
+  if (!text) return "";
+  return `<div style="margin:16px 0;padding:14px 16px;background:#f4f4f5;border-radius:10px;font-size:14px;color:#3f3f46"><strong>${esc(label)}</strong><br>${esc(text).replace(/\n/g, "<br>")}</div>`;
+}
+
+function requestReceivedEmail({ to, name, language, order }) {
+  const t = T[lang(language)];
+  const type = t.request[order.request_type] || order.request_type;
+  return sendEmail({
+    to,
+    subject: fill(t.request.receivedSubject, { id: order.id, type }),
+    html: layout(language, {
+      title: fill(t.request.receivedSubject, { id: order.id, type }),
+      greeting: hi(language, name),
+      paragraphs: [t.request.receivedBody],
+      extra: messageBox(t.request.reasonLabel, order.request_reason),
+      cta: { label: t.update.cta, url: `${SITE}/orders/${order.id}` },
+    }),
+  });
+}
+
+function requestAdminEmail({ to, order, customer }) {
+  const L = lang(process.env.ADMIN_EMAIL_LANGUAGE || "fr");
+  const t = T[L];
+  const type = t.request[order.request_type] || order.request_type;
+  const subject = fill(t.request.adminSubject, { id: order.id, type });
+  return sendEmail({
+    to,
+    subject,
+    html: layout(L, {
+      title: subject,
+      paragraphs: [customer?.email ? `${customer.name || ""} <${customer.email}>` : ""].filter(Boolean),
+      extra: messageBox(t.request.reasonLabel, order.request_reason),
+      cta: { label: t.newOrder.cta, url: `${SITE}/admin/orders/${order.id}` },
+    }),
+  });
+}
+
+function requestDecisionEmail({ to, name, language, order, message }) {
+  const t = T[lang(language)];
+  const type = t.request[order.request_type] || order.request_type;
+  const ok = order.request_status === "approved";
+  const subject = fill(ok ? t.request.approvedSubject : t.request.rejectedSubject, { id: order.id, type });
+  return sendEmail({
+    to,
+    subject,
+    html: layout(language, {
+      title: subject,
+      greeting: hi(language, name),
+      paragraphs: [ok ? t.request.approvedBody : t.request.rejectedBody],
+      extra: messageBox(t.request.messageLabel, message),
+      cta: { label: t.update.cta, url: `${SITE}/orders/${order.id}` },
+    }),
+  });
+}
+
+function refundEmail({ to, name, language, order, amount }) {
+  const t = T[lang(language)];
+  return sendEmail({
+    to,
+    subject: fill(t.refund.subject, { id: order.id }),
+    html: layout(language, {
+      title: t.refund.title,
+      greeting: hi(language, name),
+      paragraphs: [fill(t.refund.body, { amount: usd(amount, language), id: order.id })],
+      cta: { label: t.update.cta, url: `${SITE}/orders/${order.id}` },
+    }),
+  });
+}
+
 module.exports = {
+  requestReceivedEmail,
+  requestAdminEmail,
+  requestDecisionEmail,
+  refundEmail,
   sendEmail,
   welcomeEmail,
   orderConfirmationEmail,

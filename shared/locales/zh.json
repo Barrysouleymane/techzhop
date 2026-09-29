@@ -569,5 +569,59 @@
     "shippingTo": "运费：{{amount}}",
     "freeShipping": "免运费",
     "change": "更改"
+  },
+  "returns": {
+    "needHelp": "这个订单有问题吗？",
+    "cancel": "取消订单",
+    "return": "退货",
+    "returnUntil": "可退货至 {{date}}",
+    "policy": "签收后 {{days}} 天内可申请退货。",
+    "reason": "原因",
+    "reasons": {
+      "changedMind": "我改变主意了",
+      "damaged": "损坏或有缺陷",
+      "wrongItem": "收到错误的商品",
+      "late": "未收到 / 送达太晚",
+      "other": "其他"
+    },
+    "details": "详细说明（可选）",
+    "send": "提交申请",
+    "sent": "申请已提交，我们会通过邮件回复您。",
+    "status": {
+      "cancel": {
+        "pending": "已申请取消 — 审核中",
+        "approved": "取消已通过",
+        "rejected": "取消未通过"
+      },
+      "return": {
+        "pending": "已申请退货 — 审核中",
+        "approved": "退货已通过 — 请按邮件中的说明操作",
+        "rejected": "退货未通过"
+      }
+    },
+    "teamMessage": "我们团队的留言",
+    "refunded": "已退款：{{amount}}",
+    "requestTitle": "客户申请",
+    "approveRefund": "通过并退款",
+    "approve": "通过",
+    "reject": "拒绝",
+    "messagePlaceholder": "给客户的留言（例如退货地址、说明）",
+    "refundTitle": "退款",
+    "refundAmount": "金额（美元）",
+    "restock": "将商品放回库存",
+    "cancelOrder": "将订单标记为已取消",
+    "refundBtn": "退款 {{amount}}",
+    "refundConfirm": "确定向客户退款 {{amount}} 吗？此操作无法撤销。",
+    "refundDone": "退款已完成",
+    "alreadyRefunded": "已退款：{{amount}}",
+    "fullyRefunded": "已全额退款",
+    "needSql": "请在 Supabase 中运行 SQL 文件 20260929e_returns.sql 以启用退货和退款。",
+    "badge": "申请"
+  },
+  "errorPage": {
+    "title": "出了点问题",
+    "text": "抱歉，此页面出现错误。请返回首页后重试。",
+    "home": "返回首页",
+    "retry": "重试"
   }
 }

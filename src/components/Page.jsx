@@ -1,9 +1,11 @@
 import { Link } from "react-router-dom";
 import { ArrowLeft } from "lucide-react";
 import MainLayout from "@/layouts/MainLayout";
+import usePageTitle from "@/hooks/usePageTitle";
 
 /** Standard page wrapper: layout + centered container + optional title/back link */
-export default function Page({ title, back, backLabel, width = "max-w-5xl", children, actions }) {
+export default function Page({ title, back, backLabel, width = "max-w-5xl", children, actions, metaTitle }) {
+  usePageTitle(metaTitle || (typeof title === "string" ? title : undefined));
   return (
     <MainLayout>
       <section className={`${width} mx-auto px-4 sm:px-6 py-10 sm:py-12`}>

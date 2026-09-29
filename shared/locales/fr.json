@@ -571,5 +571,59 @@
     "shippingTo": "Livraison : {{amount}}",
     "freeShipping": "Livraison gratuite",
     "change": "Modifier"
+  },
+  "returns": {
+    "needHelp": "Un problème avec cette commande ?",
+    "cancel": "Annuler la commande",
+    "return": "Retourner des articles",
+    "returnUntil": "Retour possible jusqu'au {{date}}",
+    "policy": "Les retours sont acceptés dans les {{days}} jours suivant la livraison.",
+    "reason": "Motif",
+    "reasons": {
+      "changedMind": "J'ai changé d'avis",
+      "damaged": "Endommagé ou défectueux",
+      "wrongItem": "Mauvais article reçu",
+      "late": "Pas reçu / arrivé trop tard",
+      "other": "Autre"
+    },
+    "details": "Détails (facultatif)",
+    "send": "Envoyer la demande",
+    "sent": "Demande envoyée. Nous vous répondrons par e-mail.",
+    "status": {
+      "cancel": {
+        "pending": "Annulation demandée — en cours d'examen",
+        "approved": "Annulation acceptée",
+        "rejected": "Annulation refusée"
+      },
+      "return": {
+        "pending": "Retour demandé — en cours d'examen",
+        "approved": "Retour accepté — suivez les instructions reçues par e-mail",
+        "rejected": "Retour refusé"
+      }
+    },
+    "teamMessage": "Message de notre équipe",
+    "refunded": "Remboursé : {{amount}}",
+    "requestTitle": "Demande du client",
+    "approveRefund": "Accepter et rembourser",
+    "approve": "Accepter",
+    "reject": "Refuser",
+    "messagePlaceholder": "Message au client (ex. adresse de retour, explication)",
+    "refundTitle": "Remboursement",
+    "refundAmount": "Montant (USD)",
+    "restock": "Remettre les articles en stock",
+    "cancelOrder": "Passer la commande en « Annulée »",
+    "refundBtn": "Rembourser {{amount}}",
+    "refundConfirm": "Rembourser {{amount}} au client ? C'est irréversible.",
+    "refundDone": "Remboursement effectué",
+    "alreadyRefunded": "Déjà remboursé : {{amount}}",
+    "fullyRefunded": "Entièrement remboursée",
+    "needSql": "Exécutez le fichier SQL 20260929e_returns.sql dans Supabase pour activer les retours et remboursements.",
+    "badge": "Demande"
+  },
+  "errorPage": {
+    "title": "Un problème est survenu",
+    "text": "Désolé, cette page a rencontré une erreur. Revenez à l'accueil et réessayez.",
+    "home": "Retour à l'accueil",
+    "retry": "Réessayer"
   }
 }

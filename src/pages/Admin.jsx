@@ -242,7 +242,7 @@ function OrdersAdmin() {
                   </td>
                   <td className="p-4">{formatUSD(o.total, i18n.language)}</td>
                   <td className="p-4" onClick={(e) => e.stopPropagation()}>
-                    <div className="mb-2"><StatusBadge status={o.status} /></div>
+                    <div className="mb-2 flex flex-wrap gap-2"><StatusBadge status={o.status} />{o.request_status === "pending" && <span className="px-2 py-0.5 rounded-full text-xs font-bold bg-yellow-500/20 text-yellow-300">↩️ {t("returns.badge")}</span>}</div>
                     <select value={o.status} onChange={(e) => update(o, { status: e.target.value })} className="bg-zinc-800 border border-zinc-700 rounded px-2 py-1 text-white">
                       {ORDER_STATUSES.map((s) => <option key={s} value={s}>{t(`orders.status.${s}`)}</option>)}
                     </select>

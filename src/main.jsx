@@ -8,6 +8,7 @@ import "./i18n";
 
 import App from "./App";
 import ThemeSync from "./components/ThemeSync";
+import ErrorBoundary from "./components/ErrorBoundary";
 import { supabase } from "./lib/supabase";
 import axios from "axios";
 import i18n from "./i18n";
@@ -31,10 +32,12 @@ supabase.auth.onAuthStateChange((event, session) => {
 
 ReactDOM.createRoot(document.getElementById("root")).render(
   <React.StrictMode>
+    <ErrorBoundary>
     <BrowserRouter>
       <ThemeSync />
       <Toaster position="top-center" richColors closeButton />
       <App />
     </BrowserRouter>
+    </ErrorBoundary>
   </React.StrictMode>
 );

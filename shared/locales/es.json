@@ -571,5 +571,59 @@
     "shippingTo": "Envío: {{amount}}",
     "freeShipping": "Envío gratis",
     "change": "Cambiar"
+  },
+  "returns": {
+    "needHelp": "¿Algún problema con este pedido?",
+    "cancel": "Cancelar pedido",
+    "return": "Devolver artículos",
+    "returnUntil": "Devolución posible hasta el {{date}}",
+    "policy": "Se aceptan devoluciones dentro de los {{days}} días posteriores a la entrega.",
+    "reason": "Motivo",
+    "reasons": {
+      "changedMind": "Cambié de opinión",
+      "damaged": "Dañado o defectuoso",
+      "wrongItem": "Recibí un artículo equivocado",
+      "late": "No recibido / llegó tarde",
+      "other": "Otro"
+    },
+    "details": "Detalles (opcional)",
+    "send": "Enviar solicitud",
+    "sent": "Solicitud enviada. Te responderemos por correo.",
+    "status": {
+      "cancel": {
+        "pending": "Cancelación solicitada — en revisión",
+        "approved": "Cancelación aceptada",
+        "rejected": "Cancelación rechazada"
+      },
+      "return": {
+        "pending": "Devolución solicitada — en revisión",
+        "approved": "Devolución aceptada — sigue las instrucciones enviadas por correo",
+        "rejected": "Devolución rechazada"
+      }
+    },
+    "teamMessage": "Mensaje de nuestro equipo",
+    "refunded": "Reembolsado: {{amount}}",
+    "requestTitle": "Solicitud del cliente",
+    "approveRefund": "Aceptar y reembolsar",
+    "approve": "Aceptar",
+    "reject": "Rechazar",
+    "messagePlaceholder": "Mensaje al cliente (p. ej. dirección de devolución, explicación)",
+    "refundTitle": "Reembolso",
+    "refundAmount": "Importe (USD)",
+    "restock": "Volver a poner los artículos en stock",
+    "cancelOrder": "Marcar el pedido como cancelado",
+    "refundBtn": "Reembolsar {{amount}}",
+    "refundConfirm": "¿Reembolsar {{amount}} al cliente? No se puede deshacer.",
+    "refundDone": "Reembolso realizado",
+    "alreadyRefunded": "Ya reembolsado: {{amount}}",
+    "fullyRefunded": "Reembolsado por completo",
+    "needSql": "Ejecuta el archivo SQL 20260929e_returns.sql en Supabase para activar devoluciones y reembolsos.",
+    "badge": "Solicitud"
+  },
+  "errorPage": {
+    "title": "Algo salió mal",
+    "text": "Lo sentimos, esta página tuvo un problema. Vuelve al inicio e inténtalo de nuevo.",
+    "home": "Volver al inicio",
+    "retry": "Reintentar"
   }
 }

@@ -571,5 +571,59 @@
     "shippingTo": "Versand: {{amount}}",
     "freeShipping": "Kostenloser Versand",
     "change": "Ändern"
+  },
+  "returns": {
+    "needHelp": "Probleme mit dieser Bestellung?",
+    "cancel": "Bestellung stornieren",
+    "return": "Artikel zurücksenden",
+    "returnUntil": "Rücksendung möglich bis {{date}}",
+    "policy": "Rücksendungen sind innerhalb von {{days}} Tagen nach Lieferung möglich.",
+    "reason": "Grund",
+    "reasons": {
+      "changedMind": "Ich habe es mir anders überlegt",
+      "damaged": "Beschädigt oder defekt",
+      "wrongItem": "Falschen Artikel erhalten",
+      "late": "Nicht erhalten / zu spät angekommen",
+      "other": "Sonstiges"
+    },
+    "details": "Details (optional)",
+    "send": "Anfrage senden",
+    "sent": "Anfrage gesendet. Wir antworten per E-Mail.",
+    "status": {
+      "cancel": {
+        "pending": "Stornierung angefragt — wird geprüft",
+        "approved": "Stornierung angenommen",
+        "rejected": "Stornierung abgelehnt"
+      },
+      "return": {
+        "pending": "Rücksendung angefragt — wird geprüft",
+        "approved": "Rücksendung angenommen — siehe Anweisungen per E-Mail",
+        "rejected": "Rücksendung abgelehnt"
+      }
+    },
+    "teamMessage": "Nachricht von unserem Team",
+    "refunded": "Erstattet: {{amount}}",
+    "requestTitle": "Kundenanfrage",
+    "approveRefund": "Annehmen und erstatten",
+    "approve": "Annehmen",
+    "reject": "Ablehnen",
+    "messagePlaceholder": "Nachricht an den Kunden (z. B. Rücksendeadresse, Erklärung)",
+    "refundTitle": "Erstattung",
+    "refundAmount": "Betrag (USD)",
+    "restock": "Artikel wieder auf Lager legen",
+    "cancelOrder": "Bestellung als storniert markieren",
+    "refundBtn": "{{amount}} erstatten",
+    "refundConfirm": "{{amount}} an den Kunden erstatten? Das kann nicht rückgängig gemacht werden.",
+    "refundDone": "Erstattung veranlasst",
+    "alreadyRefunded": "Bereits erstattet: {{amount}}",
+    "fullyRefunded": "Vollständig erstattet",
+    "needSql": "Führe die SQL-Datei 20260929e_returns.sql in Supabase aus, um Rücksendungen und Erstattungen zu aktivieren.",
+    "badge": "Anfrage"
+  },
+  "errorPage": {
+    "title": "Etwas ist schiefgelaufen",
+    "text": "Entschuldigung, auf dieser Seite ist ein Fehler aufgetreten. Kehre zur Startseite zurück und versuche es erneut.",
+    "home": "Zur Startseite",
+    "retry": "Erneut versuchen"
   }
 }
