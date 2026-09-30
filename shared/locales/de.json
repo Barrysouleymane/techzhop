@@ -730,5 +730,44 @@
     "deliveredOk": "Zugestellt! Gut gemacht.",
     "problem": "Problem melden",
     "problemPrompt": "Was ist passiert? (Kunde nicht da, falsche Adresse…)"
+  },
+  "finances": {
+    "tab": "Finanzen",
+    "safe": "Deine Bankdaten bleiben bei Stripe — TechZhop speichert sie nie.",
+    "available": "Verfügbares Guthaben",
+    "pending": "Unterwegs",
+    "pendingHint": "Neue Kartenzahlungen, von Stripe nach einigen Tagen freigegeben.",
+    "sales30": "Umsatz — letzte {{days}} Tage",
+    "ordersCount": "{{count}} Bestellungen",
+    "refunded": "{{amount}} erstattet",
+    "testMode": "Stripe-Testmodus: Testbeträge, kein echtes Geld.",
+    "bankTitle": "Bankkonto & Auszahlungen",
+    "manageBank": "Mein Bankkonto bei Stripe verwalten",
+    "bankHint": "Stripe überweist das Geld aus Kartenverkäufen automatisch auf dein Bankkonto.",
+    "noBank": "Noch kein Bankkonto: Füge es bei Stripe hinzu, um dein Geld zu erhalten.",
+    "schedule": "Auszahlungen",
+    "intervals": {
+      "daily": "täglich",
+      "weekly": "wöchentlich",
+      "monthly": "monatlich",
+      "manual": "manuell"
+    },
+    "noPayouts": "Noch keine Auszahlungen.",
+    "payoutStatus": {
+      "paid": "Ausgezahlt",
+      "pending": "Ausstehend",
+      "in_transit": "Unterwegs",
+      "failed": "Fehlgeschlagen",
+      "canceled": "Storniert"
+    },
+    "cashTitle": "Von Fahrern kassiertes Bargeld",
+    "cashHint": "Zahlungen bei Lieferung, die ein Fahrer kassiert hat und dir noch übergeben muss.",
+    "codPending": "Noch bei Kunden zu kassieren",
+    "needSql": "Führe die SQL-Datei 20260930b_finances.sql in Supabase aus, um Bargeld als übergeben zu markieren.",
+    "noCash": "Kein Bargeld zu übergeben.",
+    "remit": "Übergeben",
+    "remitConfirm": "Hat {{name}} dir {{amount}} übergeben?",
+    "remitted": "Als übergeben markiert",
+    "byCountry": "Nach Land (30 Tage)"
   }
 }

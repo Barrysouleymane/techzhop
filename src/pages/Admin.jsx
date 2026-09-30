@@ -7,6 +7,7 @@ import Page, { btnPrimary, card } from "@/components/Page";
 import { StatusBadge } from "@/components/Orders/OrderStatus";
 import { adminApi } from "@/api/admin";
 import useAuth from "@/hooks/useAuth";
+import Finances from "@/pages/admin/Finances";
 import Team from "@/pages/admin/Team";
 import StoreSettings from "@/pages/admin/StoreSettings";
 import Banners from "@/pages/admin/Banners";
@@ -23,6 +24,7 @@ export default function Admin() {
     can("store") && ["store", t("admin.storeTab")],
     can("store") && ["banners", t("admin.bannersTab")],
     can("store") && ["promos", t("admin.promosTab")],
+    can("revenue") && ["finances", t("finances.tab")],
     can("team") && ["team", t("team.tab")],
   ].filter(Boolean);
   const [chosen, setTab] = useState(() => sessionStorage.getItem("admin-tab") || "");
@@ -54,6 +56,7 @@ export default function Admin() {
       {tab === "store" && <StoreSettings />}
       {tab === "banners" && <Banners />}
       {tab === "promos" && <Promos />}
+      {tab === "finances" && <Finances />}
     </Page>
   );
 }

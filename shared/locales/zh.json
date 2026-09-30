@@ -728,5 +728,44 @@
     "deliveredOk": "已送达！做得好。",
     "problem": "报告问题",
     "problemPrompt": "发生了什么？（客户不在、地址错误…）"
+  },
+  "finances": {
+    "tab": "财务",
+    "safe": "您的银行信息保存在 Stripe——TechZhop 从不保存。",
+    "available": "可用余额",
+    "pending": "在途",
+    "pendingHint": "最近的银行卡付款，Stripe 会在几天后结算。",
+    "sales30": "销售额——最近 {{days}} 天",
+    "ordersCount": "{{count}} 个订单",
+    "refunded": "已退款 {{amount}}",
+    "testMode": "Stripe 测试模式：均为测试金额，不涉及真实资金。",
+    "bankTitle": "银行账户与提现",
+    "manageBank": "在 Stripe 管理我的银行账户",
+    "bankHint": "Stripe 会自动将银行卡销售款转入您的银行账户。",
+    "noBank": "尚未添加银行账户：请在 Stripe 添加以收款。",
+    "schedule": "提现",
+    "intervals": {
+      "daily": "每天",
+      "weekly": "每周",
+      "monthly": "每月",
+      "manual": "手动"
+    },
+    "noPayouts": "暂无提现记录。",
+    "payoutStatus": {
+      "paid": "已到账",
+      "pending": "待处理",
+      "in_transit": "在途",
+      "failed": "失败",
+      "canceled": "已取消"
+    },
+    "cashTitle": "配送员代收的现金",
+    "cashHint": "配送员已代收、但尚未交给您的货到付款款项。",
+    "codPending": "仍待向客户收取",
+    "needSql": "请在 Supabase 中运行 SQL 文件 20260930b_finances.sql，以便标记现金已上交。",
+    "noCash": "没有待上交的现金。",
+    "remit": "已上交",
+    "remitConfirm": "{{name}} 已交给您 {{amount}} 吗？",
+    "remitted": "已标记为上交",
+    "byCountry": "按国家（30 天）"
   }
 }

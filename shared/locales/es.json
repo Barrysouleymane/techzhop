@@ -730,5 +730,44 @@
     "deliveredOk": "¡Entregado! Bien hecho.",
     "problem": "Informar de un problema",
     "problemPrompt": "¿Qué pasó? (cliente ausente, dirección errónea…)"
+  },
+  "finances": {
+    "tab": "Finanzas",
+    "safe": "Tus datos bancarios se quedan en Stripe: TechZhop nunca los guarda.",
+    "available": "Saldo disponible",
+    "pending": "En camino",
+    "pendingHint": "Pagos con tarjeta recientes, liberados por Stripe tras unos días.",
+    "sales30": "Ventas — últimos {{days}} días",
+    "ordersCount": "{{count}} pedidos",
+    "refunded": "{{amount}} reembolsados",
+    "testMode": "Stripe en modo de prueba: importes de prueba, sin dinero real.",
+    "bankTitle": "Cuenta bancaria y transferencias",
+    "manageBank": "Gestionar mi cuenta bancaria en Stripe",
+    "bankHint": "Stripe transfiere automáticamente el dinero de las ventas con tarjeta a tu banco.",
+    "noBank": "Sin cuenta bancaria: añádela en Stripe para recibir tu dinero.",
+    "schedule": "Transferencias",
+    "intervals": {
+      "daily": "cada día",
+      "weekly": "cada semana",
+      "monthly": "cada mes",
+      "manual": "manuales"
+    },
+    "noPayouts": "Aún no hay transferencias.",
+    "payoutStatus": {
+      "paid": "Pagada",
+      "pending": "Pendiente",
+      "in_transit": "En camino",
+      "failed": "Fallida",
+      "canceled": "Cancelada"
+    },
+    "cashTitle": "Efectivo cobrado por los repartidores",
+    "cashHint": "Pagos contra entrega que un repartidor cobró y aún debe entregarte.",
+    "codPending": "Aún por cobrar a clientes",
+    "needSql": "Ejecuta el archivo SQL 20260930b_finances.sql en Supabase para marcar el efectivo como entregado.",
+    "noCash": "No hay efectivo por entregar.",
+    "remit": "Entregado",
+    "remitConfirm": "¿{{name}} te entregó {{amount}}?",
+    "remitted": "Marcado como entregado",
+    "byCountry": "Por país (30 días)"
   }
 }

@@ -1613,6 +1613,130 @@ app.post("/driver/deliveries/:orderId", rateLimit("driver", 120, 10 * 60 * 1000)
   res.json({ success: true, delivery: driverView(data) });
 });
 
+
+// ======================================================
+// FINANCES (admins with "revenue")
+// Stripe balance + payouts to the bank (bank details stay at Stripe),
+// sales summary, and cash collected by drivers (pay on delivery).
+// ======================================================
+
+app.get("/admin/finances", requireAuth, requirePermission("revenue"), async (req, res) => {
+  const live = STRIPE_SECRET_KEY.startsWith("sk_live");
+  const dash = `https://dashboard.stripe.com/${live ? "" : "test/"}`;
+  const out = { stripe: null, sales: null, drivers: [], remit_enabled: false };
+
+  // --- Stripe: balance, payout schedule, last payouts ---
+  try {
+    const [balance, payouts, account] = await Promise.all([
+      stripe.balance.retrieve(),
+      stripe.payouts.list({ limit: 10, expand: ["data.destination"] }),
+      stripe.accounts.retrieve().catch(() => null),
+    ]);
+    const money = (list) => (list || []).map((b) => ({ amount: b.amount / 100, currency: b.currency.toUpperCase() }));
+    out.stripe = {
+      mode: live ? "live" : "test",
+      available: money(balance.available),
+      pending: money(balance.pending),
+      payouts_enabled: account ? !!account.payouts_enabled : null,
+      schedule: account?.settings?.payouts?.schedule?.interval || null,
+      payouts: payouts.data.map((p) => ({
+        id: p.id,
+        amount: p.amount / 100,
+        currency: p.currency.toUpperCase(),
+        status: p.status,
+        arrival_date: new Date(p.arrival_date * 1000).toISOString(),
+        bank: p.destination && typeof p.destination === "object"
+          ? { name: p.destination.bank_name || p.destination.brand || null, last4: p.destination.last4 || null }
+          : null,
+      })),
+      links: { payouts: `${dash}settings/payouts`, balance: `${dash}balance/overview`, payments: `${dash}payments` },
+    };
+  } catch (err) {
+    out.stripe = { error: err.message, links: { payouts: `${dash}settings/payouts`, balance: `${dash}balance/overview`, payments: `${dash}payments` } };
+  }
+
+  // --- Sales over the last 30 days ---
+  const since = new Date(Date.now() - 30 * 86400000).toISOString();
+  const { data: orders } = await supabase
+    .from("orders")
+    .select("*")
+    .gte("created_at", since)
+    .neq("status", "cancelled")
+    .limit(5000);
+  const sales = { days: 30, count: 0, total_usd: 0, refunded_usd: 0, byCountry: {}, cod_pending: {} };
+  for (const o of orders || []) {
+    sales.count++;
+    sales.total_usd += Number(o.total || 0);
+    sales.refunded_usd += Number(o.refunded_amount || 0);
+    const c = normalizeCountry(o.country || "US");
+    sales.byCountry[c] = sales.byCountry[c] || { count: 0, total_usd: 0 };
+    sales.byCountry[c].count++;
+    sales.byCountry[c].total_usd += Number(o.total || 0);
+    if (o.payment_method === "cod" && o.payment_status === "unpaid") {
+      const cur = o.currency || "USD";
+      sales.cod_pending[cur] = (sales.cod_pending[cur] || 0) + Number(o.local_total ?? o.total ?? 0);
+    }
+  }
+  sales.total_usd = round2(sales.total_usd);
+  sales.refunded_usd = round2(sales.refunded_usd);
+  out.sales = sales;
+
+  // --- Cash collected by drivers, not yet handed over ---
+  const cols = await orderColumns();
+  out.remit_enabled = cols.includes("cash_remitted_at");
+  if (cols.includes("driver_id")) {
+    const { data: cod } = await supabase
+      .from("orders")
+      .select("*")
+      .eq("payment_method", "cod")
+      .eq("payment_status", "collected")
+      .not("driver_id", "is", null)
+      .order("collected_at", { ascending: false })
+      .limit(5000);
+    const map = {};
+    for (const o of cod || []) {
+      if (out.remit_enabled && o.cash_remitted_at) continue;
+      const key = `${o.driver_id}|${o.currency || "USD"}`;
+      map[key] = map[key] || { driver_id: o.driver_id, currency: o.currency || "USD", count: 0, amount: 0, cash: 0, mobile_money: 0 };
+      const amt = Number(o.local_total ?? o.total ?? 0);
+      map[key].count++;
+      map[key].amount += amt;
+      if (o.collected_method === "mobile_money") map[key].mobile_money += amt;
+      else map[key].cash += amt;
+    }
+    const ids = [...new Set(Object.values(map).map((m) => m.driver_id))];
+    const { data: people } = ids.length ? await supabase.from("profiles").select("id, full_name, phone").in("id", ids) : { data: [] };
+    out.drivers = Object.values(map).map((m) => {
+      const p = (people || []).find((x) => x.id === m.driver_id);
+      return { ...m, name: p?.full_name || null, phone: p?.phone || null };
+    }).sort((a, b) => b.amount - a.amount);
+  }
+
+  res.json(out);
+});
+
+// The driver handed over the cash: mark those orders as settled
+app.post("/admin/finances/remit", requireAuth, requirePermission("revenue"), async (req, res) => {
+  const cols = await orderColumns();
+  if (!cols.includes("cash_remitted_at")) {
+    return res.status(400).json({ error: "Run supabase/migrations/20260930b_finances.sql in Supabase first." });
+  }
+  const { driver_id, currency } = req.body || {};
+  if (!driver_id) return res.status(400).json({ error: "driver_id is required" });
+  let q = supabase
+    .from("orders")
+    .update({ cash_remitted_at: new Date().toISOString() })
+    .eq("driver_id", driver_id)
+    .eq("payment_method", "cod")
+    .eq("payment_status", "collected")
+    .is("cash_remitted_at", null);
+  if (currency) q = q.eq("currency", currency);
+  const { data, error } = await q.select("id");
+  if (error) return res.status(500).json({ error: error.message });
+  console.log("💵 CASH REMITTED:", driver_id, currency, (data || []).length, "orders by", req.user.email);
+  res.json({ success: true, count: (data || []).length });
+});
+
 // ======================================================
 // CANCELLATIONS, RETURNS AND REFUNDS
 // Customer: POST /orders/:id/request { type: "cancel" | "return", reason }
@@ -1891,7 +2015,7 @@ const OPTIONAL_ORDER_COLUMNS = [
   "refunded_amount", "refunded_at", "delivered_at",
   "country", "payment_method", "payment_status", "currency", "local_total", "delivery_mode", "driver_id",
   "delivery_status", "delivery_code", "delivery_photo", "delivery_note", "picked_up_at", "out_for_delivery_at",
-  "collected_at", "collected_method", "customer_phone", "delivery_lat", "delivery_lng",
+  "collected_at", "collected_method", "customer_phone", "delivery_lat", "delivery_lng", "cash_remitted_at",
 ];
 
 // ADMIN — ONE ORDER WITH CUSTOMER, PRODUCTS AND PAYMENT DETAILS

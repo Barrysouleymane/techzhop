@@ -28,6 +28,8 @@ export const adminApi = {
   createPromo: (p) => call("post", "/admin/promos", p),
   setPromoActive: (id, active) => call("patch", `/admin/promos/${id}`, { active }),
   setRole: (email, role, language, country) => call("post", "/admin/team", { email, role, language, ...(country !== undefined ? { country } : {}) }),
+  finances: () => call("get", "/admin/finances"),
+  remitCash: (driver_id, currency) => call("post", "/admin/finances/remit", { driver_id, currency }),
   drivers: () => call("get", "/admin/drivers").then((d) => d.drivers || []),
   decide: (id, decision, message) => call("post", `/admin/orders/${id}/decision`, { decision, message }).then((d) => d.order),
   refund: (id, body) => call("post", `/admin/orders/${id}/refund`, body).then((d) => d.order),

@@ -26,6 +26,8 @@ export const adminApi = {
   createPromo: (p) => request("/admin/promos", json("POST", p)),
   setPromoActive: (id, active) => request(`/admin/promos/${id}`, json("PATCH", { active })),
   setRole: (email, role, language, country) => request("/admin/team", json("POST", { email, role, language, ...(country !== undefined ? { country } : {}) })),
+  finances: () => request("/admin/finances"),
+  remitCash: (driver_id, currency) => request("/admin/finances/remit", json("POST", { driver_id, currency })),
   drivers: () => request("/admin/drivers").then((d) => d.drivers || []),
   decide: (id, decision, message) => request(`/admin/orders/${id}/decision`, json("POST", { decision, message })).then((d) => d.order),
   refund: (id, body) => request(`/admin/orders/${id}/refund`, json("POST", body)).then((d) => d.order),

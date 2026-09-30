@@ -730,5 +730,44 @@
     "deliveredOk": "Delivered! Well done.",
     "problem": "Report a problem",
     "problemPrompt": "What happened? (customer absent, wrong address…)"
+  },
+  "finances": {
+    "tab": "Finances",
+    "safe": "Your bank details stay at Stripe — TechZhop never stores them.",
+    "available": "Available balance",
+    "pending": "On the way",
+    "pendingHint": "Recent card payments, released by Stripe after a few days.",
+    "sales30": "Sales — last {{days}} days",
+    "ordersCount": "{{count}} orders",
+    "refunded": "refunded {{amount}}",
+    "testMode": "Stripe test mode: these are test amounts, no real money.",
+    "bankTitle": "Bank account & payouts",
+    "manageBank": "Manage my bank account on Stripe",
+    "bankHint": "Stripe sends the money from card sales to your bank account automatically.",
+    "noBank": "No bank account yet: add one on Stripe to receive your money.",
+    "schedule": "Payouts",
+    "intervals": {
+      "daily": "every day",
+      "weekly": "every week",
+      "monthly": "every month",
+      "manual": "manual"
+    },
+    "noPayouts": "No payouts yet.",
+    "payoutStatus": {
+      "paid": "Paid",
+      "pending": "Pending",
+      "in_transit": "On the way",
+      "failed": "Failed",
+      "canceled": "Canceled"
+    },
+    "cashTitle": "Cash collected by drivers",
+    "cashHint": "Pay-on-delivery money a driver collected and still has to hand over to you.",
+    "codPending": "Still to collect from customers",
+    "needSql": "Run the SQL file 20260930b_finances.sql in Supabase to mark cash as handed over.",
+    "noCash": "No cash to hand over.",
+    "remit": "Handed over",
+    "remitConfirm": "Did {{name}} hand you {{amount}}?",
+    "remitted": "Marked as handed over",
+    "byCountry": "By country (30 days)"
   }
 }

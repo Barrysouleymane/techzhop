@@ -730,5 +730,44 @@
     "deliveredOk": "Entregue! Muito bem.",
     "problem": "Relatar um problema",
     "problemPrompt": "O que aconteceu? (cliente ausente, endereço errado…)"
+  },
+  "finances": {
+    "tab": "Finanças",
+    "safe": "Seus dados bancários ficam na Stripe — a TechZhop nunca os guarda.",
+    "available": "Saldo disponível",
+    "pending": "A caminho",
+    "pendingHint": "Pagamentos recentes com cartão, liberados pela Stripe após alguns dias.",
+    "sales30": "Vendas — últimos {{days}} dias",
+    "ordersCount": "{{count}} pedidos",
+    "refunded": "{{amount}} reembolsados",
+    "testMode": "Stripe em modo de teste: valores de teste, sem dinheiro real.",
+    "bankTitle": "Conta bancária e transferências",
+    "manageBank": "Gerenciar minha conta bancária na Stripe",
+    "bankHint": "A Stripe transfere automaticamente o dinheiro das vendas com cartão para sua conta.",
+    "noBank": "Nenhuma conta bancária: adicione na Stripe para receber seu dinheiro.",
+    "schedule": "Transferências",
+    "intervals": {
+      "daily": "todo dia",
+      "weekly": "toda semana",
+      "monthly": "todo mês",
+      "manual": "manuais"
+    },
+    "noPayouts": "Nenhuma transferência ainda.",
+    "payoutStatus": {
+      "paid": "Paga",
+      "pending": "Pendente",
+      "in_transit": "A caminho",
+      "failed": "Falhou",
+      "canceled": "Cancelada"
+    },
+    "cashTitle": "Dinheiro recebido pelos entregadores",
+    "cashHint": "Pagamentos na entrega que um entregador recebeu e ainda deve repassar a você.",
+    "codPending": "Ainda a receber dos clientes",
+    "needSql": "Execute o arquivo SQL 20260930b_finances.sql no Supabase para marcar o dinheiro como repassado.",
+    "noCash": "Nenhum dinheiro a repassar.",
+    "remit": "Repassado",
+    "remitConfirm": "{{name}} repassou {{amount}} a você?",
+    "remitted": "Marcado como repassado",
+    "byCountry": "Por país (30 dias)"
   }
 }

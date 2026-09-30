@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { adminApi, useStaff } from "../../src/lib/admin";
 import AdminTeam from "../../src/components/AdminTeam";
+import AdminFinances from "../../src/components/AdminFinances";
 import { StoreSettings, BannersAdmin, PromosAdmin } from "../../src/components/AdminStore";
 import { errorMessage } from "../../src/lib/api";
 import { Loading, Empty, useStyles } from "../../src/components/ui";
@@ -20,6 +21,7 @@ export default function AdminHome() {
     staff.can("store") && ["store", t("admin.storeTab")],
     staff.can("store") && ["banners", t("admin.bannersTab")],
     staff.can("store") && ["promos", t("admin.promosTab")],
+    staff.can("revenue") && ["finances", t("finances.tab")],
     staff.can("team") && ["team", t("team.tab")],
   ].filter(Boolean);
   const [chosen, setTab] = useState("");
@@ -118,7 +120,7 @@ export default function AdminHome() {
     </>
   );
 
-  const Panel = { team: AdminTeam, store: StoreSettings, banners: BannersAdmin, promos: PromosAdmin }[tab];
+  const Panel = { team: AdminTeam, store: StoreSettings, banners: BannersAdmin, promos: PromosAdmin, finances: AdminFinances }[tab];
   if (Panel) {
     return (
       <ScrollView style={{ backgroundColor: c.bg }} contentContainerStyle={{ paddingBottom: 40 }} keyboardShouldPersistTaps="handled">

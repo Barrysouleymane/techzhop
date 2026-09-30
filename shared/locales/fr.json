@@ -730,5 +730,44 @@
     "deliveredOk": "Livré ! Bravo.",
     "problem": "Signaler un problème",
     "problemPrompt": "Que s'est-il passé ? (client absent, mauvaise adresse…)"
+  },
+  "finances": {
+    "tab": "Finances",
+    "safe": "Tes coordonnées bancaires restent chez Stripe — TechZhop ne les enregistre jamais.",
+    "available": "Solde disponible",
+    "pending": "En cours d'arrivée",
+    "pendingHint": "Paiements par carte récents, libérés par Stripe après quelques jours.",
+    "sales30": "Ventes — {{days}} derniers jours",
+    "ordersCount": "{{count}} commandes",
+    "refunded": "{{amount}} remboursés",
+    "testMode": "Stripe en mode test : montants de test, pas d'argent réel.",
+    "bankTitle": "Compte bancaire et virements",
+    "manageBank": "Gérer mon compte bancaire sur Stripe",
+    "bankHint": "Stripe vire automatiquement l'argent des ventes par carte sur ton compte bancaire.",
+    "noBank": "Aucun compte bancaire : ajoute-le sur Stripe pour recevoir ton argent.",
+    "schedule": "Virements",
+    "intervals": {
+      "daily": "chaque jour",
+      "weekly": "chaque semaine",
+      "monthly": "chaque mois",
+      "manual": "manuels"
+    },
+    "noPayouts": "Aucun virement pour l'instant.",
+    "payoutStatus": {
+      "paid": "Versé",
+      "pending": "En attente",
+      "in_transit": "En route",
+      "failed": "Échoué",
+      "canceled": "Annulé"
+    },
+    "cashTitle": "Argent encaissé par les livreurs",
+    "cashHint": "Paiements à la livraison encaissés par un livreur et qu'il doit encore te remettre.",
+    "codPending": "Encore à encaisser chez les clients",
+    "needSql": "Exécute le fichier SQL 20260930b_finances.sql dans Supabase pour marquer l'argent comme remis.",
+    "noCash": "Aucun argent à remettre.",
+    "remit": "Remis",
+    "remitConfirm": "{{name}} t'a-t-il remis {{amount}} ?",
+    "remitted": "Marqué comme remis",
+    "byCountry": "Par pays (30 jours)"
   }
 }
