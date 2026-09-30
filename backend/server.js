@@ -1687,8 +1687,19 @@ app.get("/admin/finances", requireAuth, requirePermission("revenue"), async (req
       stripe.accounts.retrieve().catch(() => null),
     ]);
     const money = (list) => (list || []).map((b) => ({ amount: b.amount / 100, currency: b.currency.toUpperCase() }));
+    // Bank accounts linked in Stripe (only the bank name + last 4 digits)
+    let banks = [];
+    if (account?.id) {
+      try {
+        const ext = await stripe.accounts.listExternalAccounts(account.id, { limit: 5 });
+        banks = ext.data.map((b) => ({ name: b.bank_name || b.brand || null, last4: b.last4 || null, currency: (b.currency || "").toUpperCase(), default: !!b.default_for_currency }));
+      } catch {
+        banks = (account.external_accounts?.data || []).map((b) => ({ name: b.bank_name || null, last4: b.last4 || null, currency: (b.currency || "").toUpperCase(), default: !!b.default_for_currency }));
+      }
+    }
     out.stripe = {
       mode: live ? "live" : "test",
+      banks,
       available: money(balance.available),
       pending: money(balance.pending),
       payouts_enabled: account ? !!account.payouts_enabled : null,

@@ -802,6 +802,7 @@
     "remit": "已上交",
     "remitConfirm": "{{name}} 已交给您 {{amount}} 吗？",
     "remitted": "已标记为上交",
-    "byCountry": "按国家（30 天）"
+    "byCountry": "按国家（30 天）",
+    "notActivated": "已关联银行。Stripe 账户验证后将开始提现（测试模式下属正常情况）。"
   }
 }

@@ -804,6 +804,7 @@
     "remit": "Remis",
     "remitConfirm": "{{name}} t'a-t-il remis {{amount}} ?",
     "remitted": "Marqué comme remis",
-    "byCountry": "Par pays (30 jours)"
+    "byCountry": "Par pays (30 jours)",
+    "notActivated": "Banque reliée. Stripe commencera les virements quand ton compte Stripe sera vérifié (normal en mode test)."
   }
 }

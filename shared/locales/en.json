@@ -804,6 +804,7 @@
     "remit": "Handed over",
     "remitConfirm": "Did {{name}} hand you {{amount}}?",
     "remitted": "Marked as handed over",
-    "byCountry": "By country (30 days)"
+    "byCountry": "By country (30 days)",
+    "notActivated": "Bank linked. Stripe will start payouts once your Stripe account is verified (in test mode this is normal)."
   }
 }
