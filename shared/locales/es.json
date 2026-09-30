@@ -805,6 +805,6 @@
     "remitConfirm": "¿{{name}} te entregó {{amount}}?",
     "remitted": "Marcado como entregado",
     "byCountry": "Por país (30 días)",
-    "notActivated": "Banco vinculado. Stripe empezará las transferencias cuando tu cuenta de Stripe esté verificada (normal en modo de prueba)."
+    "notActivated": "Las transferencias aún no están activas: Stripe las inicia cuando tu cuenta está verificada (normal en modo de prueba). Revisa tu banco vinculado con el botón."
   }
 }

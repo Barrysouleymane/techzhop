@@ -63,7 +63,7 @@ export default function AdminFinances() {
 
       <Card style={{ gap: 8 }}>
         <Text style={s.h2}>🏦 {t("finances.bankTitle")}</Text>
-        <Text style={s.muted}>{(st.banks || []).length === 0 ? `⚠️ ${t("finances.noBank")}` : st.payouts_enabled === false ? `⏳ ${t("finances.notActivated")}` : t("finances.bankHint")}</Text>
+        <Text style={s.muted}>{st.payouts_enabled === false ? `⏳ ${t("finances.notActivated")}` : Array.isArray(st.banks) && st.banks.length === 0 ? `⚠️ ${t("finances.noBank")}` : t("finances.bankHint")}</Text>
         {(st.banks || []).map((b, i) => (
           <Text key={i} style={{ color: c.text, fontWeight: "700" }}>🏦 {b.name || "Bank"} •••• {b.last4} {b.currency}</Text>
         ))}

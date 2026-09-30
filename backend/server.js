@@ -1688,14 +1688,22 @@ app.get("/admin/finances", requireAuth, requirePermission("revenue"), async (req
     ]);
     const money = (list) => (list || []).map((b) => ({ amount: b.amount / 100, currency: b.currency.toUpperCase() }));
     // Bank accounts linked in Stripe (only the bank name + last 4 digits)
-    let banks = [];
-    if (account?.id) {
+    // null = Stripe doesn't tell us (common for your own account) → we never claim "no bank"
+    let banks = null;
+    const toBank = (b) => ({ name: b.bank_name || b.brand || null, last4: b.last4 || null, currency: (b.currency || "").toUpperCase() });
+    if (account?.external_accounts?.data?.length) banks = account.external_accounts.data.map(toBank);
+    if (!banks && account?.id) {
       try {
         const ext = await stripe.accounts.listExternalAccounts(account.id, { limit: 5 });
-        banks = ext.data.map((b) => ({ name: b.bank_name || b.brand || null, last4: b.last4 || null, currency: (b.currency || "").toUpperCase(), default: !!b.default_for_currency }));
+        if (ext.data.length) banks = ext.data.map(toBank);
       } catch {
-        banks = (account.external_accounts?.data || []).map((b) => ({ name: b.bank_name || null, last4: b.last4 || null, currency: (b.currency || "").toUpperCase(), default: !!b.default_for_currency }));
+        // not available for this account type
       }
+    }
+    // Banks seen on past payouts also prove a bank is linked
+    if (!banks) {
+      const seen = payouts.data.filter((p) => p.destination && typeof p.destination === "object" && p.destination.last4).map((p) => toBank(p.destination));
+      if (seen.length) banks = [seen[0]];
     }
     out.stripe = {
       mode: live ? "live" : "test",

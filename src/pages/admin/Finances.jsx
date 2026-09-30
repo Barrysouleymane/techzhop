@@ -75,7 +75,7 @@ export default function Finances() {
           </a>
         </div>
         <p className="text-gray-400 text-sm m-0">
-          {(st.banks || []).length === 0 ? `⚠️ ${t("finances.noBank")}` : st.payouts_enabled === false ? `⏳ ${t("finances.notActivated")}` : t("finances.bankHint")}
+          {st.payouts_enabled === false ? `⏳ ${t("finances.notActivated")}` : Array.isArray(st.banks) && st.banks.length === 0 ? `⚠️ ${t("finances.noBank")}` : t("finances.bankHint")}
           {st.schedule ? ` · ${t("finances.schedule")}: ${t(`finances.intervals.${st.schedule}`, st.schedule)}` : ""}
         </p>
         {(st.banks || []).map((b, i) => (

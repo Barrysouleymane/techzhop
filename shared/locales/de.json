@@ -805,6 +805,6 @@
     "remitConfirm": "Hat {{name}} dir {{amount}} übergeben?",
     "remitted": "Als übergeben markiert",
     "byCountry": "Nach Land (30 Tage)",
-    "notActivated": "Bank verknüpft. Stripe startet Auszahlungen, sobald dein Stripe-Konto verifiziert ist (im Testmodus normal)."
+    "notActivated": "Auszahlungen sind noch nicht aktiv: Stripe startet sie, sobald dein Konto verifiziert ist (im Testmodus normal). Prüfe deine verknüpfte Bank über den Button."
   }
 }
