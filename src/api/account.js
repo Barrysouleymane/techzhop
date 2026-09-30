@@ -99,6 +99,18 @@ export async function requestOrderHelp(orderId, type, reason) {
   return res.data.order;
 }
 
+// ---------- Driver ----------
+
+export async function getDeliveries() {
+  const res = await axios.get(`${API_URL}/driver/deliveries`, { headers: await authHeaders() });
+  return res.data.deliveries || [];
+}
+
+export async function updateDelivery(orderId, body) {
+  const res = await axios.post(`${API_URL}/driver/deliveries/${orderId}`, body, { headers: await authHeaders() });
+  return res.data.delivery;
+}
+
 // ---------- Security ----------
 
 export async function changePassword(email, currentPassword, newPassword) {

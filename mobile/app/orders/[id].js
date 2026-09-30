@@ -7,6 +7,7 @@ import { getOrder, errorMessage } from "../../src/lib/api";
 import { Loading, Empty, Card, Button, useStyles } from "../../src/components/ui";
 import { StatusBadge, StatusTimeline } from "../../src/components/OrderStatus";
 import OrderHelp from "../../src/components/OrderHelp";
+import DeliveryInfo from "../../src/components/DeliveryInfo";
 import { formatUSD, carrierName, trackingUrl } from "../../../shared/settings";
 
 export default function OrderDetails() {
@@ -60,6 +61,8 @@ export default function OrderDetails() {
           <Button title={t("orders.trackPackage")} icon="open-outline" onPress={() => Linking.openURL(trackingUrl(order.carrier, order.tracking_number))} style={{ marginTop: 14 }} />
         ) : null}
       </Card>
+
+      <DeliveryInfo order={order} />
 
       {order.shipping_address ? (
         <Card>

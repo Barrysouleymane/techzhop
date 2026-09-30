@@ -85,7 +85,8 @@
     "freeShippingOver": "订单满 {{amount}} 免运费",
     "deleteReview": "删除",
     "verified": "已验证购买",
-    "pickRating": "请选择评分"
+    "pickRating": "请选择评分",
+    "available": "有货"
   },
   "products": {
     "title": "全部商品",
@@ -138,7 +139,22 @@
     "addAddress": "添加收货地址",
     "changeAddress": "更改",
     "invalidItem": "购物车中有商品无效。",
-    "failed": "无法开始支付。"
+    "failed": "无法开始支付。",
+    "codPlaced": "下单成功！您将在收货时付款。",
+    "notDelivered": "我们暂不配送至{{country}}。",
+    "paymentMethod": "付款方式",
+    "method": {
+      "card": "银行卡",
+      "cod": "货到付款"
+    },
+    "methodHint": {
+      "card": "由 Stripe 安全支付。",
+      "cod": "用现金或移动支付（Orange Money、MTN…）付给配送员。"
+    },
+    "localDelivery": "由 TechZhop 配送员送货",
+    "toPayOnDelivery": "货到付款金额",
+    "phoneNeeded": "请为此地址添加电话号码，方便配送员联系您。",
+    "placeOrder": "提交订单"
   },
   "success": {
     "loading": "正在确认您的付款...",
@@ -227,7 +243,17 @@
     "country": "国家/地区",
     "default": "默认",
     "setDefault": "设为默认",
-    "deleteConfirm": "删除此地址？"
+    "deleteConfirm": "删除此地址？",
+    "notDelivered": "暂不配送",
+    "phoneHint": "必填：配送员会给您打电话。",
+    "line1Africa": "地址 / 街道",
+    "neighborhood": "街区",
+    "landmark": "地标",
+    "landmarkHint": "您家附近容易找到的地方。",
+    "landmarkPlaceholder": "例如：大清真寺后面，蓝色大门",
+    "useLocation": "使用我的当前位置",
+    "locationSaved": "位置已保存",
+    "locationError": "无法获取您的位置。请允许定位后重试。"
   },
   "orders": {
     "title": "我的订单",
@@ -540,15 +566,20 @@
       "admin": "管理员",
       "product_manager": "商品管理员",
       "seller": "销售 / 订单处理员",
-      "customer": "客户"
+      "customer": "客户",
+      "driver": "配送员"
     },
     "desc": {
       "admin": "全部权限：商品、订单、销售额和团队。",
       "product_manager": "添加、编辑和删除商品、图片、分类和品牌。",
       "seller": "查看订单、更改状态并添加运单号。",
-      "customer": "无管理后台权限。"
+      "customer": "无管理后台权限。",
+      "driver": "只能看到自己的配送：地址、客户电话、地图、取件码。"
     },
-    "invited": "邀请已发送至 {{email}}"
+    "invited": "邀请已发送至 {{email}}",
+    "country": "国家",
+    "allCountries": "所有国家",
+    "countryHint": "限定某国的成员只能看到该国的订单。"
   },
   "location": {
     "deliverTo": "配送至",
@@ -623,5 +654,79 @@
     "text": "抱歉，此页面出现错误。请返回首页后重试。",
     "home": "返回首页",
     "retry": "重试"
+  },
+  "delivery": {
+    "title": "配送与付款",
+    "paid": "已付款",
+    "toPay": "待付：{{amount}}",
+    "yourCode": "您的取件码",
+    "codeHelp": "收到包裹时请将此码告诉配送员。",
+    "steps": {
+      "assigned": "已分配",
+      "picked_up": "已取货",
+      "out_for_delivery": "配送中",
+      "delivered": "已送达",
+      "failed": "有问题"
+    },
+    "driver": "配送员",
+    "needSql": "请在 Supabase 中运行 SQL 文件 20260930_countries.sql，以启用国家、货到付款和配送员功能。",
+    "mode": "配送方式",
+    "modes": {
+      "local": "TechZhop 配送员",
+      "carrier": "快递公司（UPS/USPS…）"
+    },
+    "collected": {
+      "cash": "现金支付",
+      "mobile_money": "移动支付"
+    },
+    "code": "取件码",
+    "openMap": "在地图中打开",
+    "assignDriver": "配送员",
+    "assigned": "已分配配送员——已通知其手机",
+    "noDriver": "无配送员",
+    "noDrivers": "暂无配送员：请在团队中添加“配送员”角色。",
+    "status": "配送状态",
+    "photo": "送达照片",
+    "markCollected": "标记为已收款",
+    "codShort": "货到付款"
+  },
+  "countries": {
+    "title": "国家",
+    "intro": "在哪里销售、客户如何付款、由谁配送。",
+    "enabled": "开放",
+    "currency": "货币",
+    "rate": "1 美元 = ? {{currency}}",
+    "payments": "付款",
+    "ownStock": "在该国有独立库存",
+    "ownDrivers": "由我们自己的配送员配送",
+    "areas": "配送区域",
+    "areasHint": "城市、州或邮编开头，用逗号分隔。留空 = 全国。",
+    "days": "配送时间（天）",
+    "daysHint": "0 = 使用通用配送时间。",
+    "choose": "选择国家…",
+    "add": "添加国家",
+    "mainStock": "库存（主仓库）",
+    "stockIn": "{{country}}库存"
+  },
+  "driver": {
+    "title": "我的配送",
+    "tab": "配送",
+    "refresh": "刷新",
+    "none": "暂无配送任务。",
+    "done": "已送达（{{count}}）",
+    "call": "打电话",
+    "map": "地图",
+    "collect": "收款 {{amount}}",
+    "pickedUp": "已在门店取货",
+    "outForDelivery": "出发配送",
+    "customerNotified": "已通知客户。",
+    "askCode": "向客户索取 4 位取件码",
+    "collectedConfirm": "我已收款 {{amount}}",
+    "takePhoto": "包裹照片（可选）",
+    "photoReady": "照片已就绪",
+    "confirmDelivered": "确认送达",
+    "deliveredOk": "已送达！做得好。",
+    "problem": "报告问题",
+    "problemPrompt": "发生了什么？（客户不在、地址错误…）"
   }
 }

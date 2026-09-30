@@ -86,7 +86,8 @@
     "freeShippingOver": "Free shipping on orders over {{amount}}",
     "deleteReview": "Delete",
     "verified": "Verified purchase",
-    "pickRating": "Choose a rating"
+    "pickRating": "Choose a rating",
+    "available": "In stock"
   },
   "products": {
     "title": "All products",
@@ -140,7 +141,22 @@
     "addAddress": "Add a delivery address",
     "changeAddress": "Change",
     "invalidItem": "One of the products in your cart is invalid.",
-    "failed": "Unable to start checkout."
+    "failed": "Unable to start checkout.",
+    "codPlaced": "Order placed! You'll pay on delivery.",
+    "notDelivered": "We don't deliver to {{country}} yet.",
+    "paymentMethod": "Payment method",
+    "method": {
+      "card": "Card",
+      "cod": "Pay on delivery"
+    },
+    "methodHint": {
+      "card": "Secure payment by Stripe.",
+      "cod": "Pay the driver in cash or Mobile Money (Orange Money, MTN…)."
+    },
+    "localDelivery": "Delivered by a TechZhop driver",
+    "toPayOnDelivery": "To pay on delivery",
+    "phoneNeeded": "Add a phone number to this address so the driver can call you.",
+    "placeOrder": "Place order"
   },
   "success": {
     "loading": "Confirming your payment...",
@@ -229,7 +245,17 @@
     "country": "Country",
     "default": "Default",
     "setDefault": "Set as default",
-    "deleteConfirm": "Delete this address?"
+    "deleteConfirm": "Delete this address?",
+    "notDelivered": "not delivered yet",
+    "phoneHint": "Required: the driver will call you.",
+    "line1Africa": "Address / street",
+    "neighborhood": "Neighborhood",
+    "landmark": "Landmark",
+    "landmarkHint": "Something easy to find near your home.",
+    "landmarkPlaceholder": "e.g. behind the big mosque, blue gate",
+    "useLocation": "Use my current location",
+    "locationSaved": "Location saved",
+    "locationError": "Couldn't get your location. Allow location access and try again."
   },
   "orders": {
     "title": "My orders",
@@ -542,15 +568,20 @@
       "admin": "Administrator",
       "product_manager": "Product manager",
       "seller": "Seller / order handler",
-      "customer": "Customer"
+      "customer": "Customer",
+      "driver": "Driver"
     },
     "desc": {
       "admin": "Everything: products, orders, revenue and team.",
       "product_manager": "Add, edit and delete products, photos, categories and brands.",
       "seller": "See orders, change their status and add tracking numbers.",
-      "customer": "No access to the admin area."
+      "customer": "No access to the admin area.",
+      "driver": "Sees only their deliveries: address, customer phone, map, delivery code."
     },
-    "invited": "Invitation sent to {{email}}"
+    "invited": "Invitation sent to {{email}}",
+    "country": "Country",
+    "allCountries": "All countries",
+    "countryHint": "A person limited to one country only sees that country's orders."
   },
   "location": {
     "deliverTo": "Deliver to",
@@ -625,5 +656,79 @@
     "text": "Sorry, this page ran into a problem. Please go back to the home page and try again.",
     "home": "Back to home",
     "retry": "Try again"
+  },
+  "delivery": {
+    "title": "Delivery & payment",
+    "paid": "Paid",
+    "toPay": "To pay: {{amount}}",
+    "yourCode": "Your delivery code",
+    "codeHelp": "Give this code to the driver when you receive your package.",
+    "steps": {
+      "assigned": "Assigned",
+      "picked_up": "Picked up",
+      "out_for_delivery": "On the way",
+      "delivered": "Delivered",
+      "failed": "Problem"
+    },
+    "driver": "Driver",
+    "needSql": "Run the SQL file 20260930_countries.sql in Supabase to enable countries, pay on delivery and drivers.",
+    "mode": "Delivery",
+    "modes": {
+      "local": "TechZhop driver",
+      "carrier": "Carrier (UPS/USPS…)"
+    },
+    "collected": {
+      "cash": "Paid in cash",
+      "mobile_money": "Paid by Mobile Money"
+    },
+    "code": "Delivery code",
+    "openMap": "Open in Maps",
+    "assignDriver": "Driver",
+    "assigned": "Driver assigned — notified on their phone",
+    "noDriver": "No driver",
+    "noDrivers": "No drivers yet: add one in Team with the Driver role.",
+    "status": "Delivery status",
+    "photo": "Delivery photo",
+    "markCollected": "Mark payment as received",
+    "codShort": "Pay on delivery"
+  },
+  "countries": {
+    "title": "Countries",
+    "intro": "Where you sell, how customers pay, and who delivers.",
+    "enabled": "Open",
+    "currency": "Currency",
+    "rate": "1 USD = ? {{currency}}",
+    "payments": "Payment",
+    "ownStock": "Own stock in this country",
+    "ownDrivers": "Our own drivers deliver here",
+    "areas": "Driver areas",
+    "areasHint": "Cities, states or postal-code starts, separated by commas. Empty = the whole country.",
+    "days": "Delivery time (days)",
+    "daysHint": "0 = use the general delivery time.",
+    "choose": "Choose a country…",
+    "add": "Add country",
+    "mainStock": "Stock (main warehouse)",
+    "stockIn": "Stock in {{country}}"
+  },
+  "driver": {
+    "title": "My deliveries",
+    "tab": "Deliveries",
+    "refresh": "Refresh",
+    "none": "No deliveries right now.",
+    "done": "Delivered ({{count}})",
+    "call": "Call",
+    "map": "Map",
+    "collect": "Collect {{amount}}",
+    "pickedUp": "Picked up at the store",
+    "outForDelivery": "I'm leaving to deliver",
+    "customerNotified": "The customer has been notified.",
+    "askCode": "Ask the customer for their 4-digit code",
+    "collectedConfirm": "I collected {{amount}}",
+    "takePhoto": "Photo of the package (optional)",
+    "photoReady": "Photo ready",
+    "confirmDelivered": "Confirm delivery",
+    "deliveredOk": "Delivered! Well done.",
+    "problem": "Report a problem",
+    "problemPrompt": "What happened? (customer absent, wrong address…)"
   }
 }

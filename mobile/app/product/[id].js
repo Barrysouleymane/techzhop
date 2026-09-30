@@ -8,7 +8,7 @@ import { useShop, useRecent } from "../../src/store/shop";
 import { Stars, PriceTag, Countdown } from "../../src/components/Shop";
 import Reviews from "../../src/components/Reviews";
 import ProductCard from "../../src/components/ProductCard";
-import { isOnSale, deliveryRange, shippingCost, effectivePrice, locationPlace } from "../../../shared/settings";
+import { isOnSale, deliveryRange, shippingCost, effectivePrice, locationPlace, stockFor } from "../../../shared/settings";
 import { useLocation, useDeliveryLocation } from "../../src/store/location";
 import { useWishlist } from "../../src/store/wishlist";
 import { useMoney } from "../../src/lib/money";
@@ -78,7 +78,8 @@ export default function ProductDetails() {
   if (loading) return <Loading />;
   if (!product) return <Empty icon="alert-circle-outline">{t("product.notFound")}</Empty>;
 
-  const inStock = product.stock > 0;
+  const available = stockFor(product, loc.country, settings); // stock of the customer's country
+  const inStock = available == null || available > 0;
   const photos = product.images?.length ? product.images : product.image ? [product.image] : [];
 
   return (
@@ -119,13 +120,13 @@ export default function ProductDetails() {
           <View style={{ marginTop: 8 }}><PriceTag product={product} size={28} /></View>
           {isOnSale(product) && product.sale_ends_at ? <View style={{ marginTop: 6 }}><Countdown until={product.sale_ends_at} /></View> : null}
           <Text style={{ marginTop: 6, fontWeight: "600", color: inStock ? c.success : c.danger }}>
-            {inStock ? t("product.inStock", { count: product.stock }) : t("product.outOfStock")}
+            {inStock ? (available == null ? t("product.available") : t("product.inStock", { count: available })) : t("product.outOfStock")}
           </Text>
           {inStock && (
             <View style={{ flexDirection: "row", gap: 8, marginTop: 12, alignItems: "flex-start" }}>
               <Ionicons name="car-outline" size={18} color={c.primary} />
               <View style={{ flex: 1 }}>
-                <Text style={{ color: c.text, fontWeight: "700" }}>{t("product.delivery", deliveryRange(settings, i18n.language))}</Text>
+                <Text style={{ color: c.text, fontWeight: "700" }}>{t("product.delivery", deliveryRange(settings, i18n.language, loc.country))}</Text>
                 {shippingCost(settings, loc.country, effectivePrice(product)) === 0 ? (
                   <Text style={{ color: c.success, fontSize: 13 }}>{t("location.freeShipping")}</Text>
                 ) : (

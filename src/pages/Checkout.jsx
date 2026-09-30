@@ -1,8 +1,11 @@
 import { useEffect, useState } from "react";
-import { Link } from "react-router-dom";
+import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import axios from "axios";
-import { MapPin } from "lucide-react";
+import { MapPin, CreditCard, Banknote, AlertTriangle } from "lucide-react";
+import { toast } from "sonner";
+import useShopStore from "@/store/shopStore";
+import useCartStore from "@/store/cartStore";
 import Page, { btnPrimary, btnSecondary, card } from "@/components/Page";
 import useCart from "@/hooks/useCart";
 import useMoney from "@/hooks/useMoney";
@@ -12,10 +15,10 @@ import { API_URL } from "@/config/constants";
 import useDeliveryLocation from "@/hooks/useDeliveryLocation";
 import useLocationStore from "@/store/locationStore";
 import { authHeaders, getAddresses, apiError } from "@/api/account";
-import { formatAddress, effectivePrice } from "../../shared/settings";
+import { formatAddress, effectivePrice, countryCfg, normalizeCountry, countryName, quote, localAmount, formatLocal, isLocalDelivery, needsLandmark } from "../../shared/settings";
 
 export default function Checkout() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const money = useMoney();
   const { user } = useAuth();
   const { cart, loading } = useCart();
@@ -28,6 +31,10 @@ export default function Checkout() {
     if (id) setChoice({ type: "address", id });
   };
   const [processing, setProcessing] = useState(false);
+  const [method, setMethod] = useState(null); // "card" | "cod"
+  const settings = useShopStore((s) => s.settings);
+  const reloadCart = useCartStore((s) => s.load);
+  const navigate = useNavigate();
   const [error, setError] = useState("");
 
   useEffect(() => {
@@ -42,6 +49,28 @@ export default function Checkout() {
   }, [user]);
 
   const address = addresses.find((a) => a.id === addressId);
+  const country = normalizeCountry(address?.country);
+  const cfg = address ? countryCfg(settings, country) : null;
+  const methods = cfg?.payments || [];
+  const payWith = methods.includes(method) ? method : methods[0] || null;
+  const missingPhone = address && needsLandmark(country) && !address.phone;
+  const subtotal = cart.reduce((n, i) => n + effectivePrice(i.products) * Number(i.quantity || 0), 0);
+  const due = cfg && cfg.currency !== "USD" ? formatLocal(localAmount(cfg, quote(settings, subtotal, address).total), cfg.currency, i18n.language) : null;
+
+  async function handleCod() {
+    setProcessing(true);
+    setError("");
+    try {
+      const items = cart.map((item) => ({ product_id: item.product_id, quantity: Number(item.quantity || 0) }));
+      const res = await axios.post(`${API_URL}/orders/cod`, { items, address_id: address.id }, { headers: await authHeaders() });
+      await reloadCart();
+      toast.success(t("checkout.codPlaced"));
+      navigate(`/orders/${res.data.order_id}`);
+    } catch (err) {
+      setError(apiError(err, t));
+      setProcessing(false);
+    }
+  }
 
   async function handleCheckout() {
     setProcessing(true);
@@ -60,7 +89,7 @@ export default function Checkout() {
 
       const res = await axios.post(
         `${API_URL}/create-checkout-session`,
-        { items, shipping_address: formatAddress(address), address: address ? { country: address.country, state: address.state } : null },
+        { items, shipping_address: formatAddress(address), address_id: address?.id, address: address ? { country: address.country, state: address.state, city: address.city, postal_code: address.postal_code } : null },
         { headers: await authHeaders() }
       );
 
@@ -140,8 +169,42 @@ export default function Checkout() {
 
           {error && <div className="mt-6 bg-red-900/30 border border-red-700 text-red-300 p-4 rounded-lg">{error}</div>}
 
-          <button onClick={handleCheckout} disabled={processing} className={`${btnPrimary} w-full mt-8 py-4`}>
-            {processing ? t("checkout.redirecting") : t("checkout.pay")}
+          {address && !cfg && (
+            <div className="mt-6 flex gap-2 bg-yellow-900/30 border border-yellow-700 text-yellow-200 p-4 rounded-lg text-sm">
+              <AlertTriangle className="w-5 h-5 shrink-0" /> {t("checkout.notDelivered", { country: countryName(country, i18n.language) })}
+            </div>
+          )}
+
+          {cfg && methods.length > 0 && (
+            <div className="mt-6 space-y-2">
+              <h3 className="font-bold m-0">{t("checkout.paymentMethod")}</h3>
+              {methods.map((m) => (
+                <label key={m} className={`flex items-start gap-3 p-3 rounded-lg border cursor-pointer ${payWith === m ? "border-cyan-500" : "border-zinc-800"}`}>
+                  <input type="radio" name="pay" className="mt-1" checked={payWith === m} onChange={() => setMethod(m)} />
+                  <span>
+                    <span className="font-semibold flex items-center gap-2">
+                      {m === "card" ? <CreditCard className="w-4 h-4 text-cyan-400" /> : <Banknote className="w-4 h-4 text-green-400" />}
+                      {t(`checkout.method.${m}`)}
+                    </span>
+                    <span className="text-gray-400 text-sm block">{t(`checkout.methodHint.${m}`)}</span>
+                  </span>
+                </label>
+              ))}
+              {isLocalDelivery(settings, address) && <p className="text-green-400 text-sm m-0">🛵 {t("checkout.localDelivery")}</p>}
+            </div>
+          )}
+
+          {payWith === "cod" && due && (
+            <p className="mt-4 mb-0 text-lg">💵 {t("checkout.toPayOnDelivery")}: <strong className="text-green-400">{due}</strong></p>
+          )}
+          {missingPhone && <p className="mt-4 mb-0 text-yellow-300 text-sm">{t("checkout.phoneNeeded")}</p>}
+
+          <button
+            onClick={payWith === "cod" ? handleCod : handleCheckout}
+            disabled={processing || !address || !cfg || !payWith || (payWith === "cod" && missingPhone)}
+            className={`${btnPrimary} w-full mt-6 py-4`}
+          >
+            {processing ? t("checkout.redirecting") : payWith === "cod" ? t("checkout.placeOrder") : t("checkout.pay")}
           </button>
         </div>
       </div>

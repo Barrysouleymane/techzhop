@@ -93,9 +93,11 @@ export function formatAddress(a) {
     a.full_name,
     a.line1,
     a.line2,
+    a.neighborhood,
     [a.postal_code, a.city].filter(Boolean).join(" "),
     a.state,
     a.country,
+    a.landmark ? `(${a.landmark})` : null,
     a.phone,
   ]
     .filter(Boolean)
@@ -122,7 +124,7 @@ export function trackingUrl(carrier, number) {
 }
 
 // Staff roles (must match backend ROLE_PERMISSIONS)
-export const STAFF_ROLES = ["admin", "product_manager", "seller"];
+export const STAFF_ROLES = ["admin", "product_manager", "seller", "driver"];
 
 // ---------------------------------------------------------------------
 // PRICES, SHIPPING, TAXES, DELIVERY
@@ -145,10 +147,17 @@ export function discountPercent(p) {
   return Math.round((1 - Number(p.sale_price) / Number(p.price)) * 100);
 }
 
+// Countries we sell in (same defaults as the server). Admin → Store → Countries.
+export const DEFAULT_COUNTRIES = {
+  US: { enabled: true, currency: "USD", rate: 1, payments: ["card"], own_stock: false, local_delivery: { enabled: false, areas: ["NY"] }, min_days: 0, max_days: 0 },
+  GN: { enabled: true, currency: "GNF", rate: 8600, payments: ["cod"], own_stock: true, local_delivery: { enabled: true, areas: ["Conakry"] }, min_days: 1, max_days: 3 },
+};
+
 export const DEFAULT_SHOP_SETTINGS = {
   shipping: { standard_rate: 9.99, free_over: 50, zones: [], min_days: 3, max_days: 7 },
   taxes: { enabled: false, rates: [] },
   promo_bar: { enabled: false, text: "", ends_at: null, link: "" },
+  countries: DEFAULT_COUNTRIES,
 };
 
 /** The site-wide announcement bar is shown when enabled and not expired */
@@ -223,9 +232,14 @@ function addBusinessDays(date, days) {
   return d;
 }
 
-/** "Oct 3 – Oct 6" style range */
-export function deliveryRange(settings, locale = "en") {
+/** "Oct 3 – Oct 6" style range (uses the country's own delay when set) */
+export function deliveryRange(settings, locale = "en", country) {
   const s = { ...DEFAULT_SHOP_SETTINGS.shipping, ...(settings?.shipping || {}) };
+  const cfg = country ? countryCfg(settings, country) : null;
+  if (cfg && Number(cfg.max_days) > 0) {
+    s.min_days = Number(cfg.min_days) || 1;
+    s.max_days = Number(cfg.max_days);
+  }
   const fmt = new Intl.DateTimeFormat(locale, { weekday: "short", month: "short", day: "numeric" });
   return {
     from: fmt.format(addBusinessDays(new Date(), Number(s.min_days) || 3)),
@@ -316,4 +330,106 @@ export function locationPlace(loc, locale = "en") {
 
 export function firstName(name) {
   return String(name || "").trim().split(/\s+/)[0] || "";
+}
+
+// ---------- Countries, pay on delivery, drivers ----------
+
+/** Settings of a country we sell in, or null */
+export function countryCfg(settings, country) {
+  const c = normalizeCountry(country);
+  const cfg = (settings?.countries || DEFAULT_COUNTRIES)[c];
+  return cfg && cfg.enabled ? cfg : null;
+}
+
+/** ["US", "GN"] */
+export function sellingCountries(settings) {
+  return Object.entries(settings?.countries || DEFAULT_COUNTRIES).filter(([, c]) => c?.enabled).map(([code]) => code);
+}
+
+/** ["card"], ["cod"] or both */
+export function paymentMethods(settings, country) {
+  return countryCfg(settings, country)?.payments || [];
+}
+
+/** Stock available in a country (null = unlimited) */
+export function stockFor(product, country, settings) {
+  const c = normalizeCountry(country);
+  const cfg = countryCfg(settings, c);
+  if (cfg?.own_stock) {
+    const map = product?.stock_by_country || {};
+    return map[c] == null ? 0 : Number(map[c]);
+  }
+  return product?.stock == null ? null : Number(product.stock);
+}
+
+/** Do our own drivers deliver to this address? */
+export function isLocalDelivery(settings, address) {
+  const cfg = countryCfg(settings, address?.country);
+  if (!cfg?.local_delivery?.enabled) return false;
+  const areas = (cfg.local_delivery.areas || []).map((a) => String(a).trim().toUpperCase()).filter(Boolean);
+  if (!areas.length) return true;
+  const state = normalizeState(address?.state);
+  const city = String(address?.city || "").trim().toUpperCase();
+  const zip = String(address?.postal_code || "").trim().toUpperCase();
+  return areas.some((a) => a === state || a === city || (zip && zip.startsWith(a)));
+}
+
+/** Amount to pay in the local currency (rounded to 500 for GNF / FCFA) */
+export function localAmount(cfg, usd) {
+  const rate = Number(cfg?.rate) || 1;
+  const v = Number(usd || 0) * rate;
+  return rate >= 100 ? Math.round(v / 500) * 500 : Math.round(v * 100) / 100;
+}
+
+/** Live rates, but the shop's own fixed rate wins for the currencies of the countries we sell in */
+export function shopRates(settings, rates = FALLBACK_RATES) {
+  const out = { ...rates };
+  for (const c of Object.values(settings?.countries || {})) {
+    if (c?.enabled && c.currency && c.currency !== "USD" && Number(c.rate) > 0) out[c.currency] = Number(c.rate);
+  }
+  return out;
+}
+
+/** "10 750 000 GNF" */
+export function formatLocal(amount, currency = "USD", locale = "en") {
+  try {
+    return new Intl.NumberFormat(locale, {
+      style: "currency",
+      currency,
+      maximumFractionDigits: ["XOF", "GNF", "XAF"].includes(currency) ? 0 : 2,
+    }).format(Number(amount || 0));
+  } catch {
+    return `${amount} ${currency}`;
+  }
+}
+
+/** Amount the customer pays for this order, in the right currency */
+export function orderAmountText(order, locale = "en") {
+  if (order?.currency && order.currency !== "USD" && order.local_total != null) return formatLocal(order.local_total, order.currency, locale);
+  return formatUSD(order?.total, locale);
+}
+
+/** Countries where addresses have no reliable postal code: ask for neighborhood + landmark + GPS */
+export const LANDMARK_COUNTRIES = ["GN", "SN", "CI", "ML", "BF", "NE", "TG", "BJ", "CM", "GW", "SL", "LR"];
+export const needsLandmark = (country) => LANDMARK_COUNTRIES.includes(normalizeCountry(country));
+
+export const DELIVERY_STEPS = ["assigned", "picked_up", "out_for_delivery", "delivered"];
+
+/** Link that opens the delivery place in Google Maps (GPS point first, else the address text) */
+export function mapsUrl(order) {
+  const lat = order?.delivery_lat ?? order?.latitude;
+  const lng = order?.delivery_lng ?? order?.longitude;
+  if (lat != null && lng != null) return `https://www.google.com/maps/search/?api=1&query=${lat},${lng}`;
+  const text = order?.shipping_address || formatAddress(order);
+  return text ? `https://www.google.com/maps/search/?api=1&query=${encodeURIComponent(text)}` : null;
+}
+
+/** "+224 620 00 00 00" → "224620000000" for WhatsApp links */
+export const phoneDigits = (p) => String(p || "").replace(/[^0-9]/g, "");
+
+/** "GN" → "🇬🇳" */
+export function flag(code) {
+  const c = normalizeCountry(code);
+  if (!/^[A-Z]{2}$/.test(c)) return "";
+  return String.fromCodePoint(...[...c].map((ch) => 127397 + ch.charCodeAt(0)));
 }

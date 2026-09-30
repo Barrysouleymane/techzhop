@@ -1,11 +1,13 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import useSettingsStore from "@/store/settingsStore";
+import useShopStore from "@/store/shopStore";
 import {
   FALLBACK_RATES,
   getRates,
   formatMoney,
   currencyForRegion,
+  shopRates,
 } from "../../shared/settings";
 
 function browserRegion() {
@@ -35,5 +37,7 @@ export default function useMoney() {
     };
   }, []);
 
-  return (amountUSD) => formatMoney(amountUSD, currency, rates, i18n.language);
+  const settings = useShopStore((s) => s.settings);
+  const merged = shopRates(settings, rates); // the shop's fixed GNF rate = what drivers collect
+  return (amountUSD) => formatMoney(amountUSD, currency, merged, i18n.language);
 }

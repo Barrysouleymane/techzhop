@@ -86,7 +86,8 @@
     "freeShippingOver": "Envío gratis en pedidos desde {{amount}}",
     "deleteReview": "Eliminar",
     "verified": "Compra verificada",
-    "pickRating": "Elige una valoración"
+    "pickRating": "Elige una valoración",
+    "available": "En stock"
   },
   "products": {
     "title": "Todos los productos",
@@ -140,7 +141,22 @@
     "addAddress": "Añadir una dirección de entrega",
     "changeAddress": "Cambiar",
     "invalidItem": "Uno de los productos de tu carrito no es válido.",
-    "failed": "No se pudo iniciar el pago."
+    "failed": "No se pudo iniciar el pago.",
+    "codPlaced": "¡Pedido realizado! Pagarás en la entrega.",
+    "notDelivered": "Aún no enviamos a {{country}}.",
+    "paymentMethod": "Método de pago",
+    "method": {
+      "card": "Tarjeta",
+      "cod": "Pago contra entrega"
+    },
+    "methodHint": {
+      "card": "Pago seguro con Stripe.",
+      "cod": "Paga al repartidor en efectivo o con Mobile Money (Orange Money, MTN…)."
+    },
+    "localDelivery": "Entregado por un repartidor de TechZhop",
+    "toPayOnDelivery": "A pagar en la entrega",
+    "phoneNeeded": "Añade un teléfono a esta dirección para que el repartidor pueda llamarte.",
+    "placeOrder": "Realizar pedido"
   },
   "success": {
     "loading": "Confirmando tu pago...",
@@ -229,7 +245,17 @@
     "country": "País",
     "default": "Predeterminada",
     "setDefault": "Usar como predeterminada",
-    "deleteConfirm": "¿Eliminar esta dirección?"
+    "deleteConfirm": "¿Eliminar esta dirección?",
+    "notDelivered": "aún sin envíos",
+    "phoneHint": "Obligatorio: el repartidor te llamará.",
+    "line1Africa": "Dirección / calle",
+    "neighborhood": "Barrio",
+    "landmark": "Punto de referencia",
+    "landmarkHint": "Algo fácil de encontrar cerca de tu casa.",
+    "landmarkPlaceholder": "p. ej. detrás de la gran mezquita, portón azul",
+    "useLocation": "Usar mi ubicación actual",
+    "locationSaved": "Ubicación guardada",
+    "locationError": "No se pudo obtener tu ubicación. Permite el acceso y vuelve a intentarlo."
   },
   "orders": {
     "title": "Mis pedidos",
@@ -542,15 +568,20 @@
       "admin": "Administrador",
       "product_manager": "Gestor de productos",
       "seller": "Vendedor / preparador",
-      "customer": "Cliente"
+      "customer": "Cliente",
+      "driver": "Repartidor"
     },
     "desc": {
       "admin": "Todo: productos, pedidos, ingresos y equipo.",
       "product_manager": "Añadir, editar y eliminar productos, fotos, categorías y marcas.",
       "seller": "Ver pedidos, cambiar su estado y añadir números de seguimiento.",
-      "customer": "Sin acceso al área de administración."
+      "customer": "Sin acceso al área de administración.",
+      "driver": "Solo ve sus entregas: dirección, teléfono del cliente, mapa, código de entrega."
     },
-    "invited": "Invitación enviada a {{email}}"
+    "invited": "Invitación enviada a {{email}}",
+    "country": "País",
+    "allCountries": "Todos los países",
+    "countryHint": "Una persona limitada a un país solo ve los pedidos de ese país."
   },
   "location": {
     "deliverTo": "Enviar a",
@@ -625,5 +656,79 @@
     "text": "Lo sentimos, esta página tuvo un problema. Vuelve al inicio e inténtalo de nuevo.",
     "home": "Volver al inicio",
     "retry": "Reintentar"
+  },
+  "delivery": {
+    "title": "Entrega y pago",
+    "paid": "Pagado",
+    "toPay": "A pagar: {{amount}}",
+    "yourCode": "Tu código de entrega",
+    "codeHelp": "Da este código al repartidor cuando recibas tu paquete.",
+    "steps": {
+      "assigned": "Asignado",
+      "picked_up": "Recogido",
+      "out_for_delivery": "En camino",
+      "delivered": "Entregado",
+      "failed": "Problema"
+    },
+    "driver": "Repartidor",
+    "needSql": "Ejecuta el archivo SQL 20260930_countries.sql en Supabase para activar países, pago contra entrega y repartidores.",
+    "mode": "Entrega",
+    "modes": {
+      "local": "Repartidor de TechZhop",
+      "carrier": "Transportista (UPS/USPS…)"
+    },
+    "collected": {
+      "cash": "Pagado en efectivo",
+      "mobile_money": "Pagado con Mobile Money"
+    },
+    "code": "Código de entrega",
+    "openMap": "Abrir en Mapas",
+    "assignDriver": "Repartidor",
+    "assigned": "Repartidor asignado — avisado en su teléfono",
+    "noDriver": "Sin repartidor",
+    "noDrivers": "Aún no hay repartidores: añade uno en Equipo con el rol Repartidor.",
+    "status": "Estado de la entrega",
+    "photo": "Foto de la entrega",
+    "markCollected": "Marcar el pago como recibido",
+    "codShort": "Contra entrega"
+  },
+  "countries": {
+    "title": "Países",
+    "intro": "Dónde vendes, cómo pagan los clientes y quién entrega.",
+    "enabled": "Abierto",
+    "currency": "Moneda",
+    "rate": "1 USD = ? {{currency}}",
+    "payments": "Pago",
+    "ownStock": "Stock propio en este país",
+    "ownDrivers": "Nuestros repartidores entregan aquí",
+    "areas": "Zonas de reparto",
+    "areasHint": "Ciudades, estados o inicios de código postal, separados por comas. Vacío = todo el país.",
+    "days": "Plazo de entrega (días)",
+    "daysHint": "0 = usar el plazo general.",
+    "choose": "Elige un país…",
+    "add": "Añadir país",
+    "mainStock": "Stock (almacén principal)",
+    "stockIn": "Stock en {{country}}"
+  },
+  "driver": {
+    "title": "Mis entregas",
+    "tab": "Entregas",
+    "refresh": "Actualizar",
+    "none": "No hay entregas por ahora.",
+    "done": "Entregados ({{count}})",
+    "call": "Llamar",
+    "map": "Mapa",
+    "collect": "Cobrar {{amount}}",
+    "pickedUp": "Recogido en la tienda",
+    "outForDelivery": "Salgo a entregar",
+    "customerNotified": "Se ha avisado al cliente.",
+    "askCode": "Pide al cliente su código de 4 dígitos",
+    "collectedConfirm": "He cobrado {{amount}}",
+    "takePhoto": "Foto del paquete (opcional)",
+    "photoReady": "Foto lista",
+    "confirmDelivered": "Confirmar entrega",
+    "deliveredOk": "¡Entregado! Bien hecho.",
+    "problem": "Informar de un problema",
+    "problemPrompt": "¿Qué pasó? (cliente ausente, dirección errónea…)"
   }
 }

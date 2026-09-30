@@ -25,7 +25,8 @@ export const adminApi = {
   promos: () => request("/admin/promos").then((d) => d.promos),
   createPromo: (p) => request("/admin/promos", json("POST", p)),
   setPromoActive: (id, active) => request(`/admin/promos/${id}`, json("PATCH", { active })),
-  setRole: (email, role, language) => request("/admin/team", json("POST", { email, role, language })),
+  setRole: (email, role, language, country) => request("/admin/team", json("POST", { email, role, language, ...(country !== undefined ? { country } : {}) })),
+  drivers: () => request("/admin/drivers").then((d) => d.drivers || []),
   decide: (id, decision, message) => request(`/admin/orders/${id}/decision`, json("POST", { decision, message })).then((d) => d.order),
   refund: (id, body) => request(`/admin/orders/${id}/refund`, json("POST", body)).then((d) => d.order),
   updateOrder: (id, fields) => request(`/admin/orders/${id}`, json("PATCH", fields)).then((d) => d.order),
@@ -35,7 +36,7 @@ export const adminApi = {
     request("/admin/upload", json("POST", { data: base64, contentType })).then((d) => d.url),
 };
 
-const NONE = { admin: false, role: "customer", owner: false, permissions: [] };
+const NONE = { admin: false, driver: false, role: "customer", country: null, owner: false, permissions: [] };
 
 /** Staff info for the logged-in user: { admin, role, owner, permissions, can(p) } */
 export function useStaff() {
@@ -48,7 +49,12 @@ export function useStaff() {
   return { ...info, can: (p) => info.permissions.includes(p) };
 }
 
-/** true when the logged-in user has any staff role */
+/** true when the logged-in user can open the admin area */
 export function useIsAdmin() {
   return useStaff().admin;
+}
+
+/** true when the logged-in user is a driver */
+export function useIsDriver() {
+  return useStaff().driver;
 }

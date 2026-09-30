@@ -6,9 +6,11 @@ import { Field, btnPrimary, btnSecondary, inputClass, card } from "@/components/
 import { adminApi } from "@/api/admin";
 import { apiError } from "@/api/account";
 import useShopStore from "@/store/shopStore";
+import { countryOptions, countryName, flag, CURRENCIES, DEFAULT_COUNTRIES } from "../../../shared/settings";
 
 export default function StoreSettings() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const [newCountry, setNewCountry] = useState("");
   const reloadShop = useShopStore((s) => s.load);
   const [v, setV] = useState(null);
   const [saving, setSaving] = useState(false);
@@ -47,8 +49,85 @@ export default function StoreSettings() {
 
   const small = "bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white w-full";
 
+  const countries = v.countries || DEFAULT_COUNTRIES;
+  const setC = (code, patch) => setV({ ...v, countries: { ...countries, [code]: { ...countries[code], ...patch } } });
+  const togglePay = (code, m) => {
+    const cur = countries[code].payments || [];
+    const next = cur.includes(m) ? cur.filter((x) => x !== m) : [...cur, m];
+    setC(code, { payments: next.length ? next : cur });
+  };
+  const addCountry = () => {
+    if (!newCountry || countries[newCountry]) return;
+    setV({ ...v, countries: { ...countries, [newCountry]: { enabled: true, currency: "USD", rate: 1, payments: ["cod"], own_stock: true, local_delivery: { enabled: true, areas: [] }, min_days: 1, max_days: 3 } } });
+    setNewCountry("");
+  };
+
   return (
     <div className="grid lg:grid-cols-2 gap-6">
+      <div className={`${card} p-6 space-y-4 lg:col-span-2`}>
+        <h2 className="text-xl font-bold m-0">🌍 {t("countries.title")}</h2>
+        <p className="text-gray-400 text-sm m-0">{t("countries.intro")}</p>
+        <div className="grid md:grid-cols-2 gap-4">
+          {Object.entries(countries).map(([code, c]) => (
+            <div key={code} className={`rounded-xl border p-4 space-y-3 ${c.enabled ? "border-cyan-500/50" : "border-zinc-800 opacity-70"}`}>
+              <div className="flex items-center justify-between gap-2">
+                <strong className="text-lg">{flag(code)} {countryName(code, i18n.language)}</strong>
+                <label className="flex items-center gap-2 text-sm cursor-pointer">
+                  <input type="checkbox" className="w-4 h-4 accent-cyan-500" checked={!!c.enabled} onChange={(e) => setC(code, { enabled: e.target.checked })} /> {t("countries.enabled")}
+                </label>
+              </div>
+              <div className="grid grid-cols-2 gap-3">
+                <Field label={t("countries.currency")}>
+                  <select value={c.currency} onChange={(e) => setC(code, { currency: e.target.value })} className={small}>
+                    {CURRENCIES.map((x) => <option key={x.code} value={x.code}>{x.code}</option>)}
+                  </select>
+                </Field>
+                <Field label={t("countries.rate", { currency: c.currency })}>
+                  <input type="number" min="0" step="any" value={c.rate} disabled={c.currency === "USD"} onChange={(e) => setC(code, { rate: e.target.value })} className={small} />
+                </Field>
+              </div>
+              <div className="flex flex-wrap gap-4 text-sm">
+                <span className="text-gray-400">{t("countries.payments")}:</span>
+                {["card", "cod"].map((m) => (
+                  <label key={m} className="flex items-center gap-2 cursor-pointer">
+                    <input type="checkbox" className="w-4 h-4 accent-cyan-500" checked={(c.payments || []).includes(m)} onChange={() => togglePay(code, m)} /> {t(`checkout.method.${m}`)}
+                  </label>
+                ))}
+              </div>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="checkbox" className="w-4 h-4 accent-cyan-500" checked={!!c.own_stock} onChange={(e) => setC(code, { own_stock: e.target.checked })} /> {t("countries.ownStock")}
+              </label>
+              <label className="flex items-center gap-2 text-sm cursor-pointer">
+                <input type="checkbox" className="w-4 h-4 accent-cyan-500" checked={!!c.local_delivery?.enabled} onChange={(e) => setC(code, { local_delivery: { ...(c.local_delivery || {}), enabled: e.target.checked } })} /> {t("countries.ownDrivers")}
+              </label>
+              {c.local_delivery?.enabled && (
+                <Field label={t("countries.areas")} hint={t("countries.areasHint")}>
+                  <input
+                    value={(c.local_delivery?.areas || []).join(", ")}
+                    onChange={(e) => setC(code, { local_delivery: { ...c.local_delivery, areas: e.target.value.split(",").map((x) => x.trim()) } })}
+                    placeholder={code === "US" ? "NY, 112, 100" : "Conakry"}
+                    className={small}
+                  />
+                </Field>
+              )}
+              <Field label={t("countries.days")} hint={t("countries.daysHint")}>
+                <div className="grid grid-cols-2 gap-3">
+                  <input type="number" min="0" value={c.min_days || 0} onChange={(e) => setC(code, { min_days: e.target.value })} placeholder={t("admin.minDays")} className={small} />
+                  <input type="number" min="0" value={c.max_days || 0} onChange={(e) => setC(code, { max_days: e.target.value })} placeholder={t("admin.maxDays")} className={small} />
+                </div>
+              </Field>
+            </div>
+          ))}
+        </div>
+        <div className="flex flex-wrap gap-2">
+          <select value={newCountry} onChange={(e) => setNewCountry(e.target.value)} className={`${small} max-w-xs`}>
+            <option value="">{t("countries.choose")}</option>
+            {countryOptions(i18n.language).filter((o) => !countries[o.code]).map((o) => <option key={o.code} value={o.code}>{o.name}</option>)}
+          </select>
+          <button onClick={addCountry} disabled={!newCountry} className={btnSecondary}><Plus className="w-4 h-4" /> {t("countries.add")}</button>
+        </div>
+      </div>
+
       <div className={`${card} p-6 space-y-4`}>
         <h2 className="text-xl font-bold m-0">🚚 {t("admin.shippingTitle")}</h2>
         <div className="grid grid-cols-2 gap-4">

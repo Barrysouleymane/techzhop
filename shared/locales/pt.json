@@ -86,7 +86,8 @@
     "freeShippingOver": "Frete grátis em pedidos acima de {{amount}}",
     "deleteReview": "Excluir",
     "verified": "Compra verificada",
-    "pickRating": "Escolha uma nota"
+    "pickRating": "Escolha uma nota",
+    "available": "Em estoque"
   },
   "products": {
     "title": "Todos os produtos",
@@ -140,7 +141,22 @@
     "addAddress": "Adicionar um endereço de entrega",
     "changeAddress": "Alterar",
     "invalidItem": "Um dos produtos do seu carrinho é inválido.",
-    "failed": "Não foi possível iniciar o pagamento."
+    "failed": "Não foi possível iniciar o pagamento.",
+    "codPlaced": "Pedido feito! Você paga na entrega.",
+    "notDelivered": "Ainda não entregamos em {{country}}.",
+    "paymentMethod": "Forma de pagamento",
+    "method": {
+      "card": "Cartão",
+      "cod": "Pagamento na entrega"
+    },
+    "methodHint": {
+      "card": "Pagamento seguro pela Stripe.",
+      "cod": "Pague ao entregador em dinheiro ou Mobile Money (Orange Money, MTN…)."
+    },
+    "localDelivery": "Entregue por um entregador TechZhop",
+    "toPayOnDelivery": "A pagar na entrega",
+    "phoneNeeded": "Adicione um telefone a este endereço para o entregador poder ligar.",
+    "placeOrder": "Fazer pedido"
   },
   "success": {
     "loading": "Confirmando seu pagamento...",
@@ -229,7 +245,17 @@
     "country": "País",
     "default": "Padrão",
     "setDefault": "Definir como padrão",
-    "deleteConfirm": "Excluir este endereço?"
+    "deleteConfirm": "Excluir este endereço?",
+    "notDelivered": "ainda sem entregas",
+    "phoneHint": "Obrigatório: o entregador vai ligar para você.",
+    "line1Africa": "Endereço / rua",
+    "neighborhood": "Bairro",
+    "landmark": "Ponto de referência",
+    "landmarkHint": "Algo fácil de encontrar perto da sua casa.",
+    "landmarkPlaceholder": "ex.: atrás da grande mesquita, portão azul",
+    "useLocation": "Usar minha localização atual",
+    "locationSaved": "Localização salva",
+    "locationError": "Não foi possível obter sua localização. Permita o acesso e tente novamente."
   },
   "orders": {
     "title": "Meus pedidos",
@@ -542,15 +568,20 @@
       "admin": "Administrador",
       "product_manager": "Gerente de produtos",
       "seller": "Vendedor / separador",
-      "customer": "Cliente"
+      "customer": "Cliente",
+      "driver": "Entregador"
     },
     "desc": {
       "admin": "Tudo: produtos, pedidos, faturamento e equipe.",
       "product_manager": "Adicionar, editar e excluir produtos, fotos, categorias e marcas.",
       "seller": "Ver pedidos, alterar o status e adicionar códigos de rastreio.",
-      "customer": "Sem acesso à área de administração."
+      "customer": "Sem acesso à área de administração.",
+      "driver": "Vê apenas suas entregas: endereço, telefone do cliente, mapa, código de entrega."
     },
-    "invited": "Convite enviado para {{email}}"
+    "invited": "Convite enviado para {{email}}",
+    "country": "País",
+    "allCountries": "Todos os países",
+    "countryHint": "Uma pessoa limitada a um país só vê os pedidos desse país."
   },
   "location": {
     "deliverTo": "Entregar em",
@@ -625,5 +656,79 @@
     "text": "Desculpe, esta página teve um problema. Volte ao início e tente novamente.",
     "home": "Voltar ao início",
     "retry": "Tentar novamente"
+  },
+  "delivery": {
+    "title": "Entrega e pagamento",
+    "paid": "Pago",
+    "toPay": "A pagar: {{amount}}",
+    "yourCode": "Seu código de entrega",
+    "codeHelp": "Informe este código ao entregador ao receber o pacote.",
+    "steps": {
+      "assigned": "Atribuído",
+      "picked_up": "Retirado",
+      "out_for_delivery": "A caminho",
+      "delivered": "Entregue",
+      "failed": "Problema"
+    },
+    "driver": "Entregador",
+    "needSql": "Execute o arquivo SQL 20260930_countries.sql no Supabase para ativar países, pagamento na entrega e entregadores.",
+    "mode": "Entrega",
+    "modes": {
+      "local": "Entregador TechZhop",
+      "carrier": "Transportadora (UPS/USPS…)"
+    },
+    "collected": {
+      "cash": "Pago em dinheiro",
+      "mobile_money": "Pago por Mobile Money"
+    },
+    "code": "Código de entrega",
+    "openMap": "Abrir no Maps",
+    "assignDriver": "Entregador",
+    "assigned": "Entregador atribuído — avisado no telefone",
+    "noDriver": "Nenhum entregador",
+    "noDrivers": "Ainda não há entregadores: adicione um em Equipe com a função Entregador.",
+    "status": "Status da entrega",
+    "photo": "Foto da entrega",
+    "markCollected": "Marcar pagamento como recebido",
+    "codShort": "Na entrega"
+  },
+  "countries": {
+    "title": "Países",
+    "intro": "Onde você vende, como os clientes pagam e quem entrega.",
+    "enabled": "Aberto",
+    "currency": "Moeda",
+    "rate": "1 USD = ? {{currency}}",
+    "payments": "Pagamento",
+    "ownStock": "Estoque próprio neste país",
+    "ownDrivers": "Nossos entregadores entregam aqui",
+    "areas": "Áreas de entrega",
+    "areasHint": "Cidades, estados ou inícios de CEP, separados por vírgulas. Vazio = o país inteiro.",
+    "days": "Prazo de entrega (dias)",
+    "daysHint": "0 = usar o prazo geral.",
+    "choose": "Escolha um país…",
+    "add": "Adicionar país",
+    "mainStock": "Estoque (armazém principal)",
+    "stockIn": "Estoque em {{country}}"
+  },
+  "driver": {
+    "title": "Minhas entregas",
+    "tab": "Entregas",
+    "refresh": "Atualizar",
+    "none": "Nenhuma entrega no momento.",
+    "done": "Entregues ({{count}})",
+    "call": "Ligar",
+    "map": "Mapa",
+    "collect": "Receber {{amount}}",
+    "pickedUp": "Retirado na loja",
+    "outForDelivery": "Saindo para entregar",
+    "customerNotified": "O cliente foi avisado.",
+    "askCode": "Peça ao cliente o código de 4 dígitos",
+    "collectedConfirm": "Recebi {{amount}}",
+    "takePhoto": "Foto do pacote (opcional)",
+    "photoReady": "Foto pronta",
+    "confirmDelivered": "Confirmar entrega",
+    "deliveredOk": "Entregue! Muito bem.",
+    "problem": "Relatar um problema",
+    "problemPrompt": "O que aconteceu? (cliente ausente, endereço errado…)"
   }
 }

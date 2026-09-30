@@ -5,16 +5,20 @@ import { useTranslation } from "react-i18next";
 import { adminApi } from "../lib/admin";
 import { errorMessage } from "../lib/api";
 import { Button, Input, Card, Choice, Group, useStyles } from "./ui";
-import { STAFF_ROLES } from "../../../shared/settings";
+import { STAFF_ROLES, sellingCountries, countryName, flag } from "../../../shared/settings";
+import { useShop } from "../store/shop";
 
 export default function AdminTeam() {
   const { t, i18n } = useTranslation();
   const [members, setMembers] = useState([]);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("seller");
+  const [country, setCountry] = useState("");
+  const countries = sellingCountries(useShop((st) => st.settings));
   const [busy, setBusy] = useState(false);
   const [s, c] = useStyles((c) => ({
     h2: { color: c.text, fontSize: 18, fontWeight: "800" },
+    chip: { borderWidth: 1, borderColor: c.border, borderRadius: 18, paddingVertical: 7, paddingHorizontal: 12 },
     row: { flexDirection: "row", alignItems: "center", gap: 12, paddingVertical: 12, borderBottomWidth: 0.5, borderBottomColor: c.border },
     avatar: { width: 40, height: 40, borderRadius: 20, backgroundColor: c.border, alignItems: "center", justifyContent: "center", overflow: "hidden" },
   }));
@@ -24,10 +28,10 @@ export default function AdminTeam() {
     load();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function apply(targetEmail, newRole) {
+  async function apply(targetEmail, newRole, newCountry) {
     setBusy(true);
     try {
-      const res = await adminApi.setRole(targetEmail, newRole, i18n.language);
+      const res = await adminApi.setRole(targetEmail, newRole, i18n.language, newCountry);
       setEmail("");
       await load();
       Alert.alert(res.invited ? t("team.invited", { email: targetEmail }) : t("team.updated"));
@@ -38,9 +42,18 @@ export default function AdminTeam() {
     }
   }
 
+  function chooseCountry(m) {
+    Alert.alert(t("team.country"), t("team.countryHint"), [
+      { text: `🌍 ${t("team.allCountries")}`, onPress: () => apply(m.email, m.role, null) },
+      ...countries.map((cc) => ({ text: `${flag(cc)} ${countryName(cc, i18n.language)}`, onPress: () => apply(m.email, m.role, cc) })),
+      { text: t("common.cancel"), style: "cancel" },
+    ]);
+  }
+
   function changeRole(m) {
     Alert.alert(m.full_name || m.email, t("team.role"), [
       ...STAFF_ROLES.map((r) => ({ text: t(`team.roles.${r}`), onPress: () => apply(m.email, r) })),
+      { text: `🌍 ${t("team.country")}`, onPress: () => chooseCountry(m) },
       { text: t("team.remove"), style: "destructive", onPress: () => apply(m.email, "customer") },
       { text: t("common.cancel"), style: "cancel" },
     ]);
@@ -57,7 +70,15 @@ export default function AdminTeam() {
             <Choice key={r} label={`${t(`team.roles.${r}`)}\n${t(`team.desc.${r}`)}`} selected={role === r} onPress={() => setRole(r)} last={i === STAFF_ROLES.length - 1} />
           ))}
         </Group>
-        <Button title={t("team.add")} onPress={() => email && apply(email.trim(), role)} loading={busy} disabled={!email} />
+        <Text style={{ color: c.muted }}>{t("team.country")}</Text>
+        <View style={{ flexDirection: "row", flexWrap: "wrap", gap: 8 }}>
+          {["", ...countries].map((cc) => (
+            <Pressable key={cc || "all"} onPress={() => setCountry(cc)} style={[s.chip, country === cc && { borderColor: c.primary, backgroundColor: c.primary }]}>
+              <Text style={{ color: country === cc ? c.onPrimary : c.text }}>{cc ? `${flag(cc)} ${cc}` : `🌍 ${t("team.allCountries")}`}</Text>
+            </Pressable>
+          ))}
+        </View>
+        <Button title={t("team.add")} onPress={() => email && apply(email.trim(), role, country || null)} loading={busy} disabled={!email} />
       </Card>
 
       <Card>
@@ -76,7 +97,7 @@ export default function AdminTeam() {
               <Text style={{ color: c.warning, fontWeight: "700" }}>👑 {t("team.owner")}</Text>
             ) : (
               <>
-                <Text style={{ color: c.primary, fontWeight: "600" }}>{t(`team.roles.${m.role}`)}</Text>
+                <Text style={{ color: c.primary, fontWeight: "600" }}>{m.country ? `${flag(m.country)} ` : ""}{t(`team.roles.${m.role}`)}</Text>
                 <Ionicons name="chevron-forward" size={16} color={c.muted} />
               </>
             )}

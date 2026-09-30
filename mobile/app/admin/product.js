@@ -6,9 +6,11 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { adminApi } from "../../src/lib/admin";
 import { errorMessage } from "../../src/lib/api";
+import { useShop } from "../../src/store/shop";
+import { countryName, flag } from "../../../shared/settings";
 import { Button, Input, Card, Toggle, Loading, useStyles } from "../../src/components/ui";
 
-const EMPTY = { name: "", description: "", price: "", sale_price: "", sale_ends_at: "", stock: "", sku: "", category_id: "", brand_id: "", status: "active", featured: false, images: [] };
+const EMPTY = { name: "", description: "", price: "", sale_price: "", sale_ends_at: "", stock: "", stock_by_country: {}, sku: "", category_id: "", brand_id: "", status: "active", featured: false, images: [] };
 
 // "2026-10-31 23:59" <-> ISO
 const toText = (iso) => {
@@ -65,7 +67,9 @@ function Chips({ items, value, onChange, onCreate, noneLabel, newLabel }) {
 }
 
 export default function AdminProduct() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
+  const shopSettings = useShop((st) => st.settings);
+  const ownStock = Object.entries(shopSettings?.countries || {}).filter(([, cc]) => cc?.enabled && cc.own_stock).map(([code]) => code);
   const { id } = useLocalSearchParams();
   const isNew = !id;
   const [form, setForm] = useState(EMPTY);
@@ -94,6 +98,7 @@ export default function AdminProduct() {
             ...p,
             price: p.price != null ? String(p.price) : "",
             stock: p.stock != null ? String(p.stock) : "",
+            stock_by_country: Object.fromEntries(Object.entries(p.stock_by_country || {}).map(([k, v]) => [k, String(v)])),
             sale_price: p.sale_price != null ? String(p.sale_price) : "",
             sale_ends_at: toText(p.sale_ends_at),
             category_id: p.category_id ?? "",
@@ -206,8 +211,17 @@ export default function AdminProduct() {
           <Input label={t("admin.description")} value={form.description || ""} onChangeText={set("description")} multiline style={{ minHeight: 100, textAlignVertical: "top" }} />
           <View style={{ flexDirection: "row", gap: 12 }}>
             <View style={{ flex: 1 }}><Input label={`${t("admin.price")} (USD) *`} value={form.price} onChangeText={set("price")} keyboardType="decimal-pad" /></View>
-            <View style={{ flex: 1 }}><Input label={t("admin.stock")} value={form.stock} onChangeText={set("stock")} keyboardType="number-pad" /></View>
+            <View style={{ flex: 1 }}><Input label={ownStock.length ? t("countries.mainStock") : t("admin.stock")} value={form.stock} onChangeText={set("stock")} keyboardType="number-pad" /></View>
           </View>
+          {ownStock.map((code) => (
+            <Input
+              key={code}
+              label={t("countries.stockIn", { country: `${flag(code)} ${countryName(code, i18n.language)}` })}
+              value={form.stock_by_country?.[code] ?? ""}
+              onChangeText={(v) => setForm((f) => ({ ...f, stock_by_country: { ...(f.stock_by_country || {}), [code]: v } }))}
+              keyboardType="number-pad"
+            />
+          ))}
           <View style={{ flexDirection: "row", gap: 12 }}>
             <View style={{ flex: 1 }}><Input label={t("admin.salePrice")} value={form.sale_price} onChangeText={set("sale_price")} keyboardType="decimal-pad" /></View>
             <View style={{ flex: 1 }}><Input label={t("admin.saleEnds")} value={form.sale_ends_at} onChangeText={set("sale_ends_at")} placeholder="2026-10-31 23:59" autoCorrect={false} /></View>

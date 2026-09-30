@@ -14,7 +14,7 @@ import Reviews from "@/components/Shop/Reviews";
 import ProductCard from "@/components/ProductCard/ProductCard";
 import useShopStore from "@/store/shopStore";
 import useRecentStore from "@/store/recentStore";
-import { isOnSale, deliveryRange, shippingCost, effectivePrice, locationPlace } from "../../shared/settings";
+import { isOnSale, deliveryRange, shippingCost, effectivePrice, locationPlace, stockFor } from "../../shared/settings";
 import useDeliveryLocation from "@/hooks/useDeliveryLocation";
 import usePageTitle from "@/hooks/usePageTitle";
 import useLocationStore from "@/store/locationStore";
@@ -48,7 +48,8 @@ export default function ProductDetails() {
   if (loading) return <Page><p className="text-center py-20">{t("common.loading")}</p></Page>;
   if (!product) return <Page><p className="text-center py-20">{t("product.notFound")}</p></Page>;
 
-  const inStock = Number(product.stock) > 0;
+  const available = stockFor(product, loc.country, settings); // stock of the customer's country
+  const inStock = available == null || available > 0;
   const similar = all
     .filter((p) => p.id !== product.id && (p.categories?.name || "") === (product.categories?.name || "") )
     .slice(0, 4);
@@ -96,7 +97,7 @@ export default function ProductDetails() {
           <div className="mt-4"><PriceTag product={product} size="lg" /></div>
           {isOnSale(product) && product.sale_ends_at && <div className="mt-2"><Countdown until={product.sale_ends_at} /></div>}
           <p className={inStock ? "text-green-400" : "text-red-400"}>
-            {inStock ? t("product.inStock", { count: product.stock }) : t("product.outOfStock")}
+            {inStock ? (available == null ? t("product.available") : t("product.inStock", { count: available })) : t("product.outOfStock")}
           </p>
 
           <dl className="mt-6 space-y-2">
@@ -109,7 +110,7 @@ export default function ProductDetails() {
             <div className="mt-6 flex items-start gap-3 text-gray-300">
               <Truck className="w-5 h-5 text-cyan-400 shrink-0 mt-0.5" />
               <div>
-                <div className="font-semibold">{t("product.delivery", deliveryRange(settings, i18n.language))}</div>
+                <div className="font-semibold">{t("product.delivery", deliveryRange(settings, i18n.language, loc.country))}</div>
                 {(() => {
                   const fee = shippingCost(settings, loc.country, effectivePrice(product));
                   return (

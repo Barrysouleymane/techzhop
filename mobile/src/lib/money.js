@@ -2,12 +2,14 @@ import { useEffect, useState } from "react";
 import { getLocales } from "expo-localization";
 import { useTranslation } from "react-i18next";
 import { useSettings } from "../store/settings";
+import { useShop } from "../store/shop";
 import {
   FALLBACK_RATES,
   getRates,
   formatMoney,
   currencyForRegion,
   CURRENCIES,
+  shopRates,
 } from "../../../shared/settings";
 
 export function deviceCurrency() {
@@ -36,5 +38,7 @@ export function useMoney() {
     };
   }, []);
 
-  return (usd) => formatMoney(usd, currency, rates, i18n.language);
+  const settings = useShop((s) => s.settings);
+  const merged = shopRates(settings, rates);
+  return (usd) => formatMoney(usd, currency, merged, i18n.language);
 }

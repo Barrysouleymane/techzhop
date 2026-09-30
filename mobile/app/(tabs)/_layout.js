@@ -3,7 +3,7 @@ import { View, Text, Image } from "react-native";
 import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { useColors } from "../../src/theme";
-import { useIsAdmin } from "../../src/lib/admin";
+import { useStaff } from "../../src/lib/admin";
 
 function BrandTitle() {
   const c = useColors();
@@ -23,7 +23,8 @@ const icon = (name) => ({ color, size }) => <Ionicons name={name} color={color} 
 export default function TabsLayout() {
   const { t } = useTranslation();
   const c = useColors();
-  const isAdmin = useIsAdmin();
+  const staff = useStaff();
+  const isAdmin = staff.admin;
 
   return (
     <Tabs
@@ -39,6 +40,10 @@ export default function TabsLayout() {
       <Tabs.Screen name="index" options={{ title: "TechZhop", headerTitle: () => <BrandTitle />, tabBarLabel: t("nav.home"), tabBarIcon: icon("home-outline") }} />
       <Tabs.Screen name="products" options={{ title: t("nav.products"), tabBarIcon: icon("grid-outline") }} />
       <Tabs.Screen name="cart" options={{ title: t("nav.cart"), tabBarIcon: icon("cart-outline") }} />
+      <Tabs.Screen
+        name="deliveries"
+        options={{ title: t("driver.title"), tabBarLabel: t("driver.tab"), tabBarIcon: icon("bicycle-outline"), href: staff.driver ? undefined : null }}
+      />
       <Tabs.Screen
         name="admin"
         options={{ title: t("admin.title"), tabBarLabel: t("nav.admin"), tabBarIcon: icon("shield-checkmark-outline"), href: isAdmin ? undefined : null }}

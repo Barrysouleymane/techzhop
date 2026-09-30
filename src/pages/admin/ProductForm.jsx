@@ -6,8 +6,10 @@ import { ImagePlus, Star, X, Trash2 } from "lucide-react";
 import Page, { Field, btnPrimary, btnSecondary, btnDanger, inputClass, card } from "@/components/Page";
 import { adminApi } from "@/api/admin";
 import { apiError } from "@/api/account";
+import useShopStore from "@/store/shopStore";
+import { countryName, flag } from "../../../shared/settings";
 
-const EMPTY = { name: "", description: "", price: "", sale_price: "", sale_ends_at: "", stock: "", sku: "", category_id: "", brand_id: "", status: "active", featured: false, images: [] };
+const EMPTY = { name: "", description: "", price: "", sale_price: "", sale_ends_at: "", stock: "", stock_by_country: {}, sku: "", category_id: "", brand_id: "", status: "active", featured: false, images: [] };
 
 // ISO date → value for <input type="datetime-local">
 const toLocalInput = (iso) => {
@@ -17,7 +19,7 @@ const toLocalInput = (iso) => {
 };
 
 export default function ProductForm() {
-  const { t } = useTranslation();
+  const { t, i18n } = useTranslation();
   const { id } = useParams();
   const isNew = !id || id === "new";
   const navigate = useNavigate();
@@ -39,6 +41,7 @@ export default function ProductForm() {
             ...p,
             price: p.price ?? "",
             stock: p.stock ?? "",
+            stock_by_country: p.stock_by_country || {},
             sale_price: p.sale_price ?? "",
             sale_ends_at: toLocalInput(p.sale_ends_at),
             category_id: p.category_id ?? "",
@@ -51,6 +54,8 @@ export default function ProductForm() {
     }
   }, [id, isNew, t]);
 
+  const shopSettings = useShopStore((st) => st.settings);
+  const ownStock = Object.entries(shopSettings?.countries || {}).filter(([, c]) => c?.enabled && c.own_stock).map(([code]) => code);
   const set = (k) => (e) => setForm({ ...form, [k]: e.target.type === "checkbox" ? e.target.checked : e.target.value });
 
   async function addPhotos(e) {
@@ -155,8 +160,23 @@ export default function ProductForm() {
           <Field label={t("admin.description")}><textarea rows={5} value={form.description || ""} onChange={set("description")} className={inputClass} /></Field>
           <div className="grid grid-cols-2 gap-4">
             <Field label={`${t("admin.price")} (USD) *`}><input type="number" step="0.01" min="0" required value={form.price} onChange={set("price")} className={inputClass} /></Field>
-            <Field label={t("admin.stock")}><input type="number" min="0" value={form.stock} onChange={set("stock")} className={inputClass} /></Field>
+            <Field label={ownStock.length ? t("countries.mainStock") : t("admin.stock")}><input type="number" min="0" value={form.stock} onChange={set("stock")} className={inputClass} /></Field>
           </div>
+          {ownStock.length > 0 && (
+            <div className="grid grid-cols-2 gap-4">
+              {ownStock.map((code) => (
+                <Field key={code} label={t("countries.stockIn", { country: `${flag(code)} ${countryName(code, i18n.language)}` })}>
+                  <input
+                    type="number"
+                    min="0"
+                    value={form.stock_by_country?.[code] ?? ""}
+                    onChange={(e) => setForm({ ...form, stock_by_country: { ...(form.stock_by_country || {}), [code]: e.target.value } })}
+                    className={inputClass}
+                  />
+                </Field>
+              ))}
+            </div>
+          )}
           <div className="grid grid-cols-2 gap-4">
             <Field label={t("admin.salePrice")}><input type="number" step="0.01" min="0" value={form.sale_price} onChange={set("sale_price")} className={inputClass} /></Field>
             <Field label={t("admin.saleEnds")}><input type="datetime-local" value={form.sale_ends_at} onChange={set("sale_ends_at")} className={inputClass} /></Field>

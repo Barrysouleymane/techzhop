@@ -3,7 +3,7 @@ import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import {
   User, MapPin, Package, Heart, Bell, Globe, Coins, SunMoon, KeyRound, Trash2,
-  LifeBuoy, FileText, ShieldCheck, LogOut, ChevronRight, Shield,
+  LifeBuoy, FileText, ShieldCheck, LogOut, ChevronRight, Shield, Bike,
 } from "lucide-react";
 import Page, { card } from "@/components/Page";
 import useAuth from "@/hooks/useAuth";
@@ -14,7 +14,7 @@ import { getProfile, getMyOrders, getAddresses } from "@/api/account";
 export default function Account() {
   const { t } = useTranslation();
   const navigate = useNavigate();
-  const { user, isAdmin, role } = useAuth();
+  const { user, isAdmin, isDriver, role } = useAuth();
   const wishlistCount = useWishlistStore((s) => s.items.length);
   const [profile, setProfile] = useState(null);
   const [ordersCount, setOrdersCount] = useState(null);
@@ -68,6 +68,9 @@ export default function Account() {
     },
   ];
 
+  if (isDriver) {
+    sections[0].items.unshift({ to: "/deliveries", icon: Bike, label: t("driver.title") });
+  }
   if (isAdmin) {
     sections[0].items.push({ to: "/admin", icon: Shield, label: `${t("account.adminPanel")} · ${t(`team.roles.${role}`)}` });
   }

@@ -1,12 +1,12 @@
 import { Link } from "react-router-dom";
 import { useTranslation } from "react-i18next";
-import { User, Heart, Package, Shield } from "lucide-react";
+import { User, Heart, Package, Shield, Bike } from "lucide-react";
 import useAuth from "@/hooks/useAuth";
 import useWishlistStore from "@/store/wishlistStore";
 
 export default function UserMenu() {
   const { t } = useTranslation();
-  const { user, isAdmin } = useAuth();
+  const { user, isAdmin, isDriver } = useAuth();
   const wishlistCount = useWishlistStore((s) => s.items.length);
 
   const link = "flex items-center gap-2 text-white hover:text-cyan-400 transition no-underline";
@@ -27,6 +27,13 @@ export default function UserMenu() {
           </span>
         )}
       </Link>
+
+      {isDriver && (
+        <Link to="/deliveries" className={link} title={t("driver.title")}>
+          <Bike className="w-5 h-5" />
+          <span className="hidden lg:inline">{t("driver.title")}</span>
+        </Link>
+      )}
 
       {isAdmin && (
         <Link to="/admin" className={link} title={t("nav.admin")}>

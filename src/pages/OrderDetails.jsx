@@ -5,8 +5,9 @@ import { Truck, MapPin, ExternalLink } from "lucide-react";
 import Page, { card } from "@/components/Page";
 import { StatusBadge, StatusTimeline } from "@/components/Orders/OrderStatus";
 import OrderHelp from "@/components/Orders/OrderHelp";
+import DeliveryInfo from "@/components/Orders/DeliveryInfo";
 import { getOrder, apiError } from "@/api/account";
-import { formatUSD, carrierName, trackingUrl } from "../../shared/settings";
+import { formatUSD, carrierName, trackingUrl, orderAmountText } from "../../shared/settings";
 
 export default function OrderDetails() {
   const { t, i18n } = useTranslation();
@@ -47,6 +48,8 @@ export default function OrderDetails() {
             )}
           </div>
 
+          <DeliveryInfo order={order} />
+
           {order.shipping_address && (
             <div className={`${card} p-6`}>
               <h2 className="text-lg font-bold flex items-center gap-2"><MapPin className="w-5 h-5 text-cyan-400" /> {t("checkout.shipTo")}</h2>
@@ -68,7 +71,7 @@ export default function OrderDetails() {
             </ul>
             <div className="flex justify-between border-t border-zinc-800 mt-4 pt-4 font-bold text-lg">
               <span>{t("orders.total")}</span>
-              <span className="text-cyan-400">{usd(order.total)}</span>
+              <span className="text-cyan-400">{usd(order.total)}{order.currency && order.currency !== "USD" && order.local_total != null ? ` · ${orderAmountText(order, i18n.language)}` : ""}</span>
             </div>
           </div>
 

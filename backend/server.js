@@ -287,6 +287,45 @@ const PUSH_TEXT = {
   zh: { title: "订单 #{id}", paid: "已收到付款，谢谢！", processing: "您的订单正在准备中。", shipped: "您的订单已发货！", delivered: "您的订单已送达。", cancelled: "您的订单已取消。", pending: "您的订单待处理。" },
 };
 
+const DRIVER_PUSH = {
+  en: { title: "TechZhop", newDelivery: "New delivery assigned: order #{id}" },
+  fr: { title: "TechZhop", newDelivery: "Nouvelle livraison : commande n°{id}" },
+  es: { title: "TechZhop", newDelivery: "Nueva entrega asignada: pedido #{id}" },
+  pt: { title: "TechZhop", newDelivery: "Nova entrega atribuída: pedido #{id}" },
+  de: { title: "TechZhop", newDelivery: "Neue Lieferung zugewiesen: Bestellung #{id}" },
+  zh: { title: "TechZhop", newDelivery: "新的配送任务：订单 #{id}" },
+};
+
+const COURIER_PUSH = {
+  en: { title: "Order #{id}", onTheWay: "{name} is on the way with your order. Delivery code: {code}" },
+  fr: { title: "Commande n°{id}", onTheWay: "{name} arrive avec votre commande. Code de livraison : {code}" },
+  es: { title: "Pedido n.º {id}", onTheWay: "{name} va en camino con tu pedido. Código de entrega: {code}" },
+  pt: { title: "Pedido n.º {id}", onTheWay: "{name} está a caminho com seu pedido. Código de entrega: {code}" },
+  de: { title: "Bestellung #{id}", onTheWay: "{name} ist mit deiner Bestellung unterwegs. Liefercode: {code}" },
+  zh: { title: "订单 #{id}", onTheWay: "{name} 正在为您配送订单。取件码：{code}" },
+};
+
+/** Push to one user with a text table: sendPushTo(userId, DRIVER_PUSH, "newDelivery", { id: 12 }) */
+async function sendPushTo(userId, table, key, vars = {}, data = {}) {
+  try {
+    if (!userId) return;
+    const { data: tokens } = await supabase.from("push_tokens").select("token, language").eq("user_id", userId);
+    if (!tokens?.length) return;
+    const fillIn = (t) => String(t || "").replace(/\{(\w+)\}/g, (_, k) => vars[k] ?? "");
+    const messages = tokens.map(({ token, language }) => {
+      const t = table[language] || table.en;
+      return { to: token, sound: "default", title: fillIn(t.title), body: fillIn(t[key]), data };
+    });
+    await fetch("https://exp.host/--/api/v2/push/send", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify(messages),
+    });
+  } catch (err) {
+    console.error("PUSH ERROR:", err.message);
+  }
+}
+
 async function sendOrderPush(userId, orderId, status) {
   try {
     if (!userId || !status) return;
@@ -337,10 +376,19 @@ async function sendOrderPush(userId, orderId, status) {
 // (same rules as shared/settings.js used by the website and app)
 // ======================================================
 
+// Countries we sell in. Each one: payment methods ("card" = Stripe, "cod" = pay on delivery),
+// local currency + fixed rate (1 USD = rate), own stock or shared stock,
+// and the areas where our own drivers deliver (states, cities or postal-code prefixes).
+const DEFAULT_COUNTRIES = {
+  US: { enabled: true, currency: "USD", rate: 1, payments: ["card"], own_stock: false, local_delivery: { enabled: false, areas: ["NY"] }, min_days: 0, max_days: 0 },
+  GN: { enabled: true, currency: "GNF", rate: 8600, payments: ["cod"], own_stock: true, local_delivery: { enabled: true, areas: ["Conakry"] }, min_days: 1, max_days: 3 },
+};
+
 const DEFAULT_SHOP_SETTINGS = {
   shipping: { standard_rate: 9.99, free_over: 50, zones: [], min_days: 3, max_days: 7 },
   taxes: { enabled: false, rates: [] },
   promo_bar: { enabled: false, text: "", ends_at: null, link: "" },
+  countries: DEFAULT_COUNTRIES,
 };
 
 function isOnSale(p) {
@@ -391,6 +439,65 @@ function taxRate(settings, country, state) {
   return Number((exact || countryWide)?.rate) || 0;
 }
 
+/** Settings of one country, or null when we don't sell there */
+function countryCfg(settings, country) {
+  const c = normalizeCountry(country);
+  const cfg = (settings?.countries || DEFAULT_COUNTRIES)[c];
+  return cfg && cfg.enabled ? cfg : null;
+}
+
+/** Stock available for a country (null = unlimited) */
+function stockFor(product, country, settings) {
+  const c = normalizeCountry(country);
+  const cfg = countryCfg(settings, c);
+  if (cfg?.own_stock) {
+    const map = product?.stock_by_country || {};
+    return map[c] == null ? 0 : Number(map[c]);
+  }
+  return product?.stock == null ? null : Number(product.stock);
+}
+
+/** Add (+1) or remove (-1) quantities from the right stock */
+async function adjustStock(items, country, sign, settings) {
+  settings = settings || (await getShopSettings());
+  const c = normalizeCountry(country);
+  const own = !!countryCfg(settings, c)?.own_stock;
+  for (const item of items || []) {
+    if (!item.product_id) continue;
+    const qty = Number(item.quantity || 0) * sign;
+    const { data: p } = await supabase.from("products").select("stock, stock_by_country").eq("id", item.product_id).maybeSingle();
+    if (!p) continue;
+    if (own) {
+      const map = { ...(p.stock_by_country || {}) };
+      map[c] = Math.max(0, Number(map[c] || 0) + qty);
+      await supabase.from("products").update({ stock_by_country: map }).eq("id", item.product_id);
+    } else if (p.stock != null) {
+      await supabase.from("products").update({ stock: Math.max(0, Number(p.stock) + qty) }).eq("id", item.product_id);
+    }
+  }
+}
+
+/** Do our own drivers deliver to this address? */
+function isLocalDelivery(settings, address) {
+  const cfg = countryCfg(settings, address?.country);
+  if (!cfg?.local_delivery?.enabled) return false;
+  const areas = (cfg.local_delivery.areas || []).map((a) => String(a).trim().toUpperCase()).filter(Boolean);
+  if (!areas.length) return true;
+  const state = normalizeState(address?.state);
+  const city = String(address?.city || "").trim().toUpperCase();
+  const zip = String(address?.postal_code || "").trim().toUpperCase();
+  return areas.some((a) => a === state || a === city || (zip && zip.startsWith(a)));
+}
+
+/** Amount in the country's currency (rounded to 500 for GNF / FCFA) */
+function localAmount(cfg, usd) {
+  const rate = Number(cfg?.rate) || 1;
+  const v = Number(usd || 0) * rate;
+  return rate >= 100 ? Math.round(v / 500) * 500 : Math.round(v * 100) / 100;
+}
+
+const newDeliveryCode = () => String(Math.floor(1000 + Math.random() * 9000));
+
 let settingsCache = null;
 let settingsAt = 0;
 
@@ -401,6 +508,7 @@ async function getShopSettings() {
     shipping: { ...DEFAULT_SHOP_SETTINGS.shipping, ...(data?.value?.shipping || {}) },
     taxes: { ...DEFAULT_SHOP_SETTINGS.taxes, ...(data?.value?.taxes || {}) },
     promo_bar: { ...DEFAULT_SHOP_SETTINGS.promo_bar, ...(data?.value?.promo_bar || {}) },
+    countries: data?.value?.countries && Object.keys(data.value.countries).length ? data.value.countries : DEFAULT_COUNTRIES,
   };
   settingsAt = Date.now();
   return settingsCache;
@@ -497,6 +605,29 @@ async function doFulfill(sessionId) {
     if (cols.includes(k)) orderRow[k] = v;
   }
 
+  // Country, payment and delivery details (SQL "countries")
+  const settingsF = await getShopSettings();
+  const orderCountry = normalizeCountry(session.metadata?.country || "US");
+  let savedAddr = null;
+  if (session.metadata?.address_id && userId) {
+    const { data } = await supabase.from("addresses").select("*").eq("id", session.metadata.address_id).eq("user_id", userId).maybeSingle();
+    savedAddr = data || null;
+  }
+  const addrForZone = savedAddr || { country: orderCountry, state: session.metadata?.state, city: session.metadata?.city, postal_code: session.metadata?.postal_code };
+  const local = isLocalDelivery(settingsF, addrForZone);
+  Object.assign(orderRow, pickCols(cols, {
+    country: orderCountry,
+    payment_method: "card",
+    payment_status: "paid",
+    currency: "USD",
+    local_total: orderRow.total,
+    delivery_mode: local ? "local" : "carrier",
+    delivery_code: local ? newDeliveryCode() : null,
+    customer_phone: savedAddr?.phone || session.customer_details?.phone || null,
+    delivery_lat: savedAddr?.latitude ?? null,
+    delivery_lng: savedAddr?.longitude ?? null,
+  }));
+
   const { data: order, error: orderError } = await supabase
     .from("orders")
     .insert(orderRow)
@@ -541,21 +672,8 @@ async function doFulfill(sessionId) {
     if (error) console.error("ORDER ITEMS ERROR:", error.message);
   }
 
-  // Reduce stock
-  for (const item of orderItems) {
-    if (!item.product_id) continue;
-    const { data: p } = await supabase
-      .from("products")
-      .select("stock")
-      .eq("id", item.product_id)
-      .maybeSingle();
-    if (p && p.stock != null) {
-      await supabase
-        .from("products")
-        .update({ stock: Math.max(0, Number(p.stock) - item.quantity) })
-        .eq("id", item.product_id);
-    }
-  }
+  // Reduce stock (the country's own stock when it has one)
+  await adjustStock(orderItems, orderCountry, -1, settingsF);
 
   // Empty the customer's cart
   if (userId) {
@@ -629,31 +747,41 @@ const ROLE_PERMISSIONS = {
   admin: ["products", "orders", "team", "revenue", "store"],
   product_manager: ["products"],
   seller: ["orders"],
+  driver: ["deliveries"],
   customer: [],
 };
-const STAFF_ROLES = ["admin", "product_manager", "seller"];
+const STAFF_ROLES = ["admin", "product_manager", "seller", "driver"];
+// Roles that can open the admin area (drivers only get "My deliveries")
+const ADMIN_AREA_ROLES = ["admin", "product_manager", "seller"];
 
 function isOwnerEmail(email) {
   return ADMIN_EMAILS.includes((email || "").toLowerCase());
 }
 
+/** { role, country } — country limits a staff member to one country's orders (null = all) */
+async function getStaff(user) {
+  if (!user) return { role: "customer", country: null };
+  if (isOwnerEmail(user.email)) return { role: "admin", country: null };
+  const { data } = await supabase.from("profiles").select("*").eq("id", user.id).maybeSingle();
+  const role = ROLE_PERMISSIONS[data?.role] ? data.role : "customer";
+  return { role, country: role !== "customer" && data?.staff_country ? normalizeCountry(data.staff_country) : null };
+}
+
 async function getRole(user) {
-  if (!user) return "customer";
-  if (isOwnerEmail(user.email)) return "admin";
-  const { data } = await supabase.from("profiles").select("role").eq("id", user.id).maybeSingle();
-  return ROLE_PERMISSIONS[data?.role] ? data.role : "customer";
+  return (await getStaff(user)).role;
 }
 
 /** requirePermission("products") — also sets req.role / req.permissions */
 function requirePermission(...needed) {
   return async (req, res, next) => {
     try {
-      const role = await getRole(req.user);
+      const { role, country } = await getStaff(req.user);
       const permissions = ROLE_PERMISSIONS[role] || [];
       req.role = role;
       req.permissions = permissions;
+      req.staffCountry = country;
       const ok = needed.length === 0
-        ? STAFF_ROLES.includes(role)
+        ? ADMIN_AREA_ROLES.includes(role)
         : needed.some((p) => permissions.includes(p));
       if (!ok) return res.status(403).json({ error: "You don't have permission for this action" });
       next();
@@ -875,10 +1003,27 @@ app.post("/products", requireAuth, requirePermission("products"), async (req, re
 
 app.post("/create-checkout-session", rateLimit("checkout", 30, 10 * 60 * 1000), requireAuth, async (req, res) => {
   try {
-    const { items, shipping_address, address, return_to } = req.body || {};
+    const { items, shipping_address, return_to, address_id } = req.body || {};
+    let address = req.body?.address || null;
 
     if (!Array.isArray(items) || items.length === 0) {
       return res.status(400).json({ error: "Cart is empty" });
+    }
+
+    // The saved address (if given) is the source of truth for country/state/city
+    let savedAddress = null;
+    if (address_id) {
+      const { data } = await supabase.from("addresses").select("*").eq("id", address_id).eq("user_id", req.user.id).maybeSingle();
+      savedAddress = data || null;
+      if (savedAddress) address = savedAddress;
+    }
+
+    const settings0 = await getShopSettings();
+    const country = normalizeCountry(address?.country || "US");
+    const cfg = countryCfg(settings0, country);
+    if (!cfg) return res.status(400).json({ error: `We don't deliver to ${country} yet.` });
+    if (!(cfg.payments || []).includes("card")) {
+      return res.status(400).json({ error: "Card payment isn't available for this country. Choose pay on delivery." });
     }
 
     const ids = [...new Set(items.map((i) => Number(i.product_id)).filter(Number.isInteger))];
@@ -893,8 +1038,9 @@ app.post("/create-checkout-session", rateLimit("checkout", 30, 10 * 60 * 1000), 
 
       const quantity = Number(item.quantity);
       if (!Number.isInteger(quantity) || quantity <= 0) throw new Error(`Invalid quantity for ${product.name}`);
-      if (product.stock != null && quantity > Number(product.stock)) {
-        throw new Error(`Only ${product.stock} left in stock for ${product.name}`);
+      const available = stockFor(product, country, settings0);
+      if (available != null && quantity > available) {
+        throw new Error(available > 0 ? `Only ${available} left in stock for ${product.name}` : `${product.name} is out of stock in your country`);
       }
 
       const unit = effectivePrice(product); // sale price when active
@@ -935,6 +1081,10 @@ app.post("/create-checkout-session", rateLimit("checkout", 30, 10 * 60 * 1000), 
     }
 
     const ship = { ...DEFAULT_SHOP_SETTINGS.shipping, ...(settings.shipping || {}) };
+    if (Number(cfg.max_days) > 0) {
+      ship.min_days = Number(cfg.min_days) || 1;
+      ship.max_days = Number(cfg.max_days);
+    }
 
     const session = await stripe.checkout.sessions.create({
       mode: "payment",
@@ -959,6 +1109,11 @@ app.post("/create-checkout-session", rateLimit("checkout", 30, 10 * 60 * 1000), 
         shipping_address: String(shipping_address || "").slice(0, 490),
         subtotal: subtotal.toFixed(2),
         tax: tax.toFixed(2),
+        country,
+        state: String(address?.state || "").slice(0, 60),
+        city: String(address?.city || "").slice(0, 80),
+        postal_code: String(address?.postal_code || "").slice(0, 20),
+        address_id: savedAddress ? String(savedAddress.id) : "",
       },
       success_url:
         return_to === "app"
@@ -1203,9 +1358,14 @@ app.get(
         });
       }
 
+      const view = publicOrderView(data);
+      if (data.driver_id && ["picked_up", "out_for_delivery", "delivered"].includes(data.delivery_status)) {
+        const { data: d } = await supabase.from("profiles").select("full_name, phone").eq("id", data.driver_id).maybeSingle();
+        view.driver = { name: d?.full_name || null, phone: data.delivery_status === "out_for_delivery" ? d?.phone || null : null };
+      }
       res.json({
         success: true,
-        order: publicOrderView(data),
+        order: view,
       });
 
     } catch (err) {
@@ -1223,6 +1383,235 @@ app.get(
 
 
 
+
+
+// ======================================================
+// PAY ON DELIVERY (cash / Mobile Money to the driver)
+// POST /orders/cod { items: [{ product_id, quantity }], address_id }
+// ======================================================
+
+app.post("/orders/cod", rateLimit("cod", 20, 10 * 60 * 1000), requireAuth, async (req, res) => {
+  try {
+    const cols = await orderColumns();
+    if (!cols.includes("payment_method")) {
+      return res.status(400).json({ error: "Pay on delivery is not enabled yet: run supabase/migrations/20260930_countries.sql in Supabase." });
+    }
+    const { items, address_id } = req.body || {};
+    if (!Array.isArray(items) || items.length === 0) return res.status(400).json({ error: "Cart is empty" });
+
+    const { data: address } = await supabase.from("addresses").select("*").eq("id", address_id).eq("user_id", req.user.id).maybeSingle();
+    if (!address) return res.status(400).json({ error: "Please choose a delivery address" });
+    if (!address.phone) return res.status(400).json({ error: "Please add a phone number to your address so the driver can call you" });
+
+    const settings = await getShopSettings();
+    const country = normalizeCountry(address.country);
+    const cfg = countryCfg(settings, country);
+    if (!cfg) return res.status(400).json({ error: `We don't deliver to ${country} yet.` });
+    if (!(cfg.payments || []).includes("cod")) return res.status(400).json({ error: "Pay on delivery isn't available for this country." });
+
+    const ids = [...new Set(items.map((i) => Number(i.product_id)).filter(Number.isInteger))];
+    const { data: products, error: pErr } = await supabase.from("products").select("*").in("id", ids);
+    if (pErr) return res.status(500).json({ error: pErr.message });
+
+    let subtotal = 0;
+    const lines = items.map((item) => {
+      const product = (products || []).find((p) => Number(p.id) === Number(item.product_id));
+      if (!product) throw new Error(`Product ${item.product_id} not found`);
+      if (product.status && product.status !== "active") throw new Error(`${product.name} is no longer available`);
+      const quantity = Number(item.quantity);
+      if (!Number.isInteger(quantity) || quantity <= 0) throw new Error(`Invalid quantity for ${product.name}`);
+      const available = stockFor(product, country, settings);
+      if (available != null && quantity > available) {
+        throw new Error(available > 0 ? `Only ${available} left in stock for ${product.name}` : `${product.name} is out of stock in your country`);
+      }
+      const unit = effectivePrice(product);
+      subtotal += unit * quantity;
+      return { product, quantity, unit };
+    });
+
+    subtotal = round2(subtotal);
+    const shipping = shippingCost(settings, country, subtotal);
+    const rate = taxRate(settings, country, address.state);
+    const tax = Math.round(subtotal * rate) / 100;
+    const total = round2(subtotal + shipping + tax);
+    const local = isLocalDelivery(settings, address);
+    const now = new Date().toISOString();
+
+    const shippingText = [
+      address.full_name, address.line1, address.line2, address.neighborhood,
+      [address.postal_code, address.city].filter(Boolean).join(" "), address.state, address.country,
+      address.landmark ? `(${address.landmark})` : null, address.phone,
+    ].filter(Boolean).join(", ");
+
+    const row = {
+      user_id: req.user.id,
+      total,
+      shipping_address: shippingText,
+      status: "processing",
+      created_at: now,
+      updated_at: now,
+      ...pickCols(cols, {
+        subtotal, shipping_amount: shipping, tax_amount: tax, discount_amount: 0,
+        country, payment_method: "cod", payment_status: "unpaid",
+        currency: cfg.currency || "USD", local_total: localAmount(cfg, total),
+        delivery_mode: local ? "local" : "carrier",
+        delivery_code: newDeliveryCode(),
+        customer_phone: address.phone,
+        delivery_lat: address.latitude ?? null,
+        delivery_lng: address.longitude ?? null,
+      }),
+    };
+
+    const { data: order, error } = await supabase.from("orders").insert(row).select().single();
+    if (error) return res.status(500).json({ error: error.message });
+
+    const orderItems = lines.map((l) => ({
+      order_id: order.id, product_id: l.product.id, product_name: l.product.name, price: l.unit, quantity: l.quantity, created_at: now,
+    }));
+    const { error: iErr } = await supabase.from("order_items").insert(orderItems);
+    if (iErr) console.error("ORDER ITEMS ERROR:", iErr.message);
+
+    await adjustStock(orderItems, country, -1, settings);
+    await supabase.from("cart_items").delete().eq("user_id", req.user.id);
+
+    console.log("🧾 COD ORDER:", order.id, country, total, "USD /", row.local_total, row.currency);
+    await sendOrderPush(req.user.id, order.id, "processing");
+    const info = await userInfo(req.user.id).catch(() => null);
+    emails.orderConfirmationEmail({ to: info?.email || req.user.email, name: info?.name, language: info?.language, order, items: orderItems });
+    if (ADMIN_EMAILS.length) emails.newOrderAdminEmail({ to: ADMIN_EMAILS, order, items: orderItems });
+
+    res.json({ success: true, order_id: order.id, order: publicOrderView(order) });
+  } catch (err) {
+    console.error("COD ERROR:", err.message);
+    res.status(400).json({ error: err.message });
+  }
+});
+
+
+// ======================================================
+// DRIVERS
+// Staff with the "driver" role see only the orders assigned to them.
+// ======================================================
+
+app.get("/admin/drivers", requireAuth, requirePermission("orders"), async (req, res) => {
+  const { data, error } = await supabase.from("profiles").select("*").eq("role", "driver");
+  if (error) return res.status(500).json({ error: error.message });
+  const drivers = (data || [])
+    .filter((d) => !req.staffCountry || !d.staff_country || normalizeCountry(d.staff_country) === req.staffCountry)
+    .map((d) => ({ id: d.id, name: d.full_name || null, phone: d.phone || null, country: d.staff_country || null }));
+  res.json({ drivers });
+});
+
+// What a driver may see about a delivery (no delivery code: the customer gives it at the door)
+function driverView(o) {
+  return {
+    id: o.id, status: o.status, created_at: o.created_at, country: o.country,
+    shipping_address: o.shipping_address, customer_phone: o.customer_phone,
+    delivery_lat: o.delivery_lat, delivery_lng: o.delivery_lng,
+    delivery_status: o.delivery_status, delivery_note: o.delivery_note,
+    payment_method: o.payment_method, payment_status: o.payment_status,
+    currency: o.currency, local_total: o.local_total, total: o.total,
+    needs_code: !!o.delivery_code,
+    picked_up_at: o.picked_up_at, out_for_delivery_at: o.out_for_delivery_at, delivered_at: o.delivered_at,
+    order_items: (o.order_items || []).map((i) => ({ id: i.id, product_name: i.product_name, quantity: i.quantity })),
+  };
+}
+
+app.get("/driver/deliveries", requireAuth, requirePermission("deliveries"), async (req, res) => {
+  const { data, error } = await supabase
+    .from("orders")
+    .select("*, order_items (id, product_name, quantity)")
+    .eq("driver_id", req.user.id)
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) return res.status(500).json({ error: error.message });
+  res.json({ deliveries: (data || []).map(driverView) });
+});
+
+let deliveriesBucketReady = false;
+
+app.post("/driver/deliveries/:orderId", rateLimit("driver", 120, 10 * 60 * 1000), requireAuth, requirePermission("deliveries"), async (req, res) => {
+  const orderId = Number(req.params.orderId);
+  const action = req.body?.action;
+  const { data: order } = await supabase.from("orders").select("*, order_items (id, product_name, quantity)").eq("id", orderId).maybeSingle();
+  if (!order || order.driver_id !== req.user.id) return res.status(404).json({ error: "Delivery not found" });
+  if (order.status === "cancelled") return res.status(400).json({ error: "This order was cancelled" });
+
+  const now = new Date().toISOString();
+  const update = { updated_at: now };
+  let customerStatus = null;
+
+  if (action === "picked_up") {
+    update.delivery_status = "picked_up";
+    update.picked_up_at = now;
+  } else if (action === "out_for_delivery") {
+    update.delivery_status = "out_for_delivery";
+    update.out_for_delivery_at = now;
+    update.status = "shipped";
+  } else if (action === "failed") {
+    update.delivery_status = "failed";
+    update.delivery_note = String(req.body?.note || "").slice(0, 500) || null;
+  } else if (action === "delivered") {
+    if (order.delivery_code && String(req.body?.code || "").trim() !== String(order.delivery_code)) {
+      return res.status(400).json({ error: "Wrong delivery code. Ask the customer for the 4-digit code shown in their app or email." });
+    }
+    if (order.payment_method === "cod" && order.payment_status !== "collected" && !req.body?.collected) {
+      return res.status(400).json({ error: "Confirm that you collected the payment first." });
+    }
+    update.delivery_status = "delivered";
+    update.status = "delivered";
+    update.delivered_at = now;
+    if (order.payment_method === "cod" && req.body?.collected) {
+      update.payment_status = "collected";
+      update.collected_at = now;
+      update.collected_method = ["cash", "mobile_money"].includes(req.body?.collected_method) ? req.body.collected_method : "cash";
+    }
+    if (req.body?.note) update.delivery_note = String(req.body.note).slice(0, 500);
+
+    // Optional photo of the delivered package
+    if (req.body?.photo) {
+      try {
+        if (!deliveriesBucketReady) {
+          const { data: bucket } = await supabase.storage.getBucket("deliveries");
+          if (!bucket) await supabase.storage.createBucket("deliveries", { public: false });
+          deliveriesBucketReady = true;
+        }
+        const path = `${order.id}/${Date.now()}.jpg`;
+        const buffer = Buffer.from(String(req.body.photo).replace(/^data:[^,]+,/, ""), "base64");
+        const { error: upErr } = await supabase.storage.from("deliveries").upload(path, buffer, { contentType: "image/jpeg" });
+        if (!upErr) update.delivery_photo = path;
+        else console.error("DELIVERY PHOTO:", upErr.message);
+      } catch (err) {
+        console.error("DELIVERY PHOTO:", err.message);
+      }
+    }
+  } else {
+    return res.status(400).json({ error: "Invalid action" });
+  }
+
+  const cols = await orderColumns();
+  const safe = {};
+  for (const [k, v] of Object.entries(update)) if (["updated_at", "status"].includes(k) || cols.includes(k)) safe[k] = v;
+
+  const { data, error } = await supabase.from("orders").update(safe).eq("id", orderId).select("*, order_items (id, product_name, quantity)").single();
+  if (error) return res.status(500).json({ error: error.message });
+
+  // Tell the customer
+  const info = await userInfo(order.user_id).catch(() => null);
+  if (action === "out_for_delivery") {
+    const { data: me } = await supabase.from("profiles").select("full_name, phone").eq("id", req.user.id).maybeSingle();
+    const driverName = me?.full_name || "TechZhop";
+    sendPushTo(order.user_id, COURIER_PUSH, "onTheWay", { id: order.id, name: driverName, code: order.delivery_code || "" }, { orderId: order.id });
+    emails.outForDeliveryEmail({ to: info?.email, name: info?.name, language: info?.language, order: data, driverName, driverPhone: me?.phone });
+  } else if (action === "delivered") {
+    await sendOrderPush(order.user_id, order.id, "delivered");
+    if (info?.notifyOrders) emails.orderUpdateEmail({ to: info.email, name: info.name, language: info.language, order: data });
+  } else if (action === "failed" && ADMIN_EMAILS.length) {
+    console.log("⚠️ DELIVERY FAILED:", order.id, update.delivery_note);
+  }
+
+  res.json({ success: true, delivery: driverView(data) });
+});
 
 // ======================================================
 // CANCELLATIONS, RETURNS AND REFUNDS
@@ -1248,7 +1637,7 @@ function requestOptions(order) {
 }
 
 function publicOrderView(order) {
-  const { admin_note, ...rest } = order;
+  const { admin_note, driver_id, delivery_photo, ...rest } = order;
   return { ...rest, ...requestOptions(order) };
 }
 
@@ -1357,13 +1746,7 @@ app.post("/admin/orders/:orderId/refund", rateLimit("refund", 30, 60 * 60 * 1000
 
   // Put the products back in stock
   if (req.body?.restock) {
-    for (const item of order.order_items || []) {
-      if (!item.product_id) continue;
-      const { data: p } = await supabase.from("products").select("stock").eq("id", item.product_id).maybeSingle();
-      if (p && p.stock != null) {
-        await supabase.from("products").update({ stock: Number(p.stock) + Number(item.quantity || 0) }).eq("id", item.product_id);
-      }
-    }
+    await adjustStock(order.order_items, order.country || "US", +1);
   }
 
   const { data, error } = await supabase.from("orders").update(update).eq("id", orderId).select("*").single();
@@ -1462,13 +1845,14 @@ app.get("/admin/orders", requireAuth, requirePermission("orders"), async (req, r
       "*, order_items (id, product_id, product_name, price, quantity)"
     )
     .order("created_at", { ascending: false })
-    .limit(200);
+    .limit(300);
 
   if (error) {
     return res.status(500).json({ error: error.message });
   }
 
-  res.json({ success: true, orders: data || [] });
+  const list = req.staffCountry ? (data || []).filter((o) => normalizeCountry(o.country || "US") === req.staffCountry) : data || [];
+  res.json({ success: true, orders: list });
 });
 
 
@@ -1494,10 +1878,20 @@ async function orderColumns() {
   return cols;
 }
 
+/** Keep only the fields whose column exists in "orders" */
+function pickCols(cols, obj) {
+  const out = {};
+  for (const [k, v] of Object.entries(obj)) if (cols.includes(k)) out[k] = v;
+  return out;
+}
+
 const OPTIONAL_ORDER_COLUMNS = [
   "shipping_address", "tracking_number", "carrier", "admin_note", "subtotal", "shipping_amount", "tax_amount",
   "discount_amount", "request_type", "request_status", "request_reason", "request_message", "requested_at",
   "refunded_amount", "refunded_at", "delivered_at",
+  "country", "payment_method", "payment_status", "currency", "local_total", "delivery_mode", "driver_id",
+  "delivery_status", "delivery_code", "delivery_photo", "delivery_note", "picked_up_at", "out_for_delivery_at",
+  "collected_at", "collected_method", "customer_phone", "delivery_lat", "delivery_lng",
 ];
 
 // ADMIN — ONE ORDER WITH CUSTOMER, PRODUCTS AND PAYMENT DETAILS
@@ -1509,6 +1903,19 @@ app.get("/admin/orders/:orderId", requireAuth, requirePermission("orders"), asyn
     .single();
 
   if (error) return res.status(404).json({ error: error.message });
+  if (req.staffCountry && normalizeCountry(order.country || "US") !== req.staffCountry) {
+    return res.status(404).json({ error: "Order not found" });
+  }
+
+  // Driver + delivery photo (private bucket → temporary link)
+  if (order.driver_id) {
+    const { data: d } = await supabase.from("profiles").select("full_name, phone").eq("id", order.driver_id).maybeSingle();
+    order.driver = { id: order.driver_id, name: d?.full_name || null, phone: d?.phone || null };
+  }
+  if (order.delivery_photo) {
+    const { data: signed } = await supabase.storage.from("deliveries").createSignedUrl(order.delivery_photo, 3600);
+    order.delivery_photo_url = signed?.signedUrl || null;
+  }
 
   // Product photos
   const ids = (order.order_items || []).map((i) => i.product_id).filter(Boolean);
@@ -1561,7 +1968,7 @@ app.get("/admin/orders/:orderId", requireAuth, requirePermission("orders"), asyn
     order,
     customer,
     payment,
-    fields: { carrier: cols.includes("carrier"), note: cols.includes("admin_note"), returns: cols.includes("refunded_amount") && cols.includes("request_type") },
+    fields: { carrier: cols.includes("carrier"), note: cols.includes("admin_note"), returns: cols.includes("refunded_amount") && cols.includes("request_type"), delivery: cols.includes("driver_id") && cols.includes("delivery_status") },
   });
 });
 
@@ -1594,6 +2001,32 @@ app.patch("/admin/orders/:orderId", requireAuth, requirePermission("orders"), as
     }
   }
 
+  const { data: current } = await supabase.from("orders").select("*").eq("id", orderId).maybeSingle();
+  if (!current || (req.staffCountry && normalizeCountry(current.country || "US") !== req.staffCountry)) {
+    return res.status(404).json({ error: "Order not found" });
+  }
+
+  // Assign / unassign a driver
+  let newDriver = null;
+  if (req.body?.driver_id !== undefined && orderCols.includes("driver_id")) {
+    const driverId = req.body.driver_id || null;
+    if (driverId) {
+      const { data: d } = await supabase.from("profiles").select("id, role, staff_country").eq("id", driverId).maybeSingle();
+      if (!d || d.role !== "driver") return res.status(400).json({ error: "This person is not a driver" });
+      newDriver = d;
+    }
+    update.driver_id = driverId;
+    update.delivery_status = driverId ? "assigned" : null;
+    if (driverId && !current.delivery_code) update.delivery_code = newDeliveryCode();
+    if (driverId) update.delivery_mode = "local";
+  }
+  // Payment received in cash / Mobile Money (pay on delivery)
+  if (req.body?.payment_status !== undefined && orderCols.includes("payment_status")) {
+    if (!["unpaid", "collected", "paid"].includes(req.body.payment_status)) return res.status(400).json({ error: "Invalid payment status" });
+    update.payment_status = req.body.payment_status;
+    if (req.body.payment_status === "collected" && orderCols.includes("collected_at")) update.collected_at = new Date().toISOString();
+  }
+
   const { data, error } = await supabase
     .from("orders")
     .update(update)
@@ -1603,6 +2036,10 @@ app.patch("/admin/orders/:orderId", requireAuth, requirePermission("orders"), as
 
   if (error) {
     return res.status(500).json({ error: error.message });
+  }
+
+  if (newDriver && newDriver.id !== current.driver_id) {
+    sendPushTo(newDriver.id, DRIVER_PUSH, "newDelivery", { id: data.id }, { deliveryId: data.id });
   }
 
   if (status) {
@@ -1651,7 +2088,7 @@ async function productColumns() {
 const EDITABLE_PRODUCT_FIELDS = [
   "name", "title", "description", "price", "stock", "image", "images",
   "sku", "slug", "status", "category_id", "brand_id", "featured",
-  "sale_price", "sale_ends_at",
+  "sale_price", "sale_ends_at", "stock_by_country",
 ];
 
 async function cleanProduct(body) {
@@ -1665,6 +2102,14 @@ async function cleanProduct(body) {
 
   if (out.price !== undefined) out.price = Number(out.price);
   if (out.stock !== undefined) out.stock = Number(out.stock || 0);
+  if (out.stock_by_country !== undefined) {
+    const m = {};
+    for (const [k, v] of Object.entries(out.stock_by_country || {})) {
+      const c = normalizeCountry(k);
+      if (/^[A-Z]{2}$/.test(c) && v !== "" && v != null) m[c] = Math.max(0, parseInt(v, 10) || 0);
+    }
+    out.stock_by_country = m;
+  }
   if (out.category_id === "") out.category_id = null;
   if (out.brand_id === "") out.brand_id = null;
   if (out.sale_price !== undefined) out.sale_price = Number(out.sale_price) > 0 ? Number(out.sale_price) : null;
@@ -1682,10 +2127,12 @@ async function cleanProduct(body) {
 
 // Is the logged-in user an admin? (used by the app to show the Admin menu)
 app.get("/admin/me", requireAuth, async (req, res) => {
-  const role = await getRole(req.user);
+  const { role, country } = await getStaff(req.user);
   res.json({
-    admin: STAFF_ROLES.includes(role),
+    admin: ADMIN_AREA_ROLES.includes(role),
+    driver: role === "driver",
     role,
+    country,
     owner: isOwnerEmail(req.user.email),
     permissions: ROLE_PERMISSIONS[role] || [],
   });
@@ -1710,7 +2157,7 @@ async function findUserByEmail(email) {
 app.get("/admin/team", requireAuth, requirePermission("team"), async (req, res) => {
   const { data: staff, error } = await supabase
     .from("profiles")
-    .select("id, full_name, avatar_url, role")
+    .select("*")
     .in("role", STAFF_ROLES);
   if (error) return res.status(500).json({ error: error.message });
 
@@ -1718,7 +2165,7 @@ app.get("/admin/team", requireAuth, requirePermission("team"), async (req, res) 
     (staff || []).map(async (p) => {
       const { data } = await supabase.auth.admin.getUserById(p.id);
       const email = data?.user?.email || null;
-      return { ...p, email, owner: isOwnerEmail(email) };
+      return { id: p.id, full_name: p.full_name, avatar_url: p.avatar_url, phone: p.phone, role: p.role, country: p.staff_country || null, email, owner: isOwnerEmail(email) };
     })
   );
 
@@ -1764,6 +2211,13 @@ app.post("/admin/team", rateLimit("team", 30, 60 * 60 * 1000), requireAuth, requ
     .upsert({ id: user.id, role }, { onConflict: "id" });
   if (error) return res.status(500).json({ error: error.message });
 
+  // Optional: limit this person to one country (drivers, country managers)
+  if (req.body?.country !== undefined) {
+    const c = req.body.country ? normalizeCountry(req.body.country) : null;
+    const { error: cErr } = await supabase.from("profiles").update({ staff_country: role === "customer" ? null : c }).eq("id", user.id);
+    if (cErr) console.error("STAFF COUNTRY:", cErr.message);
+  }
+
   if (STAFF_ROLES.includes(role)) {
     const { data: p } = await supabase.from("profiles").select("full_name").eq("id", user.id).maybeSingle();
     emails.staffEmail({
@@ -1776,7 +2230,7 @@ app.post("/admin/team", rateLimit("team", 30, 60 * 60 * 1000), requireAuth, requ
   }
 
   console.log(`👥 ROLE: ${email} → ${role} (by ${req.user.email})${invited ? " [invited]" : ""}`);
-  res.json({ success: true, invited, member: { id: user.id, email, role } });
+  res.json({ success: true, invited, member: { id: user.id, email, role, country: req.body?.country || null } });
 });
 
 app.get("/admin/meta", requireAuth, requirePermission("products"), async (req, res) => {
@@ -1938,6 +2392,29 @@ app.get("/admin/settings", requireAuth, requirePermission("store"), async (req, 
   res.json(await getShopSettings());
 });
 
+function cleanCountries(input) {
+  const out = {};
+  for (const [code, c] of Object.entries(input || DEFAULT_COUNTRIES)) {
+    const cc = normalizeCountry(code);
+    if (!/^[A-Z]{2}$/.test(cc) || !c) continue;
+    const payments = (Array.isArray(c.payments) ? c.payments : []).filter((m) => ["card", "cod"].includes(m));
+    out[cc] = {
+      enabled: !!c.enabled,
+      currency: String(c.currency || "USD").toUpperCase().slice(0, 3),
+      rate: Math.max(0.0001, Number(c.rate) || 1),
+      payments: payments.length ? payments : ["card"],
+      own_stock: !!c.own_stock,
+      local_delivery: {
+        enabled: !!c.local_delivery?.enabled,
+        areas: (c.local_delivery?.areas || []).map((a) => String(a).trim()).filter(Boolean).slice(0, 100),
+      },
+      min_days: Math.max(0, parseInt(c.min_days, 10) || 0),
+      max_days: Math.max(0, parseInt(c.max_days, 10) || 0),
+    };
+  }
+  return Object.keys(out).length ? out : DEFAULT_COUNTRIES;
+}
+
 app.put("/admin/settings", requireAuth, requirePermission("store"), async (req, res) => {
   const body = req.body || {};
   const value = {
@@ -1966,6 +2443,8 @@ app.put("/admin/settings", requireAuth, requirePermission("store"), async (req, 
       ends_at: body.promo_bar?.ends_at ? new Date(body.promo_bar.ends_at).toISOString() : null,
       link: String(body.promo_bar?.link || "").slice(0, 300),
     },
+    // Not sent by older screens (e.g. the app) → keep what is saved
+    countries: body.countries ? cleanCountries(body.countries) : (await getShopSettings()).countries,
   };
   const { error } = await supabase
     .from("shop_settings")

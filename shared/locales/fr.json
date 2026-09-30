@@ -86,7 +86,8 @@
     "freeShippingOver": "Livraison gratuite dès {{amount}} d'achat",
     "deleteReview": "Supprimer",
     "verified": "Achat vérifié",
-    "pickRating": "Choisissez une note"
+    "pickRating": "Choisissez une note",
+    "available": "En stock"
   },
   "products": {
     "title": "Tous les produits",
@@ -140,7 +141,22 @@
     "addAddress": "Ajouter une adresse de livraison",
     "changeAddress": "Modifier",
     "invalidItem": "Un des produits de votre panier est invalide.",
-    "failed": "Impossible de lancer le paiement."
+    "failed": "Impossible de lancer le paiement.",
+    "codPlaced": "Commande passée ! Vous paierez à la livraison.",
+    "notDelivered": "Nous ne livrons pas encore ce pays : {{country}}.",
+    "paymentMethod": "Moyen de paiement",
+    "method": {
+      "card": "Carte bancaire",
+      "cod": "Paiement à la livraison"
+    },
+    "methodHint": {
+      "card": "Paiement sécurisé par Stripe.",
+      "cod": "Payez le livreur en espèces ou par Mobile Money (Orange Money, MTN…)."
+    },
+    "localDelivery": "Livré par un livreur TechZhop",
+    "toPayOnDelivery": "À payer à la livraison",
+    "phoneNeeded": "Ajoutez un numéro de téléphone à cette adresse pour que le livreur puisse vous appeler.",
+    "placeOrder": "Passer la commande"
   },
   "success": {
     "loading": "Confirmation de votre paiement...",
@@ -229,7 +245,17 @@
     "country": "Pays",
     "default": "Par défaut",
     "setDefault": "Définir par défaut",
-    "deleteConfirm": "Supprimer cette adresse ?"
+    "deleteConfirm": "Supprimer cette adresse ?",
+    "notDelivered": "pas encore livré",
+    "phoneHint": "Obligatoire : le livreur vous appellera.",
+    "line1Africa": "Adresse / rue",
+    "neighborhood": "Quartier",
+    "landmark": "Point de repère",
+    "landmarkHint": "Un endroit facile à trouver près de chez vous.",
+    "landmarkPlaceholder": "ex. derrière la grande mosquée, portail bleu",
+    "useLocation": "Utiliser ma position actuelle",
+    "locationSaved": "Position enregistrée",
+    "locationError": "Impossible d'obtenir votre position. Autorisez la localisation et réessayez."
   },
   "orders": {
     "title": "Mes commandes",
@@ -542,15 +568,20 @@
       "admin": "Administrateur",
       "product_manager": "Gestionnaire produits",
       "seller": "Vendeur / préparateur",
-      "customer": "Client"
+      "customer": "Client",
+      "driver": "Livreur"
     },
     "desc": {
       "admin": "Tout : produits, commandes, chiffre d'affaires et équipe.",
       "product_manager": "Ajouter, modifier et supprimer les produits, photos, catégories et marques.",
       "seller": "Voir les commandes, changer leur statut et ajouter les numéros de suivi.",
-      "customer": "Aucun accès à l'espace admin."
+      "customer": "Aucun accès à l'espace admin.",
+      "driver": "Voit seulement ses livraisons : adresse, téléphone du client, carte, code de livraison."
     },
-    "invited": "Invitation envoyée à {{email}}"
+    "invited": "Invitation envoyée à {{email}}",
+    "country": "Pays",
+    "allCountries": "Tous les pays",
+    "countryHint": "Une personne limitée à un pays ne voit que les commandes de ce pays."
   },
   "location": {
     "deliverTo": "Livrer à",
@@ -625,5 +656,79 @@
     "text": "Désolé, cette page a rencontré une erreur. Revenez à l'accueil et réessayez.",
     "home": "Retour à l'accueil",
     "retry": "Réessayer"
+  },
+  "delivery": {
+    "title": "Livraison et paiement",
+    "paid": "Payé",
+    "toPay": "À payer : {{amount}}",
+    "yourCode": "Votre code de livraison",
+    "codeHelp": "Donnez ce code au livreur quand vous recevez votre colis.",
+    "steps": {
+      "assigned": "Assignée",
+      "picked_up": "Récupérée",
+      "out_for_delivery": "En route",
+      "delivered": "Livrée",
+      "failed": "Problème"
+    },
+    "driver": "Livreur",
+    "needSql": "Exécutez le fichier SQL 20260930_countries.sql dans Supabase pour activer les pays, le paiement à la livraison et les livreurs.",
+    "mode": "Livraison",
+    "modes": {
+      "local": "Livreur TechZhop",
+      "carrier": "Transporteur (UPS/USPS…)"
+    },
+    "collected": {
+      "cash": "Payé en espèces",
+      "mobile_money": "Payé par Mobile Money"
+    },
+    "code": "Code de livraison",
+    "openMap": "Ouvrir dans Maps",
+    "assignDriver": "Livreur",
+    "assigned": "Livreur assigné — prévenu sur son téléphone",
+    "noDriver": "Aucun livreur",
+    "noDrivers": "Aucun livreur pour l'instant : ajoutez-en un dans Équipe avec le rôle Livreur.",
+    "status": "Statut de livraison",
+    "photo": "Photo de la livraison",
+    "markCollected": "Marquer le paiement comme reçu",
+    "codShort": "Paiement à la livraison"
+  },
+  "countries": {
+    "title": "Pays",
+    "intro": "Où vous vendez, comment les clients paient et qui livre.",
+    "enabled": "Ouvert",
+    "currency": "Devise",
+    "rate": "1 USD = ? {{currency}}",
+    "payments": "Paiement",
+    "ownStock": "Stock propre dans ce pays",
+    "ownDrivers": "Nos propres livreurs livrent ici",
+    "areas": "Zones des livreurs",
+    "areasHint": "Villes, États ou débuts de codes postaux, séparés par des virgules. Vide = tout le pays.",
+    "days": "Délai de livraison (jours)",
+    "daysHint": "0 = utiliser le délai général.",
+    "choose": "Choisir un pays…",
+    "add": "Ajouter le pays",
+    "mainStock": "Stock (entrepôt principal)",
+    "stockIn": "Stock – {{country}}"
+  },
+  "driver": {
+    "title": "Mes livraisons",
+    "tab": "Livraisons",
+    "refresh": "Actualiser",
+    "none": "Aucune livraison pour le moment.",
+    "done": "Livrées ({{count}})",
+    "call": "Appeler",
+    "map": "Carte",
+    "collect": "Encaisser {{amount}}",
+    "pickedUp": "Récupérée au magasin",
+    "outForDelivery": "Je pars livrer",
+    "customerNotified": "Le client a été prévenu.",
+    "askCode": "Demandez au client son code à 4 chiffres",
+    "collectedConfirm": "J'ai encaissé {{amount}}",
+    "takePhoto": "Photo du colis (facultatif)",
+    "photoReady": "Photo prête",
+    "confirmDelivered": "Confirmer la livraison",
+    "deliveredOk": "Livré ! Bravo.",
+    "problem": "Signaler un problème",
+    "problemPrompt": "Que s'est-il passé ? (client absent, mauvaise adresse…)"
   }
 }

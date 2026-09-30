@@ -113,11 +113,24 @@ export async function createCheckoutSession(cart, shippingAddress, address) {
     body: JSON.stringify({
       items,
       shipping_address: shippingAddress || "",
-      address: address ? { country: address.country, state: address.state } : null,
+      address_id: address?.id,
+      address: address ? { country: address.country, state: address.state, city: address.city, postal_code: address.postal_code } : null,
       return_to: "app",
     }),
   });
 }
+
+/** Pay on delivery: creates the order right away */
+export async function placeCodOrder(cart, addressId) {
+  const items = cart.map((item) => ({ product_id: item.product_id, quantity: Number(item.quantity || 0) }));
+  return request("/orders/cod", { method: "POST", body: JSON.stringify({ items, address_id: addressId }) });
+}
+
+// ---------- Driver ----------
+
+export const getDeliveries = () => request("/driver/deliveries").then((d) => d.deliveries || []);
+export const updateDelivery = (id, body) =>
+  request(`/driver/deliveries/${id}`, { method: "POST", body: JSON.stringify(body) }).then((d) => d.delivery);
 
 // ---------- Public store data ----------
 

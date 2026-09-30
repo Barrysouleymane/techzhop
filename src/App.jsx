@@ -24,6 +24,7 @@ import Admin from "@/pages/Admin";
 import ProductForm from "@/pages/admin/ProductForm";
 import AdminOrderDetail from "@/pages/admin/OrderDetail";
 import NotFound from "@/pages/NotFound";
+import Deliveries from "@/pages/Deliveries";
 import ProtectedRoute from "@/components/ProtectedRoute/ProtectedRoute";
 
 const protect = (el, adminOnly = false) => (
@@ -57,6 +58,7 @@ export default function App() {
       <Route path="/orders" element={protect(<Orders />)} />
       <Route path="/orders/:id" element={protect(<OrderDetails />)} />
       <Route path="/security" element={protect(<Security />)} />
+      <Route path="/deliveries" element={protect(<Deliveries />)} />
 
       {/* Admin */}
       <Route path="/admin" element={protect(<Admin />, true)} />

@@ -86,7 +86,8 @@
     "freeShippingOver": "Kostenloser Versand ab {{amount}}",
     "deleteReview": "Löschen",
     "verified": "Verifizierter Kauf",
-    "pickRating": "Bewertung wählen"
+    "pickRating": "Bewertung wählen",
+    "available": "Auf Lager"
   },
   "products": {
     "title": "Alle Produkte",
@@ -140,7 +141,22 @@
     "addAddress": "Lieferadresse hinzufügen",
     "changeAddress": "Ändern",
     "invalidItem": "Eines der Produkte in deinem Warenkorb ist ungültig.",
-    "failed": "Die Zahlung konnte nicht gestartet werden."
+    "failed": "Die Zahlung konnte nicht gestartet werden.",
+    "codPlaced": "Bestellung aufgegeben! Du zahlst bei Lieferung.",
+    "notDelivered": "Wir liefern noch nicht nach {{country}}.",
+    "paymentMethod": "Zahlungsart",
+    "method": {
+      "card": "Karte",
+      "cod": "Zahlung bei Lieferung"
+    },
+    "methodHint": {
+      "card": "Sichere Zahlung über Stripe.",
+      "cod": "Bezahle den Fahrer bar oder per Mobile Money (Orange Money, MTN…)."
+    },
+    "localDelivery": "Geliefert von einem TechZhop-Fahrer",
+    "toPayOnDelivery": "Bei Lieferung zu zahlen",
+    "phoneNeeded": "Füge dieser Adresse eine Telefonnummer hinzu, damit der Fahrer dich anrufen kann.",
+    "placeOrder": "Bestellung aufgeben"
   },
   "success": {
     "loading": "Zahlung wird bestätigt...",
@@ -229,7 +245,17 @@
     "country": "Land",
     "default": "Standard",
     "setDefault": "Als Standard festlegen",
-    "deleteConfirm": "Diese Adresse löschen?"
+    "deleteConfirm": "Diese Adresse löschen?",
+    "notDelivered": "noch keine Lieferung",
+    "phoneHint": "Pflichtfeld: Der Fahrer ruft dich an.",
+    "line1Africa": "Adresse / Straße",
+    "neighborhood": "Viertel",
+    "landmark": "Orientierungspunkt",
+    "landmarkHint": "Etwas leicht Auffindbares in der Nähe deines Zuhauses.",
+    "landmarkPlaceholder": "z. B. hinter der großen Moschee, blaues Tor",
+    "useLocation": "Meinen Standort verwenden",
+    "locationSaved": "Standort gespeichert",
+    "locationError": "Standort nicht verfügbar. Erlaube den Standortzugriff und versuche es erneut."
   },
   "orders": {
     "title": "Meine Bestellungen",
@@ -542,15 +568,20 @@
       "admin": "Administrator",
       "product_manager": "Produktmanager",
       "seller": "Verkäufer / Versand",
-      "customer": "Kunde"
+      "customer": "Kunde",
+      "driver": "Fahrer"
     },
     "desc": {
       "admin": "Alles: Produkte, Bestellungen, Umsatz und Team.",
       "product_manager": "Produkte, Fotos, Kategorien und Marken hinzufügen, bearbeiten und löschen.",
       "seller": "Bestellungen sehen, Status ändern und Sendungsnummern hinzufügen.",
-      "customer": "Kein Zugriff auf den Admin-Bereich."
+      "customer": "Kein Zugriff auf den Admin-Bereich.",
+      "driver": "Sieht nur eigene Lieferungen: Adresse, Kundentelefon, Karte, Liefercode."
     },
-    "invited": "Einladung an {{email}} gesendet"
+    "invited": "Einladung an {{email}} gesendet",
+    "country": "Land",
+    "allCountries": "Alle Länder",
+    "countryHint": "Eine auf ein Land beschränkte Person sieht nur die Bestellungen dieses Landes."
   },
   "location": {
     "deliverTo": "Liefern an",
@@ -625,5 +656,79 @@
     "text": "Entschuldigung, auf dieser Seite ist ein Fehler aufgetreten. Kehre zur Startseite zurück und versuche es erneut.",
     "home": "Zur Startseite",
     "retry": "Erneut versuchen"
+  },
+  "delivery": {
+    "title": "Lieferung & Zahlung",
+    "paid": "Bezahlt",
+    "toPay": "Zu zahlen: {{amount}}",
+    "yourCode": "Dein Liefercode",
+    "codeHelp": "Gib diesen Code dem Fahrer, wenn du dein Paket erhältst.",
+    "steps": {
+      "assigned": "Zugewiesen",
+      "picked_up": "Abgeholt",
+      "out_for_delivery": "Unterwegs",
+      "delivered": "Zugestellt",
+      "failed": "Problem"
+    },
+    "driver": "Fahrer",
+    "needSql": "Führe die SQL-Datei 20260930_countries.sql in Supabase aus, um Länder, Zahlung bei Lieferung und Fahrer zu aktivieren.",
+    "mode": "Lieferung",
+    "modes": {
+      "local": "TechZhop-Fahrer",
+      "carrier": "Versanddienst (UPS/USPS…)"
+    },
+    "collected": {
+      "cash": "Bar bezahlt",
+      "mobile_money": "Per Mobile Money bezahlt"
+    },
+    "code": "Liefercode",
+    "openMap": "In Karten öffnen",
+    "assignDriver": "Fahrer",
+    "assigned": "Fahrer zugewiesen — auf dem Handy benachrichtigt",
+    "noDriver": "Kein Fahrer",
+    "noDrivers": "Noch keine Fahrer: Füge im Team jemanden mit der Rolle Fahrer hinzu.",
+    "status": "Lieferstatus",
+    "photo": "Lieferfoto",
+    "markCollected": "Zahlung als erhalten markieren",
+    "codShort": "Bei Lieferung"
+  },
+  "countries": {
+    "title": "Länder",
+    "intro": "Wo du verkaufst, wie Kunden zahlen und wer liefert.",
+    "enabled": "Offen",
+    "currency": "Währung",
+    "rate": "1 USD = ? {{currency}}",
+    "payments": "Zahlung",
+    "ownStock": "Eigener Lagerbestand in diesem Land",
+    "ownDrivers": "Unsere eigenen Fahrer liefern hier",
+    "areas": "Fahrergebiete",
+    "areasHint": "Städte, Bundesstaaten oder PLZ-Anfänge, durch Kommas getrennt. Leer = das ganze Land.",
+    "days": "Lieferzeit (Tage)",
+    "daysHint": "0 = allgemeine Lieferzeit verwenden.",
+    "choose": "Land wählen…",
+    "add": "Land hinzufügen",
+    "mainStock": "Bestand (Hauptlager)",
+    "stockIn": "Bestand in {{country}}"
+  },
+  "driver": {
+    "title": "Meine Lieferungen",
+    "tab": "Lieferungen",
+    "refresh": "Aktualisieren",
+    "none": "Im Moment keine Lieferungen.",
+    "done": "Zugestellt ({{count}})",
+    "call": "Anrufen",
+    "map": "Karte",
+    "collect": "{{amount}} kassieren",
+    "pickedUp": "Im Laden abgeholt",
+    "outForDelivery": "Ich fahre los",
+    "customerNotified": "Der Kunde wurde benachrichtigt.",
+    "askCode": "Frage den Kunden nach seinem 4-stelligen Code",
+    "collectedConfirm": "Ich habe {{amount}} kassiert",
+    "takePhoto": "Foto vom Paket (optional)",
+    "photoReady": "Foto bereit",
+    "confirmDelivered": "Lieferung bestätigen",
+    "deliveredOk": "Zugestellt! Gut gemacht.",
+    "problem": "Problem melden",
+    "problemPrompt": "Was ist passiert? (Kunde nicht da, falsche Adresse…)"
   }
 }

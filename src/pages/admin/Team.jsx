@@ -5,7 +5,8 @@ import { User, Crown } from "lucide-react";
 import { btnPrimary, inputClass, card } from "@/components/Page";
 import { adminApi } from "@/api/admin";
 import { apiError } from "@/api/account";
-import { STAFF_ROLES } from "../../../shared/settings";
+import { STAFF_ROLES, sellingCountries, countryName, flag } from "../../../shared/settings";
+import useShopStore from "@/store/shopStore";
 
 export default function Team() {
   const { t, i18n } = useTranslation();
@@ -13,6 +14,8 @@ export default function Team() {
   const [loading, setLoading] = useState(true);
   const [email, setEmail] = useState("");
   const [role, setRole] = useState("seller");
+  const [country, setCountry] = useState("");
+  const countries = sellingCountries(useShopStore((st) => st.settings));
   const [busy, setBusy] = useState(false);
 
   const load = () =>
@@ -22,10 +25,10 @@ export default function Team() {
     load();
   }, []); // eslint-disable-line react-hooks/exhaustive-deps
 
-  async function setMemberRole(targetEmail, newRole) {
+  async function setMemberRole(targetEmail, newRole, newCountry) {
     setBusy(true);
     try {
-      const res = await adminApi.setRole(targetEmail, newRole, i18n.language);
+      const res = await adminApi.setRole(targetEmail, newRole, i18n.language, newCountry);
       toast.success(res.invited ? t("team.invited", { email: targetEmail }) : t("team.updated"));
       setEmail("");
       await load();
@@ -41,7 +44,7 @@ export default function Team() {
       <form
         onSubmit={(e) => {
           e.preventDefault();
-          setMemberRole(email, role);
+          setMemberRole(email, role, country || null);
         }}
         className={`${card} p-6 space-y-4 h-fit`}
       >
@@ -59,6 +62,14 @@ export default function Team() {
             </label>
           ))}
         </div>
+        <label className="block text-sm">
+          <span className="text-gray-400">{t("team.country")}</span>
+          <select value={country} onChange={(e) => setCountry(e.target.value)} className={`${inputClass} mt-1`}>
+            <option value="">{t("team.allCountries")}</option>
+            {countries.map((c) => <option key={c} value={c}>{flag(c)} {countryName(c, i18n.language)}</option>)}
+          </select>
+          <span className="text-gray-500 text-xs block mt-1">{t("team.countryHint")}</span>
+        </label>
         <button disabled={busy} className={`${btnPrimary} w-full`}>{t("team.add")}</button>
       </form>
 
@@ -87,6 +98,16 @@ export default function Team() {
                   className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white"
                 >
                   {STAFF_ROLES.map((r) => <option key={r} value={r}>{t(`team.roles.${r}`)}</option>)}
+                </select>
+                <select
+                  value={m.country || ""}
+                  disabled={busy}
+                  onChange={(e) => setMemberRole(m.email, m.role, e.target.value || null)}
+                  className="bg-zinc-800 border border-zinc-700 rounded-lg px-3 py-2 text-white"
+                  title={t("team.country")}
+                >
+                  <option value="">🌍 {t("team.allCountries")}</option>
+                  {countries.map((c) => <option key={c} value={c}>{flag(c)} {c}</option>)}
                 </select>
                 <button
                   disabled={busy}

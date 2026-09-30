@@ -9,7 +9,7 @@ import { StoreSettings, BannersAdmin, PromosAdmin } from "../../src/components/A
 import { errorMessage } from "../../src/lib/api";
 import { Loading, Empty, useStyles } from "../../src/components/ui";
 import { StatusBadge } from "../../src/components/OrderStatus";
-import { ORDER_STATUSES, formatUSD } from "../../../shared/settings";
+import { ORDER_STATUSES, formatUSD, flag } from "../../../shared/settings";
 
 export default function AdminHome() {
   const { t, i18n } = useTranslation();
@@ -146,6 +146,8 @@ export default function AdminHome() {
               <Pressable onPress={() => changeStatus(o)} style={{ flexDirection: "row", alignItems: "center", gap: 4 }}>
                 <StatusBadge status={o.status} />
                 {o.request_status === "pending" ? <Text style={{ color: c.warning, fontSize: 12, fontWeight: "700" }}>↩️ {t("returns.badge")}</Text> : null}
+                {o.country && o.country !== "US" ? <Text style={{ fontSize: 14 }}>{flag(o.country)}</Text> : null}
+                {o.payment_method === "cod" ? <Text style={{ color: o.payment_status === "collected" ? c.success : c.warning, fontSize: 12, fontWeight: "700" }}>💵</Text> : null}
                 <Ionicons name="chevron-down" size={16} color={c.muted} />
               </Pressable>
             </View>

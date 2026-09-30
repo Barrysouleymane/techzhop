@@ -43,7 +43,14 @@
       [
         "expo-image-picker",
         {
-          "photosPermission": "TechZhop uses your photos to set your profile picture."
+          "photosPermission": "TechZhop uses your photos to set your profile picture.",
+          "cameraPermission": "TechZhop uses the camera to take a photo of delivered packages."
+        }
+      ],
+      [
+        "expo-location",
+        {
+          "locationWhenInUsePermission": "TechZhop uses your location so the driver can find your delivery address."
         }
       ]
     ],

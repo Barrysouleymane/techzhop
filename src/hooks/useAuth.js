@@ -36,7 +36,8 @@ export default function useAuth() {
     user,
     session,
     loading: loading || !staffReady,
-    isAdmin: staff.admin, // any staff role
+    isAdmin: staff.admin, // admin area roles
+    isDriver: !!staff.driver,
     role: staff.role,
     owner: staff.owner,
     can: (permission) => staff.permissions.includes(permission),

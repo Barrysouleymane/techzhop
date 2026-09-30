@@ -16,6 +16,14 @@ const fill = (s, vars = {}) => String(s).replace(/\{(\w+)\}/g, (_, k) => (vars[k
 const esc = (s) =>
   String(s ?? "").replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" }[c]));
 const usd = (n, l) => new Intl.NumberFormat(lang(l), { style: "currency", currency: "USD" }).format(Number(n || 0));
+const localMoney = (n, currency, l) => {
+  try {
+    const zero = ["GNF", "XOF", "XAF"].includes(currency);
+    return new Intl.NumberFormat(lang(l), { style: "currency", currency, maximumFractionDigits: zero ? 0 : 2 }).format(Number(n || 0));
+  } catch {
+    return `${n} ${currency}`;
+  }
+};
 
 async function sendEmail({ to, subject, html }) {
   if (!to) return;
@@ -82,7 +90,12 @@ function itemsTable(l, order, items) {
   if (order.shipping_amount != null) html += row(t.shipping, Number(order.shipping_amount) ? usd(order.shipping_amount, l) : t.free);
   if (Number(order.tax_amount)) html += row(t.tax, usd(order.tax_amount, l));
   if (Number(order.discount_amount)) html += row(t.discount, `−${usd(order.discount_amount, l)}`);
-  html += row(t.total, usd(order.total, l), true) + `</table>`;
+  html += row(t.total, usd(order.total, l), true);
+  if (order.payment_method === "cod") {
+    const due = order.currency && order.currency !== "USD" ? localMoney(order.local_total, order.currency, l) : usd(order.total, l);
+    html += row(`💵 ${T[lang(l)].courier.toPay}`, due, true);
+  }
+  html += `</table>`;
   if (order.shipping_address) {
     html += `<p style="margin:16px 0 0;font-size:13px;color:#71717a"><strong>${esc(t.shipTo)}:</strong> ${esc(order.shipping_address)}</p>`;
   }
@@ -233,7 +246,30 @@ function refundEmail({ to, name, language, order, amount }) {
   });
 }
 
+function outForDeliveryEmail({ to, name, language, order, driverName, driverPhone }) {
+  const t = T[lang(language)].courier;
+  const code = order.delivery_code
+    ? `<div style="margin:18px 0;text-align:center"><div style="font-size:13px;color:#71717a">${esc(t.code)}</div><div style="font-size:36px;font-weight:900;letter-spacing:8px;font-family:monospace">${esc(order.delivery_code)}</div><div style="font-size:13px;color:#71717a">${esc(t.codeHelp)}</div></div>`
+    : "";
+  const due = order.payment_method === "cod" && order.payment_status !== "collected"
+    ? `<p style="margin:12px 0;font-size:15px"><strong>💵 ${esc(t.toPay)}:</strong> ${esc(order.currency && order.currency !== "USD" ? localMoney(order.local_total, order.currency, language) : usd(order.total, language))}</p>`
+    : "";
+  const phone = driverPhone ? `<p style="margin:8px 0;font-size:14px">📞 ${esc(t.call)}: <a href="tel:${esc(driverPhone)}">${esc(driverPhone)}</a></p>` : "";
+  return sendEmail({
+    to,
+    subject: fill(t.subject, { id: order.id }),
+    html: layout(language, {
+      title: t.title,
+      greeting: hi(language, name),
+      paragraphs: [fill(t.body, { name: driverName || "TechZhop" })],
+      extra: code + due + phone,
+      cta: { label: T[lang(language)].update.cta, url: `${SITE}/orders/${order.id}` },
+    }),
+  });
+}
+
 module.exports = {
+  outForDeliveryEmail,
   requestReceivedEmail,
   requestAdminEmail,
   requestDecisionEmail,

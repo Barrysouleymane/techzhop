@@ -7,6 +7,7 @@ import Page, { Field, btnPrimary, btnSecondary, inputClass, card } from "@/compo
 import { StatusBadge, StatusTimeline } from "@/components/Orders/OrderStatus";
 import { adminApi } from "@/api/admin";
 import AdminOrderMoney from "@/components/Orders/AdminOrderMoney";
+import AdminDelivery from "@/components/Orders/AdminDelivery";
 import useAuth from "@/hooks/useAuth";
 import { apiError } from "@/api/account";
 import { ORDER_STATUSES, CARRIERS, formatUSD, trackingUrl } from "../../../shared/settings";
@@ -140,6 +141,13 @@ export default function AdminOrderDetail() {
         </div>
 
         <div className="space-y-6">
+          {/* COUNTRY, PAYMENT, DRIVER */}
+          <AdminDelivery
+            order={order}
+            fields={fields}
+            onChange={(o) => setData((d) => ({ ...d, order: { ...d.order, ...o } }))}
+          />
+
           {/* REQUEST + REFUND */}
           <AdminOrderMoney
             key={`${order.request_status}-${order.refunded_amount}`}

@@ -5,6 +5,7 @@ import { Ionicons } from "@expo/vector-icons";
 import { useTranslation } from "react-i18next";
 import { adminApi, useStaff } from "../../src/lib/admin";
 import AdminOrderMoney from "../../src/components/AdminOrderMoney";
+import AdminDelivery from "../../src/components/AdminDelivery";
 import { errorMessage } from "../../src/lib/api";
 import { Loading, Card, Button, Input, useStyles } from "../../src/components/ui";
 import { StatusBadge, StatusTimeline } from "../../src/components/OrderStatus";
@@ -149,6 +150,12 @@ export default function AdminOrder() {
             </View>
           ) : null}
         </Card>
+
+        <AdminDelivery
+          order={order}
+          fields={fields}
+          onChange={(o) => setData((d) => ({ ...d, order: { ...d.order, ...o } }))}
+        />
 
         <AdminOrderMoney
           key={`${order.request_status}-${order.refunded_amount}`}
