@@ -145,16 +145,30 @@
     "paymentMethod": "付款方式",
     "method": {
       "card": "银行卡",
-      "cod": "货到付款"
+      "cod": "货到付款",
+      "momo": "Orange Money / MTN"
     },
     "methodHint": {
       "card": "由 Stripe 安全支付。",
-      "cod": "用现金或移动支付（Orange Money、MTN…）付给配送员。"
+      "cod": "用现金或移动支付（Orange Money、MTN…）付给配送员。",
+      "momo": "现在用手机付款，然后输入交易码。"
     },
     "localDelivery": "由 TechZhop 配送员送货",
     "toPayOnDelivery": "货到付款金额",
     "phoneNeeded": "请为此地址添加电话号码，方便配送员联系您。",
-    "placeOrder": "提交订单"
+    "placeOrder": "提交订单",
+    "momo": {
+      "step1": "请通过 {{operator}} 向此号码转账 {{amount}}：",
+      "step2": "输入短信收到的交易码：",
+      "copied": "号码已复制",
+      "holder": "账户名",
+      "reference": "交易码（短信）",
+      "payerPhone": "付款号码",
+      "verifyNote": "我们会核实您的付款，然后准备订单，并向您发送确认。",
+      "confirm": "我已付款——提交订单",
+      "placed": "订单已收到！我们正在核实您的付款。",
+      "operator": "运营商"
+    }
   },
   "success": {
     "loading": "正在确认您的付款...",
@@ -688,7 +702,17 @@
     "status": "配送状态",
     "photo": "送达照片",
     "markCollected": "标记为已收款",
-    "codShort": "货到付款"
+    "codShort": "货到付款",
+    "verifying": "付款核实中",
+    "paymentFailed": "未找到付款",
+    "momoCheck": "待核实的移动支付",
+    "amount": "金额",
+    "confirmPayment": "已收到付款——确认",
+    "rejectPayment": "未找到付款——取消",
+    "rejectConfirm": "取消此订单？将通知客户未找到付款，并恢复库存。",
+    "paymentConfirmed": "付款已确认——已通知客户",
+    "paymentRejected": "订单已取消",
+    "toVerify": "待核实"
   },
   "countries": {
     "title": "国家",
@@ -711,7 +735,13 @@
     "removeConfirm": "删除{{country}}？该国客户将无法再下单。以往订单和库存会保留。提示：如只是暂时关闭，请取消勾选“开放”。",
     "removedSave": "已删除——请点击保存确认。",
     "lastOne": "请至少保留一个国家。",
-    "closeHint": "取消勾选“开放”可暂时关闭某国；垃圾桶图标会将其从列表中删除。"
+    "closeHint": "取消勾选“开放”可暂时关闭某国；垃圾桶图标会将其从列表中删除。",
+    "momoAccounts": "移动支付号码（客户付款至此）",
+    "momoName": "运营商（如 Orange Money）",
+    "momoNumber": "号码",
+    "momoHolder": "向客户显示的账户名",
+    "addMomo": "添加号码",
+    "momoMissing": "请至少填写一个号码，否则不会向客户提供移动支付。"
   },
   "driver": {
     "title": "我的配送",
@@ -732,7 +762,8 @@
     "confirmDelivered": "确认送达",
     "deliveredOk": "已送达！做得好。",
     "problem": "报告问题",
-    "problemPrompt": "发生了什么？（客户不在、地址错误…）"
+    "problemPrompt": "发生了什么？（客户不在、地址错误…）",
+    "notPaid": "付款尚未确认——请勿交付包裹，请联系门店。"
   },
   "finances": {
     "tab": "财务",

@@ -147,16 +147,30 @@
     "paymentMethod": "Payment method",
     "method": {
       "card": "Card",
-      "cod": "Pay on delivery"
+      "cod": "Pay on delivery",
+      "momo": "Orange Money / MTN"
     },
     "methodHint": {
       "card": "Secure payment by Stripe.",
-      "cod": "Pay the driver in cash or Mobile Money (Orange Money, MTN…)."
+      "cod": "Pay the driver in cash or Mobile Money (Orange Money, MTN…).",
+      "momo": "Pay now from your phone, then enter the transaction code."
     },
     "localDelivery": "Delivered by a TechZhop driver",
     "toPayOnDelivery": "To pay on delivery",
     "phoneNeeded": "Add a phone number to this address so the driver can call you.",
-    "placeOrder": "Place order"
+    "placeOrder": "Place order",
+    "momo": {
+      "step1": "Send {{amount}} with {{operator}} to this number:",
+      "step2": "Enter the transaction code you received by SMS:",
+      "copied": "Number copied",
+      "holder": "Account name",
+      "reference": "Transaction code (SMS)",
+      "payerPhone": "Number that paid",
+      "verifyNote": "We check your payment, then prepare your order. You'll get a confirmation.",
+      "confirm": "I've paid — place my order",
+      "placed": "Order received! We're checking your payment.",
+      "operator": "Operator"
+    }
   },
   "success": {
     "loading": "Confirming your payment...",
@@ -690,7 +704,17 @@
     "status": "Delivery status",
     "photo": "Delivery photo",
     "markCollected": "Mark payment as received",
-    "codShort": "Pay on delivery"
+    "codShort": "Pay on delivery",
+    "verifying": "Payment being checked",
+    "paymentFailed": "Payment not found",
+    "momoCheck": "Mobile Money payment to check",
+    "amount": "Amount",
+    "confirmPayment": "Payment received — confirm",
+    "rejectPayment": "Payment not found — cancel",
+    "rejectConfirm": "Cancel this order? The customer will be told the payment wasn't found and the stock is put back.",
+    "paymentConfirmed": "Payment confirmed — the customer has been notified",
+    "paymentRejected": "Order cancelled",
+    "toVerify": "To check"
   },
   "countries": {
     "title": "Countries",
@@ -713,7 +737,13 @@
     "removeConfirm": "Remove {{country}}? Customers there won't be able to order anymore. Past orders and stock are kept. Tip: untick \"Open\" instead to close it temporarily.",
     "removedSave": "Removed — click Save to confirm.",
     "lastOne": "Keep at least one country.",
-    "closeHint": "Untick \"Open\" to close a country for a while; the trash can removes it from the list."
+    "closeHint": "Untick \"Open\" to close a country for a while; the trash can removes it from the list.",
+    "momoAccounts": "Mobile Money numbers (customers pay here)",
+    "momoName": "Operator (e.g. Orange Money)",
+    "momoNumber": "Number",
+    "momoHolder": "Account name shown to customers",
+    "addMomo": "Add a number",
+    "momoMissing": "Enter at least one number, otherwise Mobile Money isn't shown to customers."
   },
   "driver": {
     "title": "My deliveries",
@@ -734,7 +764,8 @@
     "confirmDelivered": "Confirm delivery",
     "deliveredOk": "Delivered! Well done.",
     "problem": "Report a problem",
-    "problemPrompt": "What happened? (customer absent, wrong address…)"
+    "problemPrompt": "What happened? (customer absent, wrong address…)",
+    "notPaid": "Payment not confirmed yet — do NOT hand over the package. Call the shop."
   },
   "finances": {
     "tab": "Finances",

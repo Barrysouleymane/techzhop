@@ -91,6 +91,10 @@ function itemsTable(l, order, items) {
   if (Number(order.tax_amount)) html += row(t.tax, usd(order.tax_amount, l));
   if (Number(order.discount_amount)) html += row(t.discount, `−${usd(order.discount_amount, l)}`);
   html += row(t.total, usd(order.total, l), true);
+  if (order.payment_method === "momo") {
+    const amount = order.currency && order.currency !== "USD" ? localMoney(order.local_total, order.currency, l) : usd(order.total, l);
+    html += row(`📱 ${esc(order.payment_operator || T[lang(l)].order.momo)}${order.payment_reference ? ` · ${esc(order.payment_reference)}` : ""}`, amount, true);
+  }
   if (order.payment_method === "cod") {
     const due = order.currency && order.currency !== "USD" ? localMoney(order.local_total, order.currency, l) : usd(order.total, l);
     html += row(`💵 ${T[lang(l)].courier.toPay}`, due, true);
@@ -110,7 +114,13 @@ function orderConfirmationEmail({ to, name, language, order, items }) {
     html: layout(language, {
       title: t.order.title,
       greeting: hi(language, name),
-      paragraphs: [t.order.body],
+      paragraphs: [
+        order.payment_method === "momo" && order.payment_status !== "paid"
+          ? t.order.bodyMomo
+          : order.payment_method === "cod"
+            ? t.order.bodyCod
+            : t.order.body,
+      ],
       extra: itemsTable(language, order, items),
       cta: { label: t.order.cta, url: `${SITE}/orders/${order.id}` },
     }),

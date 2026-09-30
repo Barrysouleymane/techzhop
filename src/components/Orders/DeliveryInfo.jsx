@@ -1,5 +1,5 @@
 import { useTranslation } from "react-i18next";
-import { Banknote, CreditCard, KeyRound, Bike, Phone } from "lucide-react";
+import { Banknote, CreditCard, KeyRound, Bike, Phone, Smartphone } from "lucide-react";
 import { card } from "@/components/Page";
 import { orderAmountText, DELIVERY_STEPS } from "../../../shared/settings";
 
@@ -9,7 +9,15 @@ export default function DeliveryInfo({ order }) {
   if (!order.payment_method && !order.delivery_code) return null;
 
   const cod = order.payment_method === "cod";
+  const momo = order.payment_method === "momo";
   const paid = order.payment_status === "paid" || order.payment_status === "collected";
+  const statusText = paid
+    ? t("delivery.paid")
+    : momo && order.payment_status === "pending"
+      ? t("delivery.verifying")
+      : order.payment_status === "failed"
+        ? t("delivery.paymentFailed")
+        : t("delivery.toPay", { amount: orderAmountText(order, i18n.language) });
   const done = order.status === "delivered" || order.delivery_status === "delivered";
   const stepIndex = DELIVERY_STEPS.indexOf(order.delivery_status);
 
@@ -17,11 +25,12 @@ export default function DeliveryInfo({ order }) {
     <div className={`${card} p-6 space-y-4`}>
       <div className="flex flex-wrap items-center justify-between gap-3">
         <span className="flex items-center gap-2 font-semibold">
-          {cod ? <Banknote className="w-5 h-5 text-green-400" /> : <CreditCard className="w-5 h-5 text-cyan-400" />}
-          {t(`checkout.method.${cod ? "cod" : "card"}`)}
+          {cod ? <Banknote className="w-5 h-5 text-green-400" /> : momo ? <Smartphone className="w-5 h-5 text-orange-400" /> : <CreditCard className="w-5 h-5 text-cyan-400" />}
+          {momo && order.payment_operator ? order.payment_operator : t(`checkout.method.${order.payment_method || "card"}`)}
+          {momo && order.payment_reference ? <span className="text-gray-400 text-sm font-mono">· {order.payment_reference}</span> : null}
         </span>
-        <span className={`text-sm font-bold ${paid ? "text-green-400" : "text-yellow-300"}`}>
-          {paid ? t("delivery.paid") : t("delivery.toPay", { amount: orderAmountText(order, i18n.language) })}
+        <span className={`text-sm font-bold ${paid ? "text-green-400" : order.payment_status === "failed" ? "text-red-400" : "text-yellow-300"}`}>
+          {statusText}
         </span>
       </div>
 

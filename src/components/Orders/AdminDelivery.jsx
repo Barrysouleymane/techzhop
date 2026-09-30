@@ -1,8 +1,8 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Bike, Banknote, CreditCard, Image as ImageIcon, Map as MapIcon } from "lucide-react";
-import { btnPrimary, btnSecondary, inputClass, card } from "@/components/Page";
+import { Bike, Banknote, CreditCard, Smartphone, Image as ImageIcon, Map as MapIcon } from "lucide-react";
+import { btnPrimary, btnSecondary, btnDanger, inputClass, card } from "@/components/Page";
 import { adminApi } from "@/api/admin";
 import { apiError } from "@/api/account";
 import { orderAmountText, countryName, mapsUrl } from "../../../shared/settings";
@@ -34,7 +34,21 @@ export default function AdminDelivery({ order, fields, onChange }) {
   }
 
   const cod = order.payment_method === "cod";
+  const momo = order.payment_method === "momo";
   const paid = ["paid", "collected"].includes(order.payment_status);
+
+  async function verify(decision) {
+    if (decision === "reject" && !window.confirm(t("delivery.rejectConfirm"))) return;
+    setBusy(true);
+    try {
+      onChange(await adminApi.verifyPayment(order.id, decision));
+      toast.success(decision === "confirm" ? t("delivery.paymentConfirmed") : t("delivery.paymentRejected"));
+    } catch (err) {
+      toast.error(apiError(err, t));
+    } finally {
+      setBusy(false);
+    }
+  }
   const map = mapsUrl(order);
   const countryDrivers = drivers.filter((d) => !d.country || !order.country || d.country === order.country);
 
@@ -46,13 +60,31 @@ export default function AdminDelivery({ order, fields, onChange }) {
         {order.country && <p className="m-0"><span className="text-gray-400">{t("addresses.country")}:</span> {countryName(order.country, i18n.language)}</p>}
         <p className="m-0"><span className="text-gray-400">{t("delivery.mode")}:</span> {t(`delivery.modes.${order.delivery_mode || "carrier"}`)}</p>
         <p className="m-0 flex items-center gap-2">
-          {cod ? <Banknote className="w-4 h-4 text-green-400" /> : <CreditCard className="w-4 h-4 text-cyan-400" />}
-          {t(`checkout.method.${cod ? "cod" : "card"}`)} ·{" "}
-          <span className={paid ? "text-green-400" : "text-yellow-300"}>{paid ? t("delivery.paid") : t("delivery.toPay", { amount: orderAmountText(order, i18n.language) })}</span>
+          {cod ? <Banknote className="w-4 h-4 text-green-400" /> : momo ? <Smartphone className="w-4 h-4 text-orange-400" /> : <CreditCard className="w-4 h-4 text-cyan-400" />}
+          {t(`checkout.method.${order.payment_method || "card"}`)} ·{" "}
+          <span className={paid ? "text-green-400" : order.payment_status === "failed" ? "text-red-400" : "text-yellow-300"}>
+            {paid ? t("delivery.paid") : momo && order.payment_status === "pending" ? t("delivery.verifying") : order.payment_status === "failed" ? t("delivery.paymentFailed") : t("delivery.toPay", { amount: orderAmountText(order, i18n.language) })}
+          </span>
         </p>
         {order.collected_method && <p className="m-0 text-gray-400">{t(`delivery.collected.${order.collected_method}`)}</p>}
         {order.delivery_code && <p className="m-0"><span className="text-gray-400">{t("delivery.code")}:</span> <span className="font-mono font-bold">{order.delivery_code}</span></p>}
       </div>
+
+      {momo && (
+        <div className={`rounded-xl border p-4 space-y-2 text-sm ${order.payment_status === "pending" ? "border-orange-500/60 bg-orange-500/5" : "border-zinc-800"}`}>
+          <p className="m-0 font-semibold">📱 {t("delivery.momoCheck")}</p>
+          <p className="m-0"><span className="text-gray-400">{t("checkout.momo.operator")}:</span> {order.payment_operator || "—"}</p>
+          <p className="m-0"><span className="text-gray-400">{t("checkout.momo.reference")}:</span> <span className="font-mono font-bold">{order.payment_reference || "—"}</span></p>
+          <p className="m-0"><span className="text-gray-400">{t("checkout.momo.payerPhone")}:</span> {order.payer_phone || "—"}</p>
+          <p className="m-0"><span className="text-gray-400">{t("delivery.amount")}:</span> <strong>{orderAmountText(order, i18n.language)}</strong></p>
+          {order.payment_status === "pending" && (
+            <div className="flex flex-wrap gap-2 pt-1">
+              <button className={btnPrimary} disabled={busy} onClick={() => verify("confirm")}>✓ {t("delivery.confirmPayment")}</button>
+              <button className={btnDanger} disabled={busy} onClick={() => verify("reject")}>{t("delivery.rejectPayment")}</button>
+            </div>
+          )}
+        </div>
+      )}
 
       {map && (
         <a href={map} target="_blank" rel="noreferrer" className={`${btnSecondary} w-full justify-center`}>

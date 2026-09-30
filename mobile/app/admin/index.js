@@ -149,6 +149,7 @@ export default function AdminHome() {
                 <StatusBadge status={o.status} />
                 {o.request_status === "pending" ? <Text style={{ color: c.warning, fontSize: 12, fontWeight: "700" }}>↩️ {t("returns.badge")}</Text> : null}
                 {o.country && o.country !== "US" ? <Text style={{ fontSize: 14 }}>{flag(o.country)}</Text> : null}
+                {o.payment_method === "momo" && o.payment_status === "pending" ? <Text style={{ color: "#f97316", fontSize: 12, fontWeight: "700" }}>📱</Text> : null}
                 {o.payment_method === "cod" ? <Text style={{ color: o.payment_status === "collected" ? c.success : c.warning, fontSize: 12, fontWeight: "700" }}>💵</Text> : null}
                 <Ionicons name="chevron-down" size={16} color={c.muted} />
               </Pressable>

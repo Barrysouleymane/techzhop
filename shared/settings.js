@@ -150,7 +150,8 @@ export function discountPercent(p) {
 // Countries we sell in (same defaults as the server). Admin → Store → Countries.
 export const DEFAULT_COUNTRIES = {
   US: { enabled: true, currency: "USD", rate: 1, payments: ["card"], own_stock: false, local_delivery: { enabled: false, areas: ["NY"] }, min_days: 0, max_days: 0 },
-  GN: { enabled: true, currency: "GNF", rate: 8600, payments: ["cod"], own_stock: true, local_delivery: { enabled: true, areas: ["Conakry"] }, min_days: 1, max_days: 3 },
+  GN: { enabled: true, currency: "GNF", rate: 8600, payments: ["card", "momo"], own_stock: true, local_delivery: { enabled: true, areas: ["Conakry"] }, min_days: 1, max_days: 3,
+        momo: { holder: "TechZhop", accounts: [{ name: "Orange Money", number: "" }, { name: "MTN MoMo", number: "" }] } },
 };
 
 export const DEFAULT_SHOP_SETTINGS = {
@@ -433,3 +434,13 @@ export function flag(code) {
   if (!/^[A-Z]{2}$/.test(c)) return "";
   return String.fromCodePoint(...[...c].map((ch) => 127397 + ch.charCodeAt(0)));
 }
+
+export const PAYMENT_METHODS = ["card", "momo", "cod"];
+
+/** Mobile Money accounts the customer can pay to (only those with a number) */
+export function momoAccounts(cfg) {
+  return (cfg?.momo?.accounts || []).filter((a) => a?.name && a?.number);
+}
+
+/** Is this order fully paid? */
+export const isOrderPaid = (o) => ["paid", "collected"].includes(o?.payment_status);

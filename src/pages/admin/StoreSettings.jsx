@@ -6,7 +6,7 @@ import { Field, btnPrimary, btnSecondary, inputClass, card } from "@/components/
 import { adminApi } from "@/api/admin";
 import { apiError } from "@/api/account";
 import useShopStore from "@/store/shopStore";
-import { countryOptions, countryName, flag, CURRENCIES, DEFAULT_COUNTRIES } from "../../../shared/settings";
+import { countryOptions, countryName, flag, CURRENCIES, DEFAULT_COUNTRIES, PAYMENT_METHODS } from "../../../shared/settings";
 
 export default function StoreSettings() {
   const { t, i18n } = useTranslation();
@@ -101,12 +101,29 @@ export default function StoreSettings() {
               </div>
               <div className="flex flex-wrap gap-4 text-sm">
                 <span className="text-gray-400">{t("countries.payments")}:</span>
-                {["card", "cod"].map((m) => (
+                {PAYMENT_METHODS.map((m) => (
                   <label key={m} className="flex items-center gap-2 cursor-pointer">
                     <input type="checkbox" className="w-4 h-4 accent-cyan-500" checked={(c.payments || []).includes(m)} onChange={() => togglePay(code, m)} /> {t(`checkout.method.${m}`)}
                   </label>
                 ))}
               </div>
+              {(c.payments || []).includes("momo") && (
+                <div className="rounded-lg border border-orange-500/40 p-3 space-y-2">
+                  <div className="text-sm font-semibold">📱 {t("countries.momoAccounts")}</div>
+                  {(c.momo?.accounts || []).map((a, i) => (
+                    <div key={i} className="flex gap-2">
+                      <input value={a.name} onChange={(e) => setC(code, { momo: { ...(c.momo || {}), accounts: c.momo.accounts.map((x, n) => (n === i ? { ...x, name: e.target.value } : x)) } })} placeholder={t("countries.momoName")} className={small} />
+                      <input value={a.number} onChange={(e) => setC(code, { momo: { ...(c.momo || {}), accounts: c.momo.accounts.map((x, n) => (n === i ? { ...x, number: e.target.value } : x)) } })} placeholder={t("countries.momoNumber")} className={small} />
+                      <button type="button" onClick={() => setC(code, { momo: { ...(c.momo || {}), accounts: c.momo.accounts.filter((_, n) => n !== i) } })} className="text-red-400 px-2 bg-transparent border-0 cursor-pointer" aria-label={t("admin.remove")}><X className="w-4 h-4" /></button>
+                    </div>
+                  ))}
+                  <input value={c.momo?.holder || ""} onChange={(e) => setC(code, { momo: { ...(c.momo || { accounts: [] }), holder: e.target.value } })} placeholder={t("countries.momoHolder")} className={small} />
+                  <button type="button" onClick={() => setC(code, { momo: { ...(c.momo || {}), accounts: [...(c.momo?.accounts || []), { name: "", number: "" }] } })} className={btnSecondary}>
+                    <Plus className="w-4 h-4" /> {t("countries.addMomo")}
+                  </button>
+                  {!(c.momo?.accounts || []).some((a) => a.number) && <p className="text-yellow-300 text-xs m-0">{t("countries.momoMissing")}</p>}
+                </div>
+              )}
               <label className="flex items-center gap-2 text-sm cursor-pointer">
                 <input type="checkbox" className="w-4 h-4 accent-cyan-500" checked={!!c.own_stock} onChange={(e) => setC(code, { own_stock: e.target.checked })} /> {t("countries.ownStock")}
               </label>

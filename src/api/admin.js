@@ -29,6 +29,7 @@ export const adminApi = {
   setPromoActive: (id, active) => call("patch", `/admin/promos/${id}`, { active }),
   setRole: (email, role, language, country) => call("post", "/admin/team", { email, role, language, ...(country !== undefined ? { country } : {}) }),
   finances: () => call("get", "/admin/finances"),
+  verifyPayment: (id, decision) => call("post", `/admin/orders/${id}/payment`, { decision }).then((d) => d.order),
   remitCash: (driver_id, currency) => call("post", "/admin/finances/remit", { driver_id, currency }),
   drivers: () => call("get", "/admin/drivers").then((d) => d.drivers || []),
   decide: (id, decision, message) => call("post", `/admin/orders/${id}/decision`, { decision, message }).then((d) => d.order),

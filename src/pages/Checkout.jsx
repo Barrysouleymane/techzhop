@@ -2,7 +2,7 @@ import { useEffect, useState } from "react";
 import { Link, useNavigate } from "react-router-dom";
 import { useTranslation } from "react-i18next";
 import axios from "axios";
-import { MapPin, CreditCard, Banknote, AlertTriangle } from "lucide-react";
+import { MapPin, CreditCard, Banknote, AlertTriangle, Smartphone, Copy } from "lucide-react";
 import { toast } from "sonner";
 import useShopStore from "@/store/shopStore";
 import useCartStore from "@/store/cartStore";
@@ -15,7 +15,7 @@ import { API_URL } from "@/config/constants";
 import useDeliveryLocation from "@/hooks/useDeliveryLocation";
 import useLocationStore from "@/store/locationStore";
 import { authHeaders, getAddresses, apiError } from "@/api/account";
-import { formatAddress, effectivePrice, countryCfg, normalizeCountry, countryName, quote, localAmount, formatLocal, isLocalDelivery, needsLandmark } from "../../shared/settings";
+import { formatAddress, effectivePrice, countryCfg, normalizeCountry, countryName, quote, localAmount, formatLocal, isLocalDelivery, needsLandmark, momoAccounts } from "../../shared/settings";
 
 export default function Checkout() {
   const { t, i18n } = useTranslation();
@@ -31,7 +31,8 @@ export default function Checkout() {
     if (id) setChoice({ type: "address", id });
   };
   const [processing, setProcessing] = useState(false);
-  const [method, setMethod] = useState(null); // "card" | "cod"
+  const [method, setMethod] = useState(null); // "card" | "momo" | "cod"
+  const [momo, setMomo] = useState({ operator: "", reference: "", payer_phone: "" });
   const settings = useShopStore((s) => s.settings);
   const reloadCart = useCartStore((s) => s.load);
   const navigate = useNavigate();
@@ -51,11 +52,33 @@ export default function Checkout() {
   const address = addresses.find((a) => a.id === addressId);
   const country = normalizeCountry(address?.country);
   const cfg = address ? countryCfg(settings, country) : null;
-  const methods = cfg?.payments || [];
+  const accounts = momoAccounts(cfg);
+  // Mobile Money is only offered once you've entered at least one number in Admin → Countries
+  const methods = (cfg?.payments || []).filter((m) => m !== "momo" || accounts.length > 0);
+  const account = accounts.find((a) => a.name === momo.operator) || accounts[0];
   const payWith = methods.includes(method) ? method : methods[0] || null;
   const missingPhone = address && needsLandmark(country) && !address.phone;
   const subtotal = cart.reduce((n, i) => n + effectivePrice(i.products) * Number(i.quantity || 0), 0);
   const due = cfg && cfg.currency !== "USD" ? formatLocal(localAmount(cfg, quote(settings, subtotal, address).total), cfg.currency, i18n.language) : null;
+
+  async function handleMomo() {
+    setProcessing(true);
+    setError("");
+    try {
+      const items = cart.map((item) => ({ product_id: item.product_id, quantity: Number(item.quantity || 0) }));
+      const res = await axios.post(
+        `${API_URL}/orders/momo`,
+        { items, address_id: address.id, operator: account?.name, reference: momo.reference.trim(), payer_phone: momo.payer_phone || address.phone },
+        { headers: await authHeaders() }
+      );
+      await reloadCart();
+      toast.success(t("checkout.momo.placed"));
+      navigate(`/orders/${res.data.order_id}`);
+    } catch (err) {
+      setError(apiError(err, t));
+      setProcessing(false);
+    }
+  }
 
   async function handleCod() {
     setProcessing(true);
@@ -183,7 +206,7 @@ export default function Checkout() {
                   <input type="radio" name="pay" className="mt-1" checked={payWith === m} onChange={() => setMethod(m)} />
                   <span>
                     <span className="font-semibold flex items-center gap-2">
-                      {m === "card" ? <CreditCard className="w-4 h-4 text-cyan-400" /> : <Banknote className="w-4 h-4 text-green-400" />}
+                      {m === "card" ? <CreditCard className="w-4 h-4 text-cyan-400" /> : m === "momo" ? <Smartphone className="w-4 h-4 text-orange-400" /> : <Banknote className="w-4 h-4 text-green-400" />}
                       {t(`checkout.method.${m}`)}
                     </span>
                     <span className="text-gray-400 text-sm block">{t(`checkout.methodHint.${m}`)}</span>
@@ -194,17 +217,42 @@ export default function Checkout() {
             </div>
           )}
 
+          {payWith === "momo" && account && (
+            <div className="mt-4 rounded-xl border border-orange-500/40 bg-orange-500/5 p-4 space-y-3">
+              {accounts.length > 1 && (
+                <div className="flex flex-wrap gap-2">
+                  {accounts.map((a) => (
+                    <button key={a.name} type="button" onClick={() => setMomo({ ...momo, operator: a.name })}
+                      className={`px-3 py-1.5 rounded-full border text-sm cursor-pointer ${account.name === a.name ? "border-orange-400 bg-orange-500/20 text-orange-200" : "border-zinc-700 bg-transparent text-gray-300"}`}>
+                      {a.name}
+                    </button>
+                  ))}
+                </div>
+              )}
+              <p className="m-0 text-sm text-gray-300">1. {t("checkout.momo.step1", { amount: due || "", operator: account.name })}</p>
+              <div className="flex items-center justify-between gap-2 rounded-lg bg-zinc-950 border border-zinc-700 px-3 py-2">
+                <span className="font-mono text-lg font-bold">{account.number}</span>
+                <button type="button" onClick={() => { navigator.clipboard?.writeText(account.number); toast.success(t("checkout.momo.copied")); }} className="text-cyan-400 bg-transparent border-0 cursor-pointer p-1" aria-label="copy"><Copy className="w-4 h-4" /></button>
+              </div>
+              {cfg.momo?.holder && <p className="m-0 text-xs text-gray-400">{t("checkout.momo.holder")}: <strong>{cfg.momo.holder}</strong></p>}
+              <p className="m-0 text-sm text-gray-300">2. {t("checkout.momo.step2")}</p>
+              <input value={momo.reference} onChange={(e) => setMomo({ ...momo, reference: e.target.value })} placeholder={t("checkout.momo.reference")} className="w-full rounded-lg border border-zinc-700 bg-zinc-950 text-white px-3 py-2.5 font-mono" />
+              <input type="tel" value={momo.payer_phone} onChange={(e) => setMomo({ ...momo, payer_phone: e.target.value })} placeholder={`${t("checkout.momo.payerPhone")} (${address?.phone || ""})`} className="w-full rounded-lg border border-zinc-700 bg-zinc-950 text-white px-3 py-2.5" />
+              <p className="m-0 text-xs text-gray-500">{t("checkout.momo.verifyNote")}</p>
+            </div>
+          )}
+
           {payWith === "cod" && due && (
             <p className="mt-4 mb-0 text-lg">💵 {t("checkout.toPayOnDelivery")}: <strong className="text-green-400">{due}</strong></p>
           )}
           {missingPhone && <p className="mt-4 mb-0 text-yellow-300 text-sm">{t("checkout.phoneNeeded")}</p>}
 
           <button
-            onClick={payWith === "cod" ? handleCod : handleCheckout}
-            disabled={processing || !address || !cfg || !payWith || (payWith === "cod" && missingPhone)}
+            onClick={payWith === "cod" ? handleCod : payWith === "momo" ? handleMomo : handleCheckout}
+            disabled={processing || !address || !cfg || !payWith || (payWith !== "card" && missingPhone) || (payWith === "momo" && momo.reference.trim().length < 4)}
             className={`${btnPrimary} w-full mt-6 py-4`}
           >
-            {processing ? t("checkout.redirecting") : payWith === "cod" ? t("checkout.placeOrder") : t("checkout.pay")}
+            {processing ? t("checkout.redirecting") : payWith === "cod" ? t("checkout.placeOrder") : payWith === "momo" ? t("checkout.momo.confirm") : t("checkout.pay")}
           </button>
         </div>
       </div>

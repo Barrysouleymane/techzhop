@@ -147,16 +147,30 @@
     "paymentMethod": "Forma de pagamento",
     "method": {
       "card": "Cartão",
-      "cod": "Pagamento na entrega"
+      "cod": "Pagamento na entrega",
+      "momo": "Orange Money / MTN"
     },
     "methodHint": {
       "card": "Pagamento seguro pela Stripe.",
-      "cod": "Pague ao entregador em dinheiro ou Mobile Money (Orange Money, MTN…)."
+      "cod": "Pague ao entregador em dinheiro ou Mobile Money (Orange Money, MTN…).",
+      "momo": "Pague agora pelo telefone e depois informe o código da transação."
     },
     "localDelivery": "Entregue por um entregador TechZhop",
     "toPayOnDelivery": "A pagar na entrega",
     "phoneNeeded": "Adicione um telefone a este endereço para o entregador poder ligar.",
-    "placeOrder": "Fazer pedido"
+    "placeOrder": "Fazer pedido",
+    "momo": {
+      "step1": "Envie {{amount}} por {{operator}} para este número:",
+      "step2": "Informe o código da transação recebido por SMS:",
+      "copied": "Número copiado",
+      "holder": "Titular da conta",
+      "reference": "Código da transação (SMS)",
+      "payerPhone": "Número que pagou",
+      "verifyNote": "Verificamos seu pagamento e depois preparamos seu pedido. Você receberá uma confirmação.",
+      "confirm": "Já paguei — confirmar pedido",
+      "placed": "Pedido recebido! Estamos verificando seu pagamento.",
+      "operator": "Operadora"
+    }
   },
   "success": {
     "loading": "Confirmando seu pagamento...",
@@ -690,7 +704,17 @@
     "status": "Status da entrega",
     "photo": "Foto da entrega",
     "markCollected": "Marcar pagamento como recebido",
-    "codShort": "Na entrega"
+    "codShort": "Na entrega",
+    "verifying": "Pagamento em verificação",
+    "paymentFailed": "Pagamento não encontrado",
+    "momoCheck": "Pagamento Mobile Money a verificar",
+    "amount": "Valor",
+    "confirmPayment": "Pagamento recebido — confirmar",
+    "rejectPayment": "Pagamento não encontrado — cancelar",
+    "rejectConfirm": "Cancelar este pedido? O cliente será avisado de que o pagamento não foi encontrado e o estoque será reposto.",
+    "paymentConfirmed": "Pagamento confirmado — cliente avisado",
+    "paymentRejected": "Pedido cancelado",
+    "toVerify": "A verificar"
   },
   "countries": {
     "title": "Países",
@@ -713,7 +737,13 @@
     "removeConfirm": "Remover {{country}}? Os clientes desse país não poderão mais comprar. Pedidos e estoque anteriores são mantidos. Dica: desmarque «Aberto» para fechar temporariamente.",
     "removedSave": "Removido — clique em Salvar para confirmar.",
     "lastOne": "Mantenha pelo menos um país.",
-    "closeHint": "Desmarque «Aberto» para fechar um país por um tempo; a lixeira o remove da lista."
+    "closeHint": "Desmarque «Aberto» para fechar um país por um tempo; a lixeira o remove da lista.",
+    "momoAccounts": "Números Mobile Money (os clientes pagam aqui)",
+    "momoName": "Operadora (ex.: Orange Money)",
+    "momoNumber": "Número",
+    "momoHolder": "Titular mostrado aos clientes",
+    "addMomo": "Adicionar um número",
+    "momoMissing": "Coloque pelo menos um número; senão o Mobile Money não é oferecido aos clientes."
   },
   "driver": {
     "title": "Minhas entregas",
@@ -734,7 +764,8 @@
     "confirmDelivered": "Confirmar entrega",
     "deliveredOk": "Entregue! Muito bem.",
     "problem": "Relatar um problema",
-    "problemPrompt": "O que aconteceu? (cliente ausente, endereço errado…)"
+    "problemPrompt": "O que aconteceu? (cliente ausente, endereço errado…)",
+    "notPaid": "Pagamento ainda não confirmado — NÃO entregue o pacote. Ligue para a loja."
   },
   "finances": {
     "tab": "Finanças",

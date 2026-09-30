@@ -25,6 +25,7 @@ function DeliveryCard({ d, onChange }) {
   }));
 
   const cod = d.payment_method === "cod" && d.payment_status !== "collected";
+  const unpaid = d.payment_method === "momo" && d.payment_status !== "paid";
   const done = d.delivery_status === "delivered";
   const step = DELIVERY_STEPS.indexOf(d.delivery_status);
   const map = mapsUrl(d);
@@ -89,6 +90,8 @@ function DeliveryCard({ d, onChange }) {
         </Text>
       ) : null}
 
+      {unpaid && !done ? <Text style={{ color: c.danger, fontWeight: "800", marginTop: 8 }}>⛔ {t("driver.notPaid")}</Text> : null}
+
       {!done ? (
         <View style={{ gap: 10, marginTop: 12 }}>
           {step <= 0 ? <Button title={`📦 ${t("driver.pickedUp")}`} onPress={() => act({ action: "picked_up" })} loading={busy} /> : null}
@@ -121,7 +124,7 @@ function DeliveryCard({ d, onChange }) {
                 title={t("driver.confirmDelivered")}
                 onPress={() => act({ action: "delivered", code, collected: cod ? collected : undefined, collected_method: method, photo: photo || undefined }, t("driver.deliveredOk"))}
                 loading={busy}
-                disabled={(d.needs_code && code.length !== 4) || (cod && !collected)}
+                disabled={unpaid || (d.needs_code && code.length !== 4) || (cod && !collected)}
               />
             </View>
           ) : null}

@@ -39,7 +39,27 @@ export default function AdminDelivery({ order, fields, onChange }) {
   }
 
   const cod = order.payment_method === "cod";
+  const momo = order.payment_method === "momo";
   const paid = ["paid", "collected"].includes(order.payment_status);
+
+  async function verify(decision) {
+    const run = async () => {
+      setBusy(true);
+      try {
+        onChange(await adminApi.verifyPayment(order.id, decision));
+      } catch (e) {
+        Alert.alert(t("common.error"), errorMessage(e, t));
+      } finally {
+        setBusy(false);
+      }
+    };
+    if (decision === "reject") {
+      Alert.alert(t("delivery.rejectPayment"), t("delivery.rejectConfirm"), [
+        { text: t("common.cancel"), style: "cancel" },
+        { text: t("delivery.rejectPayment"), style: "destructive", onPress: run },
+      ]);
+    } else run();
+  }
   const map = mapsUrl(order);
   const list = drivers.filter((d) => !d.country || !order.country || d.country === order.country);
   const current = drivers.find((d) => d.id === order.driver_id);
@@ -50,9 +70,26 @@ export default function AdminDelivery({ order, fields, onChange }) {
       {order.country ? <Text style={s.text}>{flag(order.country)} {countryName(order.country, i18n.language)}</Text> : null}
       <Text style={s.muted}>{t("delivery.mode")}: <Text style={s.text}>{t(`delivery.modes.${order.delivery_mode || "carrier"}`)}</Text></Text>
       <Text style={s.text}>
-        {cod ? "💵" : "💳"} {t(`checkout.method.${cod ? "cod" : "card"}`)} ·{" "}
-        <Text style={{ color: paid ? c.success : c.warning, fontWeight: "700" }}>{paid ? t("delivery.paid") : t("delivery.toPay", { amount: orderAmountText(order, i18n.language) })}</Text>
+        {cod ? "💵" : momo ? "📱" : "💳"} {t(`checkout.method.${order.payment_method || "card"}`)} ·{" "}
+        <Text style={{ color: paid ? c.success : order.payment_status === "failed" ? c.danger : c.warning, fontWeight: "700" }}>
+          {paid ? t("delivery.paid") : momo && order.payment_status === "pending" ? t("delivery.verifying") : order.payment_status === "failed" ? t("delivery.paymentFailed") : t("delivery.toPay", { amount: orderAmountText(order, i18n.language) })}
+        </Text>
       </Text>
+      {momo ? (
+        <View style={{ borderWidth: 1, borderColor: order.payment_status === "pending" ? "#f97316" : c.border, borderRadius: 12, padding: 12, gap: 4 }}>
+          <Text style={[s.text, { fontWeight: "700" }]}>📱 {t("delivery.momoCheck")}</Text>
+          <Text style={s.muted}>{t("checkout.momo.operator")}: <Text style={s.text}>{order.payment_operator || "—"}</Text></Text>
+          <Text style={s.muted}>{t("checkout.momo.reference")}: <Text style={[s.text, { fontWeight: "800" }]} selectable>{order.payment_reference || "—"}</Text></Text>
+          <Text style={s.muted}>{t("checkout.momo.payerPhone")}: <Text style={s.text} selectable>{order.payer_phone || "—"}</Text></Text>
+          <Text style={s.muted}>{t("delivery.amount")}: <Text style={[s.text, { fontWeight: "800" }]}>{orderAmountText(order, i18n.language)}</Text></Text>
+          {order.payment_status === "pending" ? (
+            <View style={{ gap: 8, marginTop: 6 }}>
+              <Button title={`✓ ${t("delivery.confirmPayment")}`} onPress={() => verify("confirm")} loading={busy} />
+              <Button title={t("delivery.rejectPayment")} variant="danger" onPress={() => verify("reject")} loading={busy} />
+            </View>
+          ) : null}
+        </View>
+      ) : null}
       {order.collected_method ? <Text style={s.muted}>{t(`delivery.collected.${order.collected_method}`)}</Text> : null}
       {order.delivery_code ? <Text style={s.muted}>{t("delivery.code")}: <Text style={[s.text, { fontWeight: "800", letterSpacing: 2 }]}>{order.delivery_code}</Text></Text> : null}
       {map ? <Button title={t("delivery.openMap")} icon="map-outline" variant="outline" onPress={() => Linking.openURL(map)} /> : null}

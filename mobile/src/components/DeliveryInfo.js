@@ -14,7 +14,16 @@ export default function DeliveryInfo({ order }) {
   if (!order.payment_method && !order.delivery_code) return null;
 
   const cod = order.payment_method === "cod";
+  const momo = order.payment_method === "momo";
   const paid = order.payment_status === "paid" || order.payment_status === "collected";
+  const failed = order.payment_status === "failed";
+  const statusText = paid
+    ? t("delivery.paid")
+    : momo && order.payment_status === "pending"
+      ? t("delivery.verifying")
+      : failed
+        ? t("delivery.paymentFailed")
+        : t("delivery.toPay", { amount: orderAmountText(order, i18n.language) });
   const done = order.status === "delivered" || order.delivery_status === "delivered";
   const stepIndex = DELIVERY_STEPS.indexOf(order.delivery_status);
 
@@ -22,11 +31,14 @@ export default function DeliveryInfo({ order }) {
     <Card>
       <View style={s.row}>
         <View style={{ flexDirection: "row", alignItems: "center", gap: 6, flexShrink: 1 }}>
-          <Ionicons name={cod ? "cash-outline" : "card-outline"} size={18} color={cod ? c.success : c.primary} />
-          <Text style={{ color: c.text, fontWeight: "700" }}>{t(`checkout.method.${cod ? "cod" : "card"}`)}</Text>
+          <Ionicons name={cod ? "cash-outline" : momo ? "phone-portrait-outline" : "card-outline"} size={18} color={cod ? c.success : momo ? "#f97316" : c.primary} />
+          <Text style={{ color: c.text, fontWeight: "700", flexShrink: 1 }}>
+            {momo && order.payment_operator ? order.payment_operator : t(`checkout.method.${order.payment_method || "card"}`)}
+            {momo && order.payment_reference ? <Text style={{ color: c.muted, fontWeight: "400" }}> · {order.payment_reference}</Text> : null}
+          </Text>
         </View>
-        <Text style={{ color: paid ? c.success : c.warning, fontWeight: "700", flexShrink: 1, textAlign: "right" }}>
-          {paid ? t("delivery.paid") : t("delivery.toPay", { amount: orderAmountText(order, i18n.language) })}
+        <Text style={{ color: paid ? c.success : failed ? c.danger : c.warning, fontWeight: "700", flexShrink: 1, textAlign: "right" }}>
+          {statusText}
         </Text>
       </View>
 

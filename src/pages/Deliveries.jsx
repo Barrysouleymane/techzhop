@@ -33,6 +33,7 @@ function DeliveryCard({ d, onChange }) {
   const [photo, setPhoto] = useState(null);
 
   const cod = d.payment_method === "cod" && d.payment_status !== "collected";
+  const unpaid = d.payment_method === "momo" && d.payment_status !== "paid";
   const done = d.delivery_status === "delivered";
   const map = mapsUrl(d);
   const tel = d.customer_phone;
@@ -91,6 +92,8 @@ function DeliveryCard({ d, onChange }) {
         </p>
       )}
 
+      {unpaid && !done && <p className="m-0 font-bold text-red-400">⛔ {t("driver.notPaid")}</p>}
+
       {!done && (
         <div className="space-y-3">
           {step <= 0 && (
@@ -127,7 +130,7 @@ function DeliveryCard({ d, onChange }) {
                 <input type="file" accept="image/*" capture="environment" className="hidden" onChange={(e) => setPhoto(e.target.files?.[0] || null)} />
               </label>
               <button
-                disabled={busy || (d.needs_code && code.length !== 4) || (cod && !collected)}
+                disabled={busy || unpaid || (d.needs_code && code.length !== 4) || (cod && !collected)}
                 onClick={deliver}
                 className={`${btnPrimary} w-full`}
               >

@@ -126,6 +126,12 @@ export async function placeCodOrder(cart, addressId) {
   return request("/orders/cod", { method: "POST", body: JSON.stringify({ items, address_id: addressId }) });
 }
 
+/** Orange Money / MTN paid before delivery: the shop checks the transaction code */
+export async function placeMomoOrder(cart, addressId, momo) {
+  const items = cart.map((item) => ({ product_id: item.product_id, quantity: Number(item.quantity || 0) }));
+  return request("/orders/momo", { method: "POST", body: JSON.stringify({ items, address_id: addressId, ...momo }) });
+}
+
 // ---------- Driver ----------
 
 export const getDeliveries = () => request("/driver/deliveries").then((d) => d.deliveries || []);

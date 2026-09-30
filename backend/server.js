@@ -381,7 +381,8 @@ async function sendOrderPush(userId, orderId, status) {
 // and the areas where our own drivers deliver (states, cities or postal-code prefixes).
 const DEFAULT_COUNTRIES = {
   US: { enabled: true, currency: "USD", rate: 1, payments: ["card"], own_stock: false, local_delivery: { enabled: false, areas: ["NY"] }, min_days: 0, max_days: 0 },
-  GN: { enabled: true, currency: "GNF", rate: 8600, payments: ["cod"], own_stock: true, local_delivery: { enabled: true, areas: ["Conakry"] }, min_days: 1, max_days: 3 },
+  GN: { enabled: true, currency: "GNF", rate: 8600, payments: ["card", "momo"], own_stock: true, local_delivery: { enabled: true, areas: ["Conakry"] }, min_days: 1, max_days: 3,
+        momo: { holder: "TechZhop", accounts: [{ name: "Orange Money", number: "" }, { name: "MTN MoMo", number: "" }] } },
 };
 
 const DEFAULT_SHOP_SETTINGS = {
@@ -1390,13 +1391,24 @@ app.get(
 // POST /orders/cod { items: [{ product_id, quantity }], address_id }
 // ======================================================
 
-app.post("/orders/cod", rateLimit("cod", 20, 10 * 60 * 1000), requireAuth, async (req, res) => {
+app.post("/orders/cod", rateLimit("cod", 20, 10 * 60 * 1000), requireAuth, (req, res) => placeOfflineOrder(req, res, "cod"));
+app.post("/orders/momo", rateLimit("momo", 20, 10 * 60 * 1000), requireAuth, (req, res) => placeOfflineOrder(req, res, "momo"));
+
+// Orders paid outside Stripe: "cod" (pay the driver) or "momo" (Orange Money / MTN sent before delivery)
+async function placeOfflineOrder(req, res, method) {
   try {
     const cols = await orderColumns();
     if (!cols.includes("payment_method")) {
-      return res.status(400).json({ error: "Pay on delivery is not enabled yet: run supabase/migrations/20260930_countries.sql in Supabase." });
+      return res.status(400).json({ error: "Not enabled yet: run supabase/migrations/20260930_countries.sql in Supabase." });
+    }
+    if (method === "momo" && !cols.includes("payment_reference")) {
+      return res.status(400).json({ error: "Mobile Money is not enabled yet: run supabase/migrations/20260930c_momo.sql in Supabase." });
     }
     const { items, address_id } = req.body || {};
+    const reference = String(req.body?.reference || "").trim().slice(0, 60);
+    const operator = String(req.body?.operator || "").trim().slice(0, 40);
+    const payerPhone = String(req.body?.payer_phone || "").trim().slice(0, 30);
+    if (method === "momo" && reference.length < 4) return res.status(400).json({ error: "Enter the transaction code you received by SMS." });
     if (!Array.isArray(items) || items.length === 0) return res.status(400).json({ error: "Cart is empty" });
 
     const { data: address } = await supabase.from("addresses").select("*").eq("id", address_id).eq("user_id", req.user.id).maybeSingle();
@@ -1407,7 +1419,10 @@ app.post("/orders/cod", rateLimit("cod", 20, 10 * 60 * 1000), requireAuth, async
     const country = normalizeCountry(address.country);
     const cfg = countryCfg(settings, country);
     if (!cfg) return res.status(400).json({ error: `We don't deliver to ${country} yet.` });
-    if (!(cfg.payments || []).includes("cod")) return res.status(400).json({ error: "Pay on delivery isn't available for this country." });
+    if (!(cfg.payments || []).includes(method)) return res.status(400).json({ error: "This payment method isn't available for this country." });
+    if (method === "momo" && operator && !(cfg.momo?.accounts || []).some((a) => a.name === operator)) {
+      return res.status(400).json({ error: "Unknown Mobile Money operator." });
+    }
 
     const ids = [...new Set(items.map((i) => Number(i.product_id)).filter(Number.isInteger))];
     const { data: products, error: pErr } = await supabase.from("products").select("*").in("id", ids);
@@ -1447,12 +1462,16 @@ app.post("/orders/cod", rateLimit("cod", 20, 10 * 60 * 1000), requireAuth, async
       user_id: req.user.id,
       total,
       shipping_address: shippingText,
-      status: "processing",
+      // Mobile Money: waits until you confirm the payment; pay on delivery: prepared right away
+      status: method === "momo" ? "pending" : "processing",
       created_at: now,
       updated_at: now,
       ...pickCols(cols, {
         subtotal, shipping_amount: shipping, tax_amount: tax, discount_amount: 0,
-        country, payment_method: "cod", payment_status: "unpaid",
+        country, payment_method: method, payment_status: method === "momo" ? "pending" : "unpaid",
+        payment_reference: method === "momo" ? reference : null,
+        payment_operator: method === "momo" ? operator || null : null,
+        payer_phone: method === "momo" ? payerPhone || address.phone : null,
         currency: cfg.currency || "USD", local_total: localAmount(cfg, total),
         delivery_mode: local ? "local" : "carrier",
         delivery_code: newDeliveryCode(),
@@ -1474,17 +1493,49 @@ app.post("/orders/cod", rateLimit("cod", 20, 10 * 60 * 1000), requireAuth, async
     await adjustStock(orderItems, country, -1, settings);
     await supabase.from("cart_items").delete().eq("user_id", req.user.id);
 
-    console.log("🧾 COD ORDER:", order.id, country, total, "USD /", row.local_total, row.currency);
-    await sendOrderPush(req.user.id, order.id, "processing");
+    console.log(`🧾 ${method.toUpperCase()} ORDER:`, order.id, country, total, "USD /", row.local_total, row.currency, reference || "");
+    await sendOrderPush(req.user.id, order.id, order.status);
     const info = await userInfo(req.user.id).catch(() => null);
     emails.orderConfirmationEmail({ to: info?.email || req.user.email, name: info?.name, language: info?.language, order, items: orderItems });
     if (ADMIN_EMAILS.length) emails.newOrderAdminEmail({ to: ADMIN_EMAILS, order, items: orderItems });
 
     res.json({ success: true, order_id: order.id, order: publicOrderView(order) });
   } catch (err) {
-    console.error("COD ERROR:", err.message);
+    console.error("OFFLINE ORDER ERROR:", err.message);
     res.status(400).json({ error: err.message });
   }
+}
+
+// Staff checks the Mobile Money account, then confirms or rejects the payment
+app.post("/admin/orders/:orderId/payment", requireAuth, requirePermission("orders"), async (req, res) => {
+  const orderId = Number(req.params.orderId);
+  const decision = req.body?.decision;
+  if (!["confirm", "reject"].includes(decision)) return res.status(400).json({ error: "Invalid decision" });
+
+  const { data: order } = await supabase.from("orders").select("*, order_items (product_id, quantity)").eq("id", orderId).maybeSingle();
+  if (!order || (req.staffCountry && normalizeCountry(order.country || "US") !== req.staffCountry)) {
+    return res.status(404).json({ error: "Order not found" });
+  }
+  if (order.payment_method !== "momo") return res.status(400).json({ error: "Not a Mobile Money order" });
+
+  const now = new Date().toISOString();
+  const update = decision === "confirm"
+    ? { payment_status: "paid", status: order.status === "pending" ? "processing" : order.status, updated_at: now }
+    : { payment_status: "failed", status: "cancelled", updated_at: now };
+
+  const { data, error } = await supabase.from("orders").update(update).eq("id", orderId).select("*").single();
+  if (error) return res.status(500).json({ error: error.message });
+
+  if (decision === "reject" && order.status !== "cancelled") {
+    await adjustStock(order.order_items, order.country || "US", +1);
+  }
+
+  console.log(`📱 MOMO ${decision.toUpperCase()}:`, orderId, "by", req.user.email);
+  await sendOrderPush(data.user_id, data.id, data.status);
+  const info = await userInfo(data.user_id).catch(() => null);
+  if (info) emails.orderUpdateEmail({ to: info.email, name: info.name, language: info.language, order: data });
+
+  res.json({ success: true, order: data });
 });
 
 
@@ -1552,6 +1603,9 @@ app.post("/driver/deliveries/:orderId", rateLimit("driver", 120, 10 * 60 * 1000)
     update.delivery_status = "failed";
     update.delivery_note = String(req.body?.note || "").slice(0, 500) || null;
   } else if (action === "delivered") {
+    if (order.payment_method === "momo" && order.payment_status !== "paid") {
+      return res.status(400).json({ error: "The payment isn't confirmed yet. Don't hand over the package — call the shop." });
+    }
     if (order.delivery_code && String(req.body?.code || "").trim() !== String(order.delivery_code)) {
       return res.status(400).json({ error: "Wrong delivery code. Ask the customer for the 4-digit code shown in their app or email." });
     }
@@ -2016,6 +2070,7 @@ const OPTIONAL_ORDER_COLUMNS = [
   "country", "payment_method", "payment_status", "currency", "local_total", "delivery_mode", "driver_id",
   "delivery_status", "delivery_code", "delivery_photo", "delivery_note", "picked_up_at", "out_for_delivery_at",
   "collected_at", "collected_method", "customer_phone", "delivery_lat", "delivery_lng", "cash_remitted_at",
+  "payment_reference", "payment_operator", "payer_phone",
 ];
 
 // ADMIN — ONE ORDER WITH CUSTOMER, PRODUCTS AND PAYMENT DETAILS
@@ -2521,7 +2576,7 @@ function cleanCountries(input) {
   for (const [code, c] of Object.entries(input || DEFAULT_COUNTRIES)) {
     const cc = normalizeCountry(code);
     if (!/^[A-Z]{2}$/.test(cc) || !c) continue;
-    const payments = (Array.isArray(c.payments) ? c.payments : []).filter((m) => ["card", "cod"].includes(m));
+    const payments = (Array.isArray(c.payments) ? c.payments : []).filter((m) => ["card", "momo", "cod"].includes(m));
     out[cc] = {
       enabled: !!c.enabled,
       currency: String(c.currency || "USD").toUpperCase().slice(0, 3),
@@ -2534,6 +2589,13 @@ function cleanCountries(input) {
       },
       min_days: Math.max(0, parseInt(c.min_days, 10) || 0),
       max_days: Math.max(0, parseInt(c.max_days, 10) || 0),
+      momo: {
+        holder: String(c.momo?.holder || "").slice(0, 80),
+        accounts: (c.momo?.accounts || [])
+          .map((a) => ({ name: String(a?.name || "").trim().slice(0, 40), number: String(a?.number || "").trim().slice(0, 30) }))
+          .filter((a) => a.name)
+          .slice(0, 6),
+      },
     };
   }
   return Object.keys(out).length ? out : DEFAULT_COUNTRIES;
