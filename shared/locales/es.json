@@ -708,7 +708,12 @@
     "choose": "Elige un país…",
     "add": "Añadir país",
     "mainStock": "Stock (almacén principal)",
-    "stockIn": "Stock en {{country}}"
+    "stockIn": "Stock en {{country}}",
+    "remove": "Eliminar",
+    "removeConfirm": "¿Eliminar {{country}}? Los clientes de ese país ya no podrán pedir. Los pedidos y el stock anteriores se conservan. Consejo: desmarca «Abierto» para cerrarlo temporalmente.",
+    "removedSave": "Eliminado — pulsa Guardar para confirmar.",
+    "lastOne": "Deja al menos un país.",
+    "closeHint": "Desmarca «Abierto» para cerrar un país un tiempo; la papelera lo quita de la lista."
   },
   "driver": {
     "title": "Mis entregas",

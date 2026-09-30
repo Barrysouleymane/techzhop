@@ -708,7 +708,12 @@
     "choose": "Choose a country…",
     "add": "Add country",
     "mainStock": "Stock (main warehouse)",
-    "stockIn": "Stock in {{country}}"
+    "stockIn": "Stock in {{country}}",
+    "remove": "Remove",
+    "removeConfirm": "Remove {{country}}? Customers there won't be able to order anymore. Past orders and stock are kept. Tip: untick \"Open\" instead to close it temporarily.",
+    "removedSave": "Removed — click Save to confirm.",
+    "lastOne": "Keep at least one country.",
+    "closeHint": "Untick \"Open\" to close a country for a while; the trash can removes it from the list."
   },
   "driver": {
     "title": "My deliveries",

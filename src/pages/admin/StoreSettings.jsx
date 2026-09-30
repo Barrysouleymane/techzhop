@@ -1,7 +1,7 @@
 import { useEffect, useState } from "react";
 import { useTranslation } from "react-i18next";
 import { toast } from "sonner";
-import { Plus, X } from "lucide-react";
+import { Plus, X, Trash2 } from "lucide-react";
 import { Field, btnPrimary, btnSecondary, inputClass, card } from "@/components/Page";
 import { adminApi } from "@/api/admin";
 import { apiError } from "@/api/account";
@@ -56,6 +56,14 @@ export default function StoreSettings() {
     const next = cur.includes(m) ? cur.filter((x) => x !== m) : [...cur, m];
     setC(code, { payments: next.length ? next : cur });
   };
+  const removeCountry = (code) => {
+    if (Object.keys(countries).length <= 1) return toast.error(t("countries.lastOne"));
+    if (!window.confirm(t("countries.removeConfirm", { country: countryName(code, i18n.language) }))) return;
+    const next = { ...countries };
+    delete next[code];
+    setV({ ...v, countries: next });
+    toast(t("countries.removedSave"));
+  };
   const addCountry = () => {
     if (!newCountry || countries[newCountry]) return;
     setV({ ...v, countries: { ...countries, [newCountry]: { enabled: true, currency: "USD", rate: 1, payments: ["cod"], own_stock: true, local_delivery: { enabled: true, areas: [] }, min_days: 1, max_days: 3 } } });
@@ -66,15 +74,20 @@ export default function StoreSettings() {
     <div className="grid lg:grid-cols-2 gap-6">
       <div className={`${card} p-6 space-y-4 lg:col-span-2`}>
         <h2 className="text-xl font-bold m-0">🌍 {t("countries.title")}</h2>
-        <p className="text-gray-400 text-sm m-0">{t("countries.intro")}</p>
+        <p className="text-gray-400 text-sm m-0">{t("countries.intro")} {t("countries.closeHint")}</p>
         <div className="grid md:grid-cols-2 gap-4">
           {Object.entries(countries).map(([code, c]) => (
             <div key={code} className={`rounded-xl border p-4 space-y-3 ${c.enabled ? "border-cyan-500/50" : "border-zinc-800 opacity-70"}`}>
               <div className="flex items-center justify-between gap-2">
                 <strong className="text-lg">{flag(code)} {countryName(code, i18n.language)}</strong>
-                <label className="flex items-center gap-2 text-sm cursor-pointer">
-                  <input type="checkbox" className="w-4 h-4 accent-cyan-500" checked={!!c.enabled} onChange={(e) => setC(code, { enabled: e.target.checked })} /> {t("countries.enabled")}
-                </label>
+                <div className="flex items-center gap-3">
+                  <label className="flex items-center gap-2 text-sm cursor-pointer">
+                    <input type="checkbox" className="w-4 h-4 accent-cyan-500" checked={!!c.enabled} onChange={(e) => setC(code, { enabled: e.target.checked })} /> {t("countries.enabled")}
+                  </label>
+                  <button type="button" onClick={() => removeCountry(code)} title={t("countries.remove")} aria-label={t("countries.remove")} className="text-red-400 hover:text-red-300 bg-transparent border-0 p-1 cursor-pointer">
+                    <Trash2 className="w-4 h-4" />
+                  </button>
+                </div>
               </div>
               <div className="grid grid-cols-2 gap-3">
                 <Field label={t("countries.currency")}>

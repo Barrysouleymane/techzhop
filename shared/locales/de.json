@@ -708,7 +708,12 @@
     "choose": "Land wählen…",
     "add": "Land hinzufügen",
     "mainStock": "Bestand (Hauptlager)",
-    "stockIn": "Bestand in {{country}}"
+    "stockIn": "Bestand in {{country}}",
+    "remove": "Entfernen",
+    "removeConfirm": "{{country}} entfernen? Kunden dort können nicht mehr bestellen. Frühere Bestellungen und Bestand bleiben erhalten. Tipp: Deaktiviere lieber „Offen“, um es vorübergehend zu schließen.",
+    "removedSave": "Entfernt — klicke auf Speichern zum Bestätigen.",
+    "lastOne": "Behalte mindestens ein Land.",
+    "closeHint": "Deaktiviere „Offen“, um ein Land vorübergehend zu schließen; der Papierkorb entfernt es aus der Liste."
   },
   "driver": {
     "title": "Meine Lieferungen",

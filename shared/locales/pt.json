@@ -708,7 +708,12 @@
     "choose": "Escolha um país…",
     "add": "Adicionar país",
     "mainStock": "Estoque (armazém principal)",
-    "stockIn": "Estoque em {{country}}"
+    "stockIn": "Estoque em {{country}}",
+    "remove": "Remover",
+    "removeConfirm": "Remover {{country}}? Os clientes desse país não poderão mais comprar. Pedidos e estoque anteriores são mantidos. Dica: desmarque «Aberto» para fechar temporariamente.",
+    "removedSave": "Removido — clique em Salvar para confirmar.",
+    "lastOne": "Mantenha pelo menos um país.",
+    "closeHint": "Desmarque «Aberto» para fechar um país por um tempo; a lixeira o remove da lista."
   },
   "driver": {
     "title": "Minhas entregas",

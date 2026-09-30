@@ -706,7 +706,12 @@
     "choose": "选择国家…",
     "add": "添加国家",
     "mainStock": "库存（主仓库）",
-    "stockIn": "{{country}}库存"
+    "stockIn": "{{country}}库存",
+    "remove": "删除",
+    "removeConfirm": "删除{{country}}？该国客户将无法再下单。以往订单和库存会保留。提示：如只是暂时关闭，请取消勾选“开放”。",
+    "removedSave": "已删除——请点击保存确认。",
+    "lastOne": "请至少保留一个国家。",
+    "closeHint": "取消勾选“开放”可暂时关闭某国；垃圾桶图标会将其从列表中删除。"
   },
   "driver": {
     "title": "我的配送",

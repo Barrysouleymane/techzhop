@@ -708,7 +708,12 @@
     "choose": "Choisir un pays…",
     "add": "Ajouter le pays",
     "mainStock": "Stock (entrepôt principal)",
-    "stockIn": "Stock – {{country}}"
+    "stockIn": "Stock – {{country}}",
+    "remove": "Supprimer",
+    "removeConfirm": "Supprimer {{country}} ? Les clients de ce pays ne pourront plus commander. Les anciennes commandes et le stock sont conservés. Astuce : décoche plutôt « Ouvert » pour fermer temporairement.",
+    "removedSave": "Supprimé — clique sur Enregistrer pour confirmer.",
+    "lastOne": "Garde au moins un pays.",
+    "closeHint": "Décoche « Ouvert » pour fermer un pays un moment ; la corbeille le retire de la liste."
   },
   "driver": {
     "title": "Mes livraisons",
